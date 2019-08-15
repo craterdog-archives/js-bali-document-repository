@@ -37,6 +37,6 @@
   "dependencies": {
     "axios": "^0.18.0",
     "aws-sdk": "^2.504.0",
-    "bali-component-framework": "^1.11.3"
+    "bali-component-framework": "^1.12.1"
   }
 }

@@ -16,6 +16,7 @@
  */
 const bali = require('bali-component-framework');
 const axios = require('axios');
+const EOL = '\n';
 
 /**
  * This function returns an object that implements the API for the AWS cloud document
@@ -126,7 +127,7 @@ exports.repository = function(notary, url, debug) {
                     $procedure: '$createCitation',
                     $exception: '$unexpected',
                     $name: bali.text(name),
-                    $citation: citation,
+                    $citation: bali.text(EOL + citation + EOL),
                     $text: bali.text('An unexpected error occurred while attempting to create a citation.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -203,7 +204,7 @@ exports.repository = function(notary, url, debug) {
                     $procedure: '$saveDraft',
                     $exception: '$unexpected',
                     $draftId: bali.text(draftId),
-                    $draft: bali.text(draft),
+                    $draft: bali.text(EOL + draft + EOL),
                     $text: bali.text('An unexpected error occurred while attempting to save a draft.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -303,7 +304,7 @@ exports.repository = function(notary, url, debug) {
                     $procedure: '$createDocument',
                     $exception: '$unexpected',
                     $documentId: bali.text(documentId),
-                    $document: bali.text(document),
+                    $document: bali.text(EOL + document + EOL),
                     $text: bali.text('An unexpected error occurred while attempting to create a document.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -327,7 +328,7 @@ exports.repository = function(notary, url, debug) {
                     $procedure: '$queueMessage',
                     $exception: '$unexpected',
                     $queueId: bali.text(queueId),
-                    $message: message,
+                    $message: bali.text(EOL + message + EOL),
                     $text: bali.text('An unexpected error occurred while attempting to queue a message.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -384,7 +385,7 @@ const generateCredentials = async function(notary, debug) {
         parameters.setParameter('$tag', bali.tag());
         parameters.setParameter('$version', bali.version());
         parameters.setParameter('$permissions', bali.parse('/bali/permissions/private/v1'));
-        parameters.setParameter('$previous', bali.NONE);
+        parameters.setParameter('$previous', bali.pattern.NONE);
         const credentials = await notary.signComponent(document);
         return credentials;
     } catch (cause) {
@@ -468,7 +469,7 @@ const sendRequest = async function(credentials, functionName, url, method, type,
                 $status: cause.response.status,
                 $details: bali.text(cause.response.statusText),
                 $text: bali.text('The request was rejected by the Bali Nebula™.')
-            });
+            }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
         }
@@ -483,7 +484,7 @@ const sendRequest = async function(credentials, functionName, url, method, type,
                 $status: cause.request.status,
                 $details: bali.text(cause.request.statusText),
                 $text: bali.text('The request received no response.')
-            });
+            }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
         } 
@@ -495,7 +496,7 @@ const sendRequest = async function(credentials, functionName, url, method, type,
             $url: bali.reference(options.url),
             $method: bali.text(options.method),
             $text: bali.text('The request was not formed correctly.')
-        });
+        }, cause);
         if (debug) console.error(exception.toString());
         throw exception;
     }

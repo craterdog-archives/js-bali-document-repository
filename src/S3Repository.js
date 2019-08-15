@@ -15,10 +15,18 @@
  * repository. It is designed to be used by a lambda based service that is running in
  * the AWS cloud. It treats documents as UTF-8 encoded strings.
  */
-const config = require('./Configuration.js');
 const aws = new require('aws-sdk/clients/s3');
 const s3 = new aws({apiVersion: '2006-03-01'});
 const bali = require('bali-component-framework');
+
+const config = {
+    url: 'https://bali-nebula.net/repository/',
+    citationBucket: 'craterdog-bali-citations-us-west-2',
+    draftBucket: 'craterdog-bali-drafts-us-west-2',
+    documentBucket: 'craterdog-bali-documents-us-west-2',
+    queueBucket: 'craterdog-bali-queues-us-west-2'
+};
+
 const EOL = '\n';  // POSIX compliant end of line
 
 

@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = true;  // set to true for exception logging
+const debug = false;  // set to true for exception logging
 const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
@@ -31,10 +31,17 @@ const transaction = bali.catalog({
     $tag: bali.tag(),
     $version: bali.version(),
     $permissions: bali.parse('/bali/permissions/public/v1'),
-    $previous: bali.NONE
+    $previous: bali.pattern.NONE
 }));
 
 const source = transaction.toString();
+
+function extractId(component) {
+    const parameters = component.getValue('$component').getParameters();
+    const identifier = parameters.getParameter('$tag').getValue();
+    const version = parameters.getParameter('$version');
+    return '' + identifier + version;
+}
 
 describe('Bali Nebula™ Document Repository', function() {
 
@@ -44,10 +51,13 @@ describe('Bali Nebula™ Document Repository', function() {
             const name = 'bali/examples/name/v1.2.3.4';
 
             // generate a new notary key
-            await notary.generateKey();
+            const certificate = await notary.generateKey();
+            expect(certificate).to.exist;
+            const certificateId = extractId(certificate);
+            await repository.createDocument(certificateId, certificate);
 
             // make sure the new name does not yet exist in the repository
-            exists = await repository.citationExists(name);
+            var exists = await repository.citationExists(name);
             expect(exists).is.false;
 
             // create a new name in the repository
