@@ -63,3 +63,6 @@ typings/
 # NetBeans
 nbproject/
 test/config
+
+# Mac
+.DS_Store
