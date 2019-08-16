@@ -431,7 +431,7 @@ const sendRequest = async function(credentials, functionName, url, method, type,
             return status < 400 || status === 404;  // only flag unexpected server errors
         },
         headers: {
-            //'User-Agent': 'Bali Nebula API™ 1.0',
+            //'User-Agent': 'Bali Nebula™ API 1.0',
             'Nebula-Credentials': '"' + bali.format(credentials, -1) + '"'  // inlined quoted string
         }
     };
