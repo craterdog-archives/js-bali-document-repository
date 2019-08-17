@@ -6,7 +6,7 @@ This project provides a JavaScript version of the document repository classes fo
  * **RemoteRepository** - This implementation uses a remote repository service and accesses it via HTTPS.
  * **S3Repository** - This implementation uses the AWS S3 filesystem as the repository and is only accessible with the proper AWS credentials.
 
-![Pyramid](https://raw.githubusercontent.com/craterdog-bali/js-bali-document-repository/master/docs/images/BaliPyramid.png)
+![Pyramid](docs/images/BaliPyramid.png)
 
 _**WARNING**_
 _This project is still in its early stages and the classes and interfaces to the classes are likely to change._
