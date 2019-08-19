@@ -1,6 +1,6 @@
 ![Logo](https://raw.githubusercontent.com/craterdog-bali/bali-project-documentation/master/images/CraterDogLogo.png)
 
-### Bali Document Repository
+### Bali Nebula™ Document Repository
 This project provides a JavaScript version of the document repository classes for the [_Bali Nebula™_](https://github.com/craterdog-bali/bali-project-documentation/wiki). It defines the interface to the document repository and the following implementations of that interface:
  * **LocalRepository** - This implementation uses the local filesystem as the repository and is only for testing.
  * **RemoteRepository** - This implementation uses a remote repository service and accesses it via HTTPS.
