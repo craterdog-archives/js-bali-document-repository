@@ -18,7 +18,7 @@ const directory = 'test/config/';
 const url = bali.reference('http://localhost:3000');
 const securityModule = require('bali-digital-notary').ssm(directory + accountId.getValue() + '.keys', debug);
 const notary = require('bali-digital-notary').api(securityModule, accountId, directory, debug);
-const repository = require('../').remote(notary, url, debug);
+const repository = require('../index').remote(notary, url, debug);
 
 const transaction = bali.catalog({
     $timestamp: bali.moment(),

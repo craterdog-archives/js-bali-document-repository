@@ -18,15 +18,6 @@
 const aws = new require('aws-sdk/clients/s3');
 const s3 = new aws({apiVersion: '2006-03-01'});
 const bali = require('bali-component-framework');
-
-const config = {
-    url: 'https://bali-nebula.net/repository/',
-    citationBucket: 'craterdog-bali-citations-us-west-2',
-    draftBucket: 'craterdog-bali-drafts-us-west-2',
-    documentBucket: 'craterdog-bali-documents-us-west-2',
-    queueBucket: 'craterdog-bali-queues-us-west-2'
-};
-
 const EOL = '\n';  // POSIX compliant end of line
 
 
@@ -34,11 +25,12 @@ const EOL = '\n';  // POSIX compliant end of line
  * This function returns an object that implements the API for an AWS S3 based document
  * repository.
  * 
+ * @param {Object} configuration An object containing the S3 configuration information. 
  * @param {Boolean} debug An optional flag that determines whether or not exceptions
  * will be logged to the error console.
  * @returns {Object} An object implementing the document repository interface.
  */
-exports.repository = function(debug) {
+exports.repository = function(configuration, debug) {
 
     // return a singleton object for the API
     return {
@@ -62,7 +54,7 @@ exports.repository = function(debug) {
          * @returns {Reference} A reference to this document repository.
          */
         getURL: function() {
-            return bali.reference(config.url);
+            return bali.reference(configuration.url);
         },
 
         /**
@@ -74,7 +66,7 @@ exports.repository = function(debug) {
          */
         citationExists: async function(name) {
             const filename = name + '.bali';
-            const exists = await doesExist(config.citationBucket, filename);
+            const exists = await doesExist(configuration.citationBucket, filename);
             return exists;
         },
 
@@ -89,9 +81,9 @@ exports.repository = function(debug) {
         fetchCitation: async function(name) {
             var citation;
             const filename = name + '.bali';
-            const exists = await doesExist(config.citationBucket, filename);
+            const exists = await doesExist(configuration.citationBucket, filename);
             if (exists) {
-                citation = await getObject(config.citationBucket, filename);
+                citation = await getObject(configuration.citationBucket, filename);
                 citation = citation.toString().slice(0, -1);  // remove POSIX compliant <EOL>
             }
             return citation;
@@ -106,7 +98,7 @@ exports.repository = function(debug) {
          */
         createCitation: async function(name, citation) {
             const filename = name + '.bali';
-            const exists = await doesExist(config.documentBucket, filename);
+            const exists = await doesExist(configuration.documentBucket, filename);
             if (exists) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
@@ -120,7 +112,7 @@ exports.repository = function(debug) {
                 throw exception;
             }
             citation = citation + EOL;  // add POSIX compliant <EOL>
-            await putObject(config.citationBucket, filename, citation);
+            await putObject(configuration.citationBucket, filename, citation);
         },
 
         /**
@@ -133,7 +125,7 @@ exports.repository = function(debug) {
          */
         draftExists: async function(draftId) {
             const filename = draftId + '.bali';
-            const exists = await doesExist(config.draftBucket, filename);
+            const exists = await doesExist(configuration.draftBucket, filename);
             return exists;
         },
 
@@ -148,9 +140,9 @@ exports.repository = function(debug) {
         fetchDraft: async function(draftId) {
             var draft;
             const filename = draftId + '.bali';
-            const exists = await doesExist(config.draftBucket, filename);
+            const exists = await doesExist(configuration.draftBucket, filename);
             if (exists) {
-                draft = await getObject(config.draftBucket, filename);
+                draft = await getObject(configuration.draftBucket, filename);
                 draft = draft.toString().slice(0, -1);  // remove POSIX compliant <EOL>
             }
             return draft;
@@ -166,7 +158,7 @@ exports.repository = function(debug) {
         saveDraft: async function(draftId, draft) {
             const filename = draftId + '.bali';
             const document = draft + EOL;  // add POSIX compliant <EOL>
-            await putObject(config.draftBucket, filename, document);
+            await putObject(configuration.draftBucket, filename, document);
         },
 
         /**
@@ -177,9 +169,9 @@ exports.repository = function(debug) {
          */
         deleteDraft: async function(draftId) {
             const filename = draftId + '.bali';
-            const exists = await doesExist(config.draftBucket, filename);
+            const exists = await doesExist(configuration.draftBucket, filename);
             if (exists) {
-                await deleteObject(config.draftBucket, filename);
+                await deleteObject(configuration.draftBucket, filename);
             }
         },
 
@@ -193,7 +185,7 @@ exports.repository = function(debug) {
          */
         documentExists: async function(documentId) {
             const filename = documentId + '.bali';
-            const exists = await doesExist(config.documentBucket, filename);
+            const exists = await doesExist(configuration.documentBucket, filename);
             return exists;
         },
 
@@ -208,9 +200,9 @@ exports.repository = function(debug) {
         fetchDocument: async function(documentId) {
             var document;
             const filename = documentId + '.bali';
-            const exists = await doesExist(config.documentBucket, filename);
+            const exists = await doesExist(configuration.documentBucket, filename);
             if (exists) {
-                document = await getObject(config.documentBucket, filename);
+                document = await getObject(configuration.documentBucket, filename);
                 document = document.toString().slice(0, -1);  // remove POSIX compliant <EOL>
             }
             return document;
@@ -225,7 +217,7 @@ exports.repository = function(debug) {
          */
         createDocument: async function(documentId, document) {
             const filename = documentId + '.bali';
-            const exists = await doesExist(config.documentBucket, filename);
+            const exists = await doesExist(configuration.documentBucket, filename);
             if (exists) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
@@ -239,7 +231,7 @@ exports.repository = function(debug) {
                 throw exception;
             }
             document = document + EOL;  // add POSIX compliant <EOL>
-            await putObject(config.documentBucket, filename, document);
+            await putObject(configuration.documentBucket, filename, document);
         },
 
         /**
@@ -251,7 +243,7 @@ exports.repository = function(debug) {
         queueMessage: async function(queueId, message) {
             const messageId = bali.tag().getValue();
             const filename = queueId + '/' + messageId + '.bali';
-            const exists = await doesExist(config.queueBucket, filename);
+            const exists = await doesExist(configuration.queueBucket, filename);
             if (exists) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
@@ -264,7 +256,7 @@ exports.repository = function(debug) {
                 throw exception;
             }
             const document = message + EOL;  // add POSIX compliant <EOL>
-            await putObject(config.queueBucket, filename, document);
+            await putObject(configuration.queueBucket, filename, document);
         },
 
         /**
@@ -276,16 +268,16 @@ exports.repository = function(debug) {
         dequeueMessage: async function(queueId) {
             var message;
             while (true) {
-                const messages = (await listObjects(config.queueBucket, queueId));
+                const messages = (await listObjects(configuration.queueBucket, queueId));
                 if (messages && messages.length) {
                     // select a message a random since a distributed queue cannot guarantee FIFO
                     const count = messages.length;
                     const index = bali.random.index(count) - 1;  // convert to zero based indexing
                     const filename = messages[index].Key;
-                    message = await getObject(config.queueBucket, filename);
+                    message = await getObject(configuration.queueBucket, filename);
                     message = message.toString().slice(0, -1);  // remove POSIX compliant <EOL>
                     try {
-                        await deleteObject(config.queueBucket, filename);
+                        await deleteObject(configuration.queueBucket, filename);
                         break; // we got there first
                     } catch (exception) {
                         // another process got there first

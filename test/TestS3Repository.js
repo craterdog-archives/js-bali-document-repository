@@ -12,7 +12,15 @@ const debug = false;  // set to true for error logging
 const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
-const repository = require('../src/S3Repository').repository(debug);
+
+const configuration = {
+    url: 'https://bali-nebula.net/repository/',
+    citationBucket: 'craterdog-bali-citations-us-west-2',
+    draftBucket: 'craterdog-bali-drafts-us-west-2',
+    documentBucket: 'craterdog-bali-documents-us-west-2',
+    queueBucket: 'craterdog-bali-queues-us-west-2'
+};
+const repository = require('../index').s3(configuration, debug);
 
 const source =
     '[\n' +
@@ -32,7 +40,7 @@ describe('Bali Nebula™ Document Repository', function() {
             const name = 'bali/examples/name/v1.2.3';
 
             // make sure the new name does not yet exist in the repository
-            exists = await repository.citationExists(name);
+            var exists = await repository.citationExists(name);
             expect(exists).is.false;
 
             // create a new name in the repository

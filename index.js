@@ -39,12 +39,13 @@ exports.remote = function(notary, url, debug) {
 /**
  * This function initializes an S3 document repository for the Bali Nebula™.
  * 
+ * @param {Object} configuration An object containing the S3 configuration information. 
  * @param {Boolean} debug An optional flag that determines whether or not exceptions
  * will be logged to the error console.
  * @returns {Object} A singleton object containing the initialized document repository.
  */
-exports.s3 = function(debug) {
-    const repository = require('./src/S3Repository').repository(debug);
+exports.s3 = function(configuration, debug) {
+    const repository = require('./src/S3Repository').repository(configuration, debug);
     return repository;
 };
 

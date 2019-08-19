@@ -14,7 +14,7 @@ const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
 const bali = require('bali-component-framework');
-const repository = require('../').local(directory, debug);
+const repository = require('../index').local(directory, debug);
 
 const transaction = bali.catalog({
     $timestamp: bali.moment(),
