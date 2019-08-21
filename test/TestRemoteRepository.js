@@ -13,11 +13,11 @@ const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
 const bali = require('bali-component-framework');
-const accountId = bali.parse('#GTDHQ9B8ZGS7WCBJJJBFF6KDCCF55R2P');
+const accountTag = bali.parse('#GTDHQ9B8ZGS7WCBJJJBFF6KDCCF55R2P');
 const directory = 'test/config/';
 const url = bali.reference('http://localhost:3000');
-const securityModule = require('bali-digital-notary').ssm(directory + accountId.getValue() + '.keys', debug);
-const notary = require('bali-digital-notary').api(securityModule, accountId, directory, debug);
+const securityModule = require('bali-digital-notary').ssm(directory + accountTag.getValue() + '.keys', debug);
+const notary = require('bali-digital-notary').api(securityModule, accountTag, directory, debug);
 const repository = require('../index').remote(notary, url, debug);
 
 const transaction = bali.catalog({

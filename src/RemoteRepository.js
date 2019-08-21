@@ -31,7 +31,7 @@ const EOL = '\n';
  */
 exports.repository = function(notary, url, debug) {
     debug = debug || false;
-    const accountId = notary.getAccountId();
+    const accountTag = notary.getAccountTag();
 
     // return a singleton object for the API
     return {
@@ -44,7 +44,7 @@ exports.repository = function(notary, url, debug) {
         toString: function() {
             const catalog = bali.catalog({
                 $module: '/bali/repositories/RemoteRepository',
-                $accountId: accountId,
+                $accountTag: accountTag,
                 $url: url
             });
             return catalog.toString();
