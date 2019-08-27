@@ -29,7 +29,7 @@ const invalidCredentials = async function(request) {
         const certificateId = citation.getValue('$tag').getValue() + citation.getValue('$version');
         const document = (await repository.fetchDocument(certificateId)) || request.body;  // may be self-signed
         const certificate = bali.parse(document).getValue('$component');
-        const isValid = await notary.documentIsValid(credentials, certificate);
+        const isValid = await notary.documentValid(credentials, certificate);
         return !isValid;
     } catch (cause) {
         if (debug) console.error('Test Service: The request credentials were badly formed: ' + cause.toString());
