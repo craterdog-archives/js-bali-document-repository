@@ -53,7 +53,7 @@ describe('Bali Nebula™ Document Repository', function() {
             // generate a new notary key
             const catalog = await notary.generateKey();
             expect(catalog).to.exist;
-            const certificate = await notary.signComponent(catalog);
+            const certificate = await notary.notarizeDocument(catalog);
             expect(certificate).to.exist;
             var citation = await notary.activateKey(certificate);
             expect(citation).to.exist;

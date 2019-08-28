@@ -386,7 +386,7 @@ const generateCredentials = async function(notary, debug) {
         parameters.setParameter('$version', bali.version());
         parameters.setParameter('$permissions', bali.parse('/bali/permissions/private/v1'));
         parameters.setParameter('$previous', bali.pattern.NONE);
-        const credentials = await notary.signComponent(document);
+        const credentials = await notary.notarizeDocument(document);
         return credentials;
     } catch (cause) {
         const exception = bali.exception({
