@@ -44,6 +44,7 @@ exports.repository = function(directory, debug) {
     const citations = repositoryDirectory + 'citations/';
     const drafts = repositoryDirectory + 'drafts/';
     const documents = repositoryDirectory + 'documents/';
+    const types = repositoryDirectory + 'types/';
     const queues = repositoryDirectory + 'queues/';
 
     // return a singleton object for the API
@@ -82,6 +83,7 @@ exports.repository = function(directory, debug) {
                 await pfs.mkdir(citations, 0o700).catch(function() {});
                 await pfs.mkdir(drafts, 0o700).catch(function() {});
                 await pfs.mkdir(documents, 0o700).catch(function() {});
+                await pfs.mkdir(types, 0o700).catch(function() {});
                 await pfs.mkdir(queues, 0o700).catch(function() {});
                 this.initializeAPI = undefined;  // can only be called once
             } catch (cause) {
@@ -89,7 +91,7 @@ exports.repository = function(directory, debug) {
                     $module: '/bali/services/LocalRepository',
                     $procedure: '$initializeAPI',
                     $exception: '$unexpected',
-                    $directory: bali.text(directory),
+                    $directory: directory,
                     $text: bali.text('An unexpected error occurred while attempting to initialize the local repository.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -107,7 +109,7 @@ exports.repository = function(directory, debug) {
         citationExists: async function(name) {
             try {
                 if (this.initializeAPI) await this.initializeAPI();
-                const filename = citations + name.replace(/\//g, '_') + '.bali';
+                const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
                 const exists = await doesExist(filename);
                 return exists;
             } catch (cause) {
@@ -115,7 +117,7 @@ exports.repository = function(directory, debug) {
                     $module: '/bali/services/LocalRepository',
                     $procedure: '$citationExists',
                     $exception: '$unexpected',
-                    $name: bali.text(name),
+                    $name: name,
                     $text: bali.text('An unexpected error occurred while attempting to verify the existence of a citation.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -135,7 +137,7 @@ exports.repository = function(directory, debug) {
             try {
                 if (this.initializeAPI) await this.initializeAPI();
                 var citation;
-                const filename = citations + name.replace(/\//g, '_') + '.bali';
+                const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
                 const exists = await doesExist(filename);
                 if (exists) {
                     citation = await pfs.readFile(filename);
@@ -147,7 +149,7 @@ exports.repository = function(directory, debug) {
                     $module: '/bali/services/LocalRepository',
                     $procedure: '$fetchCitation',
                     $exception: '$unexpected',
-                    $name: bali.text(name),
+                    $name: name,
                     $text: bali.text('An unexpected error occurred while attempting to fetch a citation.')
                 }, cause);
                 if (debug) console.error(exception.toString());
@@ -165,7 +167,7 @@ exports.repository = function(directory, debug) {
         createCitation: async function(name, citation) {
             try {
                 if (this.initializeAPI) await this.initializeAPI();
-                const filename = citations + name.replace(/\//g, '_') + '.bali';
+                const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
                 const exists = await doesExist(filename);
                 if (exists) {
                     const exception = bali.exception({
@@ -173,7 +175,7 @@ exports.repository = function(directory, debug) {
                         $procedure: '$createCitation',
                         $exception: '$fileExists',
                         $url: bali.reference('file:' + directory),
-                        $file: bali.text(filename),
+                        $file: filename,
                         $text: bali.text('The file to be written already exists.')
                     });
                     if (debug) console.error(exception.toString());
@@ -186,7 +188,7 @@ exports.repository = function(directory, debug) {
                     $module: '/bali/services/LocalRepository',
                     $procedure: '$createCitation',
                     $exception: '$unexpected',
-                    $name: bali.text(name),
+                    $name: name,
                     $citation: citation,
                     $text: bali.text('An unexpected error occurred while attempting to create a citation.')
                 }, cause);
@@ -385,7 +387,7 @@ exports.repository = function(directory, debug) {
                         $procedure: '$createDocument',
                         $exception: '$fileExists',
                         $url: bali.reference('file:' + directory),
-                        $file: bali.text(filename),
+                        $file: filename,
                         $text: bali.text('The file to be written already exists.')
                     });
                     if (debug) console.error(exception.toString());
@@ -401,6 +403,105 @@ exports.repository = function(directory, debug) {
                     $documentId: documentId,
                     $document: document,
                     $text: bali.text('An unexpected error occurred while attempting to create a document.')
+                }, cause);
+                if (debug) console.error(exception.toString());
+                throw exception;
+            }
+        },
+
+        /**
+         * This function checks to see whether or not a type is associated with the
+         * specified identifier.
+         * 
+         * @param {String} typeId The unique identifier (including version number) for
+         * the type being checked.
+         * @returns {Boolean} Whether or not the type exists.
+         */
+        typeExists: async function(typeId) {
+            try {
+                if (this.initializeAPI) await this.initializeAPI();
+                const filename = types + typeId + '.bali';
+                const exists = await doesExist(filename);
+                return exists;
+            } catch (cause) {
+                const exception = bali.exception({
+                    $module: '/bali/services/LocalRepository',
+                    $procedure: '$typeExists',
+                    $exception: '$unexpected',
+                    $typeId: typeId,
+                    $text: bali.text('An unexpected error occurred while attempting to verify the existence of a type.')
+                }, cause);
+                if (debug) console.error(exception.toString());
+                throw exception;
+            }
+        },
+
+        /**
+         * This function attempts to retrieve the specified type from the repository.
+         * 
+         * @param {String} typeId The unique identifier (including version number) for
+         * the type being fetched.
+         * @returns {String} The canonical source string for the type, or
+         * <code>undefined</code> if it doesn't exist.
+         */
+        fetchType: async function(typeId) {
+            try {
+                if (this.initializeAPI) await this.initializeAPI();
+                var type;
+                const filename = types + typeId + '.bali';
+                const exists = await doesExist(filename);
+                if (exists) {
+                    type = await pfs.readFile(filename);
+                    type = type.toString().slice(0, -1);  // remove POSIX compliant <EOL>
+                }
+                return type;
+            } catch (cause) {
+                const exception = bali.exception({
+                    $module: '/bali/services/LocalRepository',
+                    $procedure: '$fetchType',
+                    $exception: '$unexpected',
+                    $typeId: typeId,
+                    $text: bali.text('An unexpected error occurred while attempting to fetch a type.')
+                }, cause);
+                if (debug) console.error(exception.toString());
+                throw exception;
+            }
+        },
+
+        /**
+         * This function creates a new type in the repository.
+         * 
+         * @param {String} typeId The unique identifier (including version number) for
+         * the type being created.
+         * @param {String} type The canonical source string for the type.
+         */
+        createType: async function(typeId, type) {
+            try {
+                if (this.initializeAPI) await this.initializeAPI();
+                const filename = types + typeId + '.bali';
+                const exists = await doesExist(filename);
+                if (exists) {
+                    const exception = bali.exception({
+                        $module: '/bali/repositories/LocalRepository',
+                        $procedure: '$createType',
+                        $exception: '$fileExists',
+                        $url: bali.reference('file:' + directory),
+                        $file: filename,
+                        $text: bali.text('The file to be written already exists.')
+                    });
+                    if (debug) console.error(exception.toString());
+                    throw exception;
+                }
+                type = type + EOL;  // add POSIX compliant <EOL>
+                await pfs.writeFile(filename, type, {encoding: 'utf8', mode: 0o400});
+            } catch (cause) {
+                const exception = bali.exception({
+                    $module: '/bali/services/LocalRepository',
+                    $procedure: '$createType',
+                    $exception: '$unexpected',
+                    $typeId: typeId,
+                    $type: type,
+                    $text: bali.text('An unexpected error occurred while attempting to create a type.')
                 }, cause);
                 if (debug) console.error(exception.toString());
                 throw exception;
