@@ -22,15 +22,15 @@ const repository = require('../index').remote(notary, url, debug);
 
 const transaction = bali.catalog({
     $timestamp: bali.moment(),
-    $product: bali.text('Snickers Bar'),
+    $product: 'Snickers Bar',
     $quantity: 10,
-    $price: bali.parse('1.25($USD)'),
-    $tax: bali.parse('1.07($USD)'),
-    $total: bali.parse('13.57($USD)')
+    $price: '1.25($currency: $USD)',
+    $tax: '1.07($currency: $USD)',
+    $total: '13.57($currency: $USD)'
 }, bali.parameters({
     $tag: bali.tag(),
     $version: bali.version(),
-    $permissions: bali.parse('/bali/permissions/public/v1'),
+    $permissions: '/bali/permissions/public/v1',
     $previous: bali.pattern.NONE
 }));
 
@@ -38,8 +38,8 @@ const source = transaction.toString();
 
 function extractId(component) {
     const parameters = component.getValue('$component').getParameters();
-    const identifier = parameters.getParameter('$tag').getValue();
-    const version = parameters.getParameter('$version');
+    const identifier = parameters.getValue('$tag').getValue();
+    const version = parameters.getValue('$version');
     return '' + identifier + version;
 }
 

@@ -23,8 +23,8 @@ const EOL = '\n';
 
 const invalidCredentials = async function(request) {
     try {
-        const header = request.headers['nebula-credentials'];
-        const credentials = bali.parse(header.slice(1, -1));  // strip off double quote delimiters
+        const encoded = request.headers['nebula-credentials'];
+        const credentials = bali.parse(decodeURI(encoded).slice(2, -2));  // strip off double quote delimiters
         const citation = credentials.getValue('$component');
         const certificateId = citation.getValue('$tag').getValue() + citation.getValue('$version');
         const document = (await repository.fetchDocument(certificateId)) || request.body;  // may be self-signed

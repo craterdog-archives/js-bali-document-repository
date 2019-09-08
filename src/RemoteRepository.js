@@ -380,12 +380,14 @@ const generateCredentials = async function(notary, debug) {
     debug = debug || false;
     try {
         const citation = await notary.getCitation();
-        const document = bali.duplicate(citation);
-        const parameters = document.getParameters();
-        parameters.setParameter('$tag', bali.tag());
-        parameters.setParameter('$version', bali.version());
-        parameters.setParameter('$permissions', bali.parse('/bali/permissions/private/v1'));
-        parameters.setParameter('$previous', bali.pattern.NONE);
+        const parameters = bali.parameters({
+            $type: '/bali/notary/Citation/v1',
+            $tag: bali.tag(),
+            $version: bali.version(),
+            $permissions: '/bali/permissions/private/v1',
+            $previous: bali.pattern.NONE
+        });
+        const document = bali.duplicate(citation, parameters);
         const credentials = await notary.notarizeDocument(document);
         return credentials;
     } catch (cause) {
@@ -420,6 +422,7 @@ const generateCredentials = async function(notary, debug) {
 const sendRequest = async function(credentials, functionName, url, method, type, identifier, document, debug) {
     debug = debug || false;
 
+    const encoded = encodeURI('"' + EOL + credentials + EOL + '"');
     // setup the request URL and options
     const fullURL = url.getValue().toString() + type + '/' + identifier;
     const options = {
@@ -432,7 +435,7 @@ const sendRequest = async function(credentials, functionName, url, method, type,
         },
         headers: {
             //'User-Agent': 'Bali Nebula™ API 1.0',
-            'Nebula-Credentials': '"' + bali.format(credentials, -1) + '"'  // inlined quoted string
+            'Nebula-Credentials': encoded
         }
     };
 
