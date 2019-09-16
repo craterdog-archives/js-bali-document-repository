@@ -18,7 +18,7 @@
  * @returns {Object} A singleton object containing the initialized document repository.
  */
 exports.local = function(directory, debug) {
-    const repository = require('./src/LocalRepository').repository(directory, debug);
+    const repository = new require('./src/repositories/LocalRepository').LocalRepository(directory, debug);
     return repository;
 };
 
@@ -32,7 +32,7 @@ exports.local = function(directory, debug) {
  * @returns {Object} A singleton object containing the initialized document repository.
  */
 exports.remote = function(notary, url, debug) {
-    const repository = require('./src/RemoteRepository').repository(notary, url, debug);
+    const repository = require('./src/repositories/RemoteRepository').repository(notary, url, debug);
     return repository;
 };
 
@@ -45,7 +45,7 @@ exports.remote = function(notary, url, debug) {
  * @returns {Object} A singleton object containing the initialized document repository.
  */
 exports.s3 = function(configuration, debug) {
-    const repository = require('./src/S3Repository').repository(configuration, debug);
+    const repository = require('./src/repositories/S3Repository').repository(configuration, debug);
     return repository;
 };
 
