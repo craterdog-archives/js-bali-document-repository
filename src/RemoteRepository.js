@@ -14,7 +14,7 @@
  * that is used to access an AWS cloud based document repository. It treats documents
  * as UTF-8 encoded strings.
  */
-const bali = require('bali-component-framework');
+const bali = require('bali-component-framework').api();
 const axios = require('axios');
 const EOL = '\n';
 
@@ -31,7 +31,7 @@ const EOL = '\n';
  */
 exports.repository = function(notary, url, debug) {
     debug = debug || false;
-    const accountTag = notary.getAccountTag();
+    const account = notary.getAccount();
 
     // return a singleton object for the API
     return {
@@ -44,7 +44,7 @@ exports.repository = function(notary, url, debug) {
         toString: function() {
             const catalog = bali.catalog({
                 $module: '/bali/repositories/RemoteRepository',
-                $accountTag: accountTag,
+                $account: account,
                 $url: url
             });
             return catalog.toString();
@@ -387,7 +387,7 @@ const generateCredentials = async function(notary, debug) {
             $permissions: '/bali/permissions/private/v1',
             $previous: bali.pattern.NONE
         });
-        const document = bali.duplicate(citation, parameters);
+        const document = citation.duplicate(parameters);
         const credentials = await notary.notarizeDocument(document);
         return credentials;
     } catch (cause) {

@@ -24,7 +24,7 @@
  */
 const pfs = require('fs').promises;
 const os = require('os');
-const bali = require('bali-component-framework');
+const bali = require('bali-component-framework').api();
 const EOL = '\n';  // POSIX compliant end of line
 
 
@@ -553,7 +553,8 @@ exports.repository = function(directory, debug) {
                     const count = messages.length;
                     if (count) {
                         // select a message a random since a distributed queue cannot guarantee FIFO
-                        const index = bali.random.index(count) - 1;  // convert to zero based indexing
+                        const generator = bali.generator();
+                        const index = generator.generateIndex(count) - 1;  // convert to zero based indexing
                         const messageFile = messages[index];
                         const filename = queue + messageFile;
                         message = await pfs.readFile(filename);

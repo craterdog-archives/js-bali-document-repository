@@ -8,12 +8,12 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = false;  // set to true for error logging
+const debug = 0;  // [0..3]
 const directory = 'test/config/';
 const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
-const bali = require('bali-component-framework');
+const bali = require('bali-component-framework').api();
 const repository = require('../index').local(directory, debug);
 
 const transaction = bali.catalog({

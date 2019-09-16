@@ -17,7 +17,7 @@
  */
 const aws = new require('aws-sdk/clients/s3');
 const s3 = new aws({apiVersion: '2006-03-01'});
-const bali = require('bali-component-framework');
+const bali = require('bali-component-framework').api();
 const EOL = '\n';  // POSIX compliant end of line
 
 
@@ -272,7 +272,8 @@ exports.repository = function(configuration, debug) {
                 if (messages && messages.length) {
                     // select a message a random since a distributed queue cannot guarantee FIFO
                     const count = messages.length;
-                    const index = bali.random.index(count) - 1;  // convert to zero based indexing
+                    const generator = bali.generator();
+                    const index = generator.generateIndex(count) - 1;  // convert to zero based indexing
                     const filename = messages[index].Key;
                     message = await getObject(configuration.queueBucket, filename);
                     message = message.toString().slice(0, -1);  // remove POSIX compliant <EOL>

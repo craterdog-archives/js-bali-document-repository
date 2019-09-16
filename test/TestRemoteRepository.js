@@ -8,16 +8,16 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = false;  // set to true for exception logging
+const debug = 0;  // [0..3]
 const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
-const bali = require('bali-component-framework');
-const accountTag = bali.parse('#GTDHQ9B8ZGS7WCBJJJBFF6KDCCF55R2P');
+const bali = require('bali-component-framework').api();
+const accountTag = bali.component('#GTDHQ9B8ZGS7WCBJJJBFF6KDCCF55R2P');
 const directory = 'test/config/';
 const url = bali.reference('http://localhost:3000');
 const securityModule = require('bali-digital-notary').ssm(directory + accountTag.getValue() + '.keys', debug);
-const notary = require('bali-digital-notary').api(securityModule, accountTag, directory, debug);
+const notary = require('bali-digital-notary').notary(securityModule, accountTag, directory, debug);
 const repository = require('../index').remote(notary, url, debug);
 
 const transaction = bali.catalog({
