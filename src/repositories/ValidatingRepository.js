@@ -16,14 +16,10 @@
 
 
 /*
- * This class implements a local filesystem based document repository.  It treats
- * documents as UTF-8 encoded strings.  It can be used for local testing of the
- * Bali Nebula™.  If a test directory is specified, it will be created and used as
- * the repository.  Otherwise, a repository directory will be created and used
- * within a '.bali/' directory in the home directory for the running process.
+ * This class implements a document repository that acts as a cache in front of
+ * a remote document repository.  Each document is validated prior to being stored
+ * in the cache to ensure no modifications occurred during transit.
  */
-const os = require('os');
-const pfs = require('fs').promises;
 const bali = require('bali-component-framework').api();
 
 
@@ -32,17 +28,17 @@ const bali = require('bali-component-framework').api();
 // the POSIX end of line character
 const EOL = '\n';
 
-const READONLY = 0o400;
-const UPDATEABLE = 0o600;
+// the cache size
+const CACHE_SIZE = 256;
+
 
 // PUBLIC FUNCTIONS
 
 /**
- * This function creates a new instance of a local document repository.  If the
- * repository does not yet exist it is created.
+ * This function creates a new instance of a cached document repository.  A remote repository
+ * is passed in and is used as the persistent store for all documents.
  * 
- * @param {String} directory An optional directory to be used for local configuration storage. If
- * no directory is specified, a directory called '.bali/' is created in the home directory.
+ * @param {Object} repository The actual repository that maintains documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -51,26 +47,22 @@ const UPDATEABLE = 0o600;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new local document repository.
+ * @returns {Object} The new cached document repository.
  */
-const LocalRepository = function(directory, debug) {
+const CachedRepository = function(repository, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/LocalRepository', '$LocalRepository', '$directory', directory, [
-            '/javascript/Undefined',
-            '/javascript/String'
+        validator.validateType('/bali/repositories/CachedRepository', '$CachedRepository', '$repository', repository, [
+            '/javascript/Object'
         ]);
     }
 
     // setup the private attributes
-    directory = directory || os.homedir() + '/.bali/';
-    const citations = directory + 'citations/';
-    const drafts = directory + 'drafts/';
-    const documents = directory + 'documents/';
-    const types = directory + 'types/';
-    const queues = directory + 'queues/';
+    const citations = new Cache(CACHE_SIZE);
+    const documents = new Cache(CACHE_SIZE);
+    const types = new Cache(CACHE_SIZE);
 
     /**
      * This function returns a string providing attributes about this repository.
@@ -79,7 +71,7 @@ const LocalRepository = function(directory, debug) {
      */
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/CachedRepository',
             $url: this.getURL()
         });
         return catalog.toString();
@@ -92,10 +84,10 @@ const LocalRepository = function(directory, debug) {
      */
     this.getURL = async function() {
         try {
-            return bali.reference('file:' + directory);
+            return await repository.getURL();
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$getURL',
                 $exception: '$unexpected',
                 $text: bali.text('An unexpected error occurred while attempting to retrieve the URL for the repository.')
@@ -117,22 +109,18 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$citationExists', '$name', name, [
+                validator.validateType('/bali/repositories/CachedRepository', '$citationExists', '$name', name, [
                     '/javascript/String'
                 ]);
             }
 
-            // create the directory if necessary
-            await createDirectory(citations, debug);
-
             // check for existence
-            const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            const exists = await pathExists(filename, debug);
+            if (citations.exists(name)) return true;
+            return await repository.citationExists(name);
 
-            return exists;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $name: name,
@@ -156,19 +144,22 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchCitation', '$name', name, [
+                validator.validateType('/bali/repositories/CachedRepository', '$fetchCitation', '$name', name, [
                     '/javascript/String'
                 ]);
             }
 
             // fetch the citation
-            const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            const citation = await readComponent(filename, debug);
+            var citation = citations.fetch(name);
+            if (!citation) {
+                citation = await repository.fetchCitation(name);
+                citations.store(name, citation);
+            }
 
             return citation;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$fetchCitation',
                 $exception: '$unexpected',
                 $name: name,
@@ -191,26 +182,21 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$createCitation', '$name', name, [
+                validator.validateType('/bali/repositories/CachedRepository', '$createCitation', '$name', name, [
                     '/javascript/String'
                 ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$createCitation', '$citation', citation, [
+                validator.validateType('/bali/repositories/CachedRepository', '$createCitation', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
 
-            // create the directory if necessary
-            await createDirectory(citations, debug);
-
             // make sure the citation doesn't already exist
-            const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            if (await pathExists(filename, debug)) {
+            if (citations.exists(name) || await repository.citationExists(name)) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/LocalRepository',
+                    $module: '/bali/repositories/CachedRepository',
                     $procedure: '$createCitation',
                     $exception: '$citationExists',
-                    $url: bali.reference('file:' + directory),
-                    $file: filename,
+                    $name: name,
                     $text: bali.text('The citation to be created already exists.')
                 });
                 if (debug) console.error(exception.toString());
@@ -218,11 +204,12 @@ const LocalRepository = function(directory, debug) {
             }
 
             // create the new citation
-            await writeComponent(filename, citation, READONLY, debug);
+            await repository.createCitation(name, citation);
+            citations.store(name, citation);
 
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$createCitation',
                 $exception: '$unexpected',
                 $name: name,
@@ -247,19 +234,17 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$draftExists', '$draftId', draftId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$draftExists', '$draftId', draftId, [
                     '/javascript/String'
                 ]);
             }
 
             // check for existence
-            const filename = drafts + draftId + '.bali';
-            const exists = await pathExists(filename, debug);
+            return await repository.draftExists(draftId);
 
-            return exists;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $draftId: draftId,
@@ -283,19 +268,18 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchDraft', '$draftId', draftId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$fetchDraft', '$draftId', draftId, [
                     '/javascript/String'
                 ]);
             }
 
             // fetch the draft document
-            const filename = drafts + draftId + '.bali';
-            const draft = await readComponent(filename, debug);
+            const draft = await repository.fetchDraft(draftId);
 
             return draft;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$fetchDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
@@ -318,24 +302,33 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$saveDraft', '$draftId', draftId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$saveDraft', '$draftId', draftId, [
                     '/javascript/String'
                 ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$saveDraft', '$draft', draft, [
+                validator.validateType('/bali/repositories/CachedRepository', '$saveDraft', '$draft', draft, [
                     '/bali/collections/Catalog'
                 ]);
             }
 
-            // create the directory if necessary
-            await createDirectory(drafts, debug);
+            // make sure the committed document doesn't already exist
+            if (documents.exists(draftId) || await repository.documentExists(draftId)) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/CachedRepository',
+                    $procedure: '$saveDraft',
+                    $exception: '$documentExists',
+                    $draftId: draftId,
+                    $text: bali.text('A committed version of the draft to be saved already exists.')
+                });
+                if (debug) console.error(exception.toString());
+                throw exception;
+            }
 
             // save the draft document
-            const filename = drafts + draftId + '.bali';
-            await writeComponent(filename, draft, UPDATEABLE, debug);
+            await repository.saveDraft(draftId, draft);
 
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$saveDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
@@ -358,18 +351,17 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$deleteDraft', '$draftId', draftId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$deleteDraft', '$draftId', draftId, [
                     '/javascript/String'
                 ]);
             }
 
             // delete the draft document
-            const filename = drafts + draftId + '.bali';
-            await deletePath(filename, debug);
+            await repository.deleteDraft(draftId);
 
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
@@ -393,19 +385,18 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$documentExists', '$documentId', documentId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$documentExists', '$documentId', documentId, [
                     '/javascript/String'
                 ]);
             }
 
-            // check the existence
-            const filename = documents + documentId + '.bali';
-            const exists = await pathExists(filename, debug);
+            // check for existence
+            if (documents.exists(documentId)) return true;
+            return await repository.documentExists(documentId);
 
-            return exists;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $documentId: documentId,
@@ -429,19 +420,22 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchDocument', '$documentId', documentId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$fetchDocument', '$documentId', documentId, [
                     '/javascript/String'
                 ]);
             }
 
             // fetch the document
-            const filename = documents + documentId + '.bali';
-            const document = await readComponent(filename, debug);
+            var document = documents.fetch(documentId);
+            if (!document) {
+                document = await repository.fetchDocument(documentId);
+                documents.store(documentId, document);
+            }
 
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$fetchDocument',
                 $exception: '$unexpected',
                 $documentId: documentId,
@@ -464,26 +458,21 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$createDocument', '$documentId', documentId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$createDocument', '$documentId', documentId, [
                     '/javascript/String'
                 ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$createDocument', '$document', document, [
+                validator.validateType('/bali/repositories/CachedRepository', '$createDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
 
-            // create the directory if necessary
-            await createDirectory(documents, debug);
-
             // make sure the document doesn't already exist
-            const filename = documents + documentId + '.bali';
-            if (await pathExists(filename, debug)) {
+            if (documents.exists(documentId) || await repository.documentExists(documentId)) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/LocalRepository',
+                    $module: '/bali/repositories/CachedRepository',
                     $procedure: '$createDocument',
-                    $exception: '$fileExists',
-                    $url: bali.reference('file:' + directory),
-                    $file: filename,
+                    $exception: '$documentExists',
+                    $documentId: documentId,
                     $text: bali.text('The document to be created already exists.')
                 });
                 if (debug) console.error(exception.toString());
@@ -491,11 +480,12 @@ const LocalRepository = function(directory, debug) {
             }
 
             // create the new document
-            await writeComponent(filename, document, READONLY, debug);
+            await repository.createDocument(documentId, document);
+            documents.store(documentId, document);
 
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$createDocument',
                 $exception: '$unexpected',
                 $documentId: documentId,
@@ -520,19 +510,18 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$typeExists', '$typeId', typeId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$typeExists', '$typeId', typeId, [
                     '/javascript/String'
                 ]);
             }
 
-            // check the existence
-            const filename = types + typeId + '.bali';
-            const exists = await pathExists(filename, debug);
+            // check for existence
+            if (types.exists(typeId)) return true;
+            return await repository.typeExists(typeId);
 
-            return exists;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$typeExists',
                 $exception: '$unexpected',
                 $typeId: typeId,
@@ -556,19 +545,22 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchType', '$typeId', typeId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$fetchType', '$typeId', typeId, [
                     '/javascript/String'
                 ]);
             }
 
             // fetch the type
-            const filename = types + typeId + '.bali';
-            const type = await readComponent(filename, debug);
+            var type = types.fetch(typeId);
+            if (!type) {
+                type = await repository.fetchType(typeId);
+                types.store(typeId, type);
+            }
 
             return type;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$fetchType',
                 $exception: '$unexpected',
                 $typeId: typeId,
@@ -591,26 +583,21 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$createType', '$typeId', typeId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$createType', '$typeId', typeId, [
                     '/javascript/String'
                 ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$createType', '$type', type, [
+                validator.validateType('/bali/repositories/CachedRepository', '$createType', '$type', type, [
                     '/bali/collections/Catalog'
                 ]);
             }
 
-            // create the directory if necessary
-            await createDirectory(types, debug);
-
             // make sure the type doesn't already exist
-            const filename = types + typeId + '.bali';
-            if (await pathExists(filename, debug)) {
+            if (types.exists(typeId) || await repository.typeExists(typeId)) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/LocalRepository',
+                    $module: '/bali/repositories/CachedRepository',
                     $procedure: '$createType',
-                    $exception: '$fileExists',
-                    $url: bali.reference('file:' + directory),
-                    $file: filename,
+                    $exception: '$typeExists',
+                    $typeId: typeId,
                     $text: bali.text('The type to be created already exists.')
                 });
                 if (debug) console.error(exception.toString());
@@ -618,11 +605,12 @@ const LocalRepository = function(directory, debug) {
             }
 
             // create the new type
-            await writeComponent(filename, type, READONLY, debug);
+            await repository.createType(typeId, type);
+            types.store(typeId, type);
 
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$createType',
                 $exception: '$unexpected',
                 $typeId: typeId,
@@ -645,26 +633,20 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$queueMessage', '$queueId', queueId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$queueMessage', '$queueId', queueId, [
                     '/javascript/String'
                 ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$queueMessage', '$message', message, [
+                validator.validateType('/bali/repositories/CachedRepository', '$queueMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
 
-            // create the directory if necessary
-            const queue = queues + queueId + '/';
-            await createDirectory(queue, debug);
-
             // place the new message on the queue
-            const messageId = bali.tag().getValue();
-            const filename = queue + messageId + '.bali';
-            await writeComponent(filename, message, UPDATEABLE, debug);
+            await repository.queueMessage(queueId, message);
 
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$queueMessage',
                 $exception: '$unexpected',
                 $queueId: queueId,
@@ -688,40 +670,18 @@ const LocalRepository = function(directory, debug) {
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$dequeueMessage', '$queueId', queueId, [
+                validator.validateType('/bali/repositories/CachedRepository', '$dequeueMessage', '$queueId', queueId, [
                     '/javascript/String'
                 ]);
             }
 
             // remove a message from the queue
-            const queue = queues + queueId + '/';
-            var message;
-            while (await pathExists(queue, debug)) {
-                const messages = await listDirectory(queue, debug);
-                const count = messages.length;
-                if (count) {
-                    // select a message a random since a distributed queue cannot guarantee FIFO
-                    const generator = bali.generator();
-                    const index = generator.generateIndex(count) - 1;  // convert to zero based indexing
-                    const messageFile = messages[index];
-                    const filename = queue + messageFile;
-                    message = await readComponent(filename, debug);
-                    try {
-                        await deletePath(filename, debug);
-                        break; // we got there first
-                    } catch (exception) {
-                        // another process got there first
-                        message = undefined;
-                    }
-                } else {
-                    break;  // no more messages
-                }
-            }
+            const message = await repository.dequeueMessage(queueId);
 
             return message;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$dequeueMessage',
                 $exception: '$unexpected',
                 $queueId: queueId,
@@ -734,8 +694,8 @@ const LocalRepository = function(directory, debug) {
 
     return this;
 };
-LocalRepository.prototype.constructor = LocalRepository;
-exports.LocalRepository = LocalRepository;
+CachedRepository.prototype.constructor = CachedRepository;
+exports.CachedRepository = CachedRepository;
 
 
 // PRIVATE FUNCTIONS
@@ -766,7 +726,7 @@ const pathExists = async function(path, debug) {
         } else {
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/CachedRepository',
                 $procedure: '$pathExists',
                 $exception: '$unexpected',
                 $path: path,
@@ -797,7 +757,7 @@ const deletePath = async function(path, debug) {
         if (await pathExists(path, debug)) await pfs.unlink(path);
     } catch (cause) {
         const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/CachedRepository',
             $procedure: '$deletePath',
             $exception: '$unexpected',
             $path: path,
@@ -829,7 +789,7 @@ const listDirectory = async function(directory, debug) {
         return files;
     } catch (cause) {
         const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/CachedRepository',
             $procedure: '$listDirectory',
             $exception: '$unexpected',
             $directory: directory,
@@ -859,7 +819,7 @@ const createDirectory = async function(directory, debug) {
         await pfs.mkdir(directory, {recursive: true, mode: 0o700}).catch(function() {});
     } catch (cause) {
         const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/CachedRepository',
             $procedure: '$createDirectory',
             $exception: '$unexpected',
             $directory: directory,
@@ -896,7 +856,7 @@ const readComponent = async function(file, debug) {
         return component;
     } catch (cause) {
         const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/CachedRepository',
             $procedure: '$readFile',
             $exception: '$unexpected',
             $file: file,
@@ -930,7 +890,7 @@ const writeComponent = async function(file, component, mode, debug) {
         await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
     } catch (cause) {
         const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/CachedRepository',
             $procedure: '$writeFile',
             $exception: '$unexpected',
             $file: file,
@@ -941,3 +901,36 @@ const writeComponent = async function(file, component, mode, debug) {
         throw exception;
     }
 };
+
+
+/*
+ * This function creates a new document cache with the specified maximum capacity.  All
+ * documents that are stored in the cache are assumed to be immutable so there are no
+ * cache consistency issues.
+ * 
+ * @param {Number} capacity The maximum number of documents that can be cached before
+ * the oldest document will be removed to make room for a new document.
+ */
+const Cache = function(capacity) {
+
+    const documents = new Map();
+
+    this.exists = function(documentId) {
+        return documents.has(documentId);
+    };
+
+    this.fetch = function(documentId) {
+        return documents.get(documentId);
+    };
+
+    this.store = function(documentId, document) {
+        if (documents.size > capacity) {
+            // delete the first (oldest) cached document
+            const key = documents.keys().next().getValue();
+            documents.delete(key);
+        }
+        documents.set(documentId, document);
+    };
+
+};
+Cache.prototype.constructor = Cache;

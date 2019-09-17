@@ -14,9 +14,10 @@ const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
 const bali = require('bali-component-framework').api();
+const Repositories = require('../index');
 
 const repositories = {
-    'Local Repository': require('../index').local(directory, debug)
+    'Local Repository': Repositories.cached(Repositories.local(directory, debug), debug)
 };
 
 const transaction = bali.catalog({
@@ -43,7 +44,7 @@ describe('Bali Nebula™ Document Repository', function() {
         describe('Test ' + key, function() {
     
             it('should perform a citation name lifecycle', async function() {
-                const name = bali.component('/bali/examples/name/v1.2.3');
+                const name = '/bali/examples/name/v1.2.3';
     
                 // make sure the new name does not yet exist in the repository
                 exists = await repository.citationExists(name);
@@ -131,9 +132,9 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(none).to.not.exist;
     
                 // queue up some messages
-                await repository.queueMessage(queueId, bali.component('$first', debug));
-                await repository.queueMessage(queueId, bali.component('$second', debug));
-                await repository.queueMessage(queueId, bali.component('$third', debug));
+                await repository.queueMessage(queueId, bali.catalog({$first: '$first'}));
+                await repository.queueMessage(queueId, bali.catalog({$second: '$second'}));
+                await repository.queueMessage(queueId, bali.catalog({$third: '$third'}));
     
                 // dequeue the messages
                 var message = await repository.dequeueMessage(queueId);
