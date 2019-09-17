@@ -10,9 +10,9 @@
 'use strict';
 
 /*
- * This class implements a document repository that acts as a cache in front of
- * a remote document repository.  Each document is validated prior to being stored
- * in the cache to ensure no modifications occurred during transit.
+ * This class implements a document repository wrapper that caches (locally) all documents
+ * that have been retrieved from the wrapped document repository.  The documents are assumed
+ * to be immutable so no cache consistency issues exist.
  */
 const bali = require('bali-component-framework').api();
 
@@ -22,7 +22,7 @@ const bali = require('bali-component-framework').api();
 // the POSIX end of line character
 const EOL = '\n';
 
-// the cache size
+// the maximum cache size
 const CACHE_SIZE = 256;
 
 
@@ -76,15 +76,15 @@ const CachedRepository = function(repository, debug) {
      * 
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = async function() {
+    this.getURL = function() {
         try {
-            return await repository.getURL();
+            return repository.getURL();
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedRepository',
                 $procedure: '$getURL',
                 $exception: '$unexpected',
-                $text: bali.text('An unexpected error occurred while attempting to retrieve the URL for the repository.')
+                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -118,7 +118,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $name: name,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a citation.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -157,7 +157,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$fetchCitation',
                 $exception: '$unexpected',
                 $name: name,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a citation.')
+                $text: 'An unexpected error occurred while attempting to fetch a citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -191,7 +191,7 @@ const CachedRepository = function(repository, debug) {
                     $procedure: '$createCitation',
                     $exception: '$citationExists',
                     $name: name,
-                    $text: bali.text('The citation to be created already exists.')
+                    $text: 'The citation to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -208,7 +208,7 @@ const CachedRepository = function(repository, debug) {
                 $exception: '$unexpected',
                 $name: name,
                 $citation: citation,
-                $text: bali.text('An unexpected error occurred while attempting to create a citation.')
+                $text: 'An unexpected error occurred while attempting to create a citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -242,7 +242,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $draftId: draftId,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a draft.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -277,7 +277,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$fetchDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a draft.')
+                $text: 'An unexpected error occurred while attempting to fetch a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -311,7 +311,7 @@ const CachedRepository = function(repository, debug) {
                     $procedure: '$saveDraft',
                     $exception: '$documentExists',
                     $draftId: draftId,
-                    $text: bali.text('A committed version of the draft to be saved already exists.')
+                    $text: 'A committed version of the draft to be saved already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -327,7 +327,7 @@ const CachedRepository = function(repository, debug) {
                 $exception: '$unexpected',
                 $draftId: draftId,
                 $draft: draft,
-                $text: bali.text('An unexpected error occurred while attempting to save a draft.')
+                $text: 'An unexpected error occurred while attempting to save a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -359,7 +359,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
-                $text: bali.text('An unexpected error occurred while attempting to delete a draft.')
+                $text: 'An unexpected error occurred while attempting to delete a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -394,7 +394,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $documentId: documentId,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a document.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -433,7 +433,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$fetchDocument',
                 $exception: '$unexpected',
                 $documentId: documentId,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a document.')
+                $text: 'An unexpected error occurred while attempting to fetch a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -467,7 +467,7 @@ const CachedRepository = function(repository, debug) {
                     $procedure: '$createDocument',
                     $exception: '$documentExists',
                     $documentId: documentId,
-                    $text: bali.text('The document to be created already exists.')
+                    $text: 'The document to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -484,7 +484,7 @@ const CachedRepository = function(repository, debug) {
                 $exception: '$unexpected',
                 $documentId: documentId,
                 $document: document,
-                $text: bali.text('An unexpected error occurred while attempting to create a document.')
+                $text: 'An unexpected error occurred while attempting to create a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -519,7 +519,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$typeExists',
                 $exception: '$unexpected',
                 $typeId: typeId,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a type.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -558,7 +558,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$fetchType',
                 $exception: '$unexpected',
                 $typeId: typeId,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a type.')
+                $text: 'An unexpected error occurred while attempting to fetch a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -592,7 +592,7 @@ const CachedRepository = function(repository, debug) {
                     $procedure: '$createType',
                     $exception: '$typeExists',
                     $typeId: typeId,
-                    $text: bali.text('The type to be created already exists.')
+                    $text: 'The type to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -609,7 +609,7 @@ const CachedRepository = function(repository, debug) {
                 $exception: '$unexpected',
                 $typeId: typeId,
                 $type: type,
-                $text: bali.text('An unexpected error occurred while attempting to create a type.')
+                $text: 'An unexpected error occurred while attempting to create a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -645,7 +645,7 @@ const CachedRepository = function(repository, debug) {
                 $exception: '$unexpected',
                 $queueId: queueId,
                 $message: message,
-                $text: bali.text('An unexpected error occurred while attempting to queue a message.')
+                $text: 'An unexpected error occurred while attempting to queue a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -679,7 +679,7 @@ const CachedRepository = function(repository, debug) {
                 $procedure: '$dequeueMessage',
                 $exception: '$unexpected',
                 $queueId: queueId,
-                $text: bali.text('An unexpected error occurred while attempting to dequeue a message.')
+                $text: 'An unexpected error occurred while attempting to dequeue a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -693,209 +693,6 @@ exports.CachedRepository = CachedRepository;
 
 
 // PRIVATE FUNCTIONS
-
-/**
- * This function determines whether or not the specified directory path exists.
- * 
- * @param {String} path The directory path. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Boolean} Whether or not the directory path exists.
- */
-const pathExists = async function(path, debug) {
-    try {
-        await pfs.stat(path);
-        // the path exists
-        return true;
-    } catch (cause) {
-        if (cause.code === 'ENOENT') {
-            // the path does not exist
-            return false;
-        } else {
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
-                $procedure: '$pathExists',
-                $exception: '$unexpected',
-                $path: path,
-                $text: bali.text('An unexpected error occurred while attempting to check a path.')
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    }
-};
-
-
-/**
- * This function deletes the specified directory path if it exists.
- * 
- * @param {String} path The directory path. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const deletePath = async function(path, debug) {
-    try {
-        if (await pathExists(path, debug)) await pfs.unlink(path);
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/CachedRepository',
-            $procedure: '$deletePath',
-            $exception: '$unexpected',
-            $path: path,
-            $text: bali.text('An unexpected error occurred while attempting to delete a path.')
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function returns a list of the files contained in the specified directory.
- * 
- * @param {String} directory The directory to be listed.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Array} An array containing the filenames of the files in the directory.
- */
-const listDirectory = async function(directory, debug) {
-    try {
-        const files = await pfs.readdir(directory, 'utf8');
-        return files;
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/CachedRepository',
-            $procedure: '$listDirectory',
-            $exception: '$unexpected',
-            $directory: directory,
-            $text: bali.text('An unexpected error occurred while attempting to list a directory.')
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function recursively creates the specified directory structure.
- * 
- * @param {String} directory The directory path to be created. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const createDirectory = async function(directory, debug) {
-    try {
-        await pfs.mkdir(directory, {recursive: true, mode: 0o700}).catch(function() {});
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/CachedRepository',
-            $procedure: '$createDirectory',
-            $exception: '$unexpected',
-            $directory: directory,
-            $text: bali.text('An unexpected error occurred while attempting to create a directory.')
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function returns the contents of the specified file as a component, or as
- * <code>undefined</code> if it does not exist.
- * 
- * @param {String} file The name of the file to be read.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Component} The component that was stored in the file.
- */
-const readComponent = async function(file, debug) {
-    try {
-        var component;
-        if (await pathExists(file, debug)) {
-            const source = await pfs.readFile(file, 'utf8');
-            component = bali.component(source, debug);
-        }
-        return component;
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/CachedRepository',
-            $procedure: '$readFile',
-            $exception: '$unexpected',
-            $file: file,
-            $text: bali.text('An unexpected error occurred while attempting to read a file.')
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function stores the specified component in the specified file using Bali Document
- * Notation™.
- * 
- * @param {String} file The name of the file to be written to.
- * @param {Component} component The component to be stored in the file.
- * @param {Number} mode The access mode for the resulting file. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const writeComponent = async function(file, component, mode, debug) {
-    try {
-        const source = component.toString() + EOL;  // add POSIX compliant <EOL>
-        await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/CachedRepository',
-            $procedure: '$writeFile',
-            $exception: '$unexpected',
-            $file: file,
-            $source: source,
-            $text: bali.text('An unexpected error occurred while attempting to write a file.')
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
 
 /*
  * This function creates a new document cache with the specified maximum capacity.  All

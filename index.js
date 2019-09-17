@@ -10,7 +10,7 @@
 'use strict';
 
 /**
- * This function initializes a cached document repository for the Bali Nebula™.
+ * This function initializes a cached document repository wrapper for the Bali Nebula™.
  * 
  * @param {Object} repository The actual repository that maintains documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
@@ -21,11 +21,31 @@
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new cached document repository.
+ * @returns {Object} The new cached document repository wrapper.
  */
 exports.cached = function(repository, debug) {
-    const cached = new require('./src/repositories/CachedRepository').CachedRepository(repository, debug);
-    return cached;
+    const wrapper = new require('./src/repositories/CachedRepository').CachedRepository(repository, debug);
+    return wrapper;
+};
+
+/**
+ * This function initializes a validating document repository wrapper for the Bali Nebula™.
+ * 
+ * @param {Object} notary The digital notary to be used to validate the documents.
+ * @param {Object} repository The actual repository that maintains documents.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {Object} The new validating document repository wrapper.
+ */
+exports.validated = function(notary, repository, debug) {
+    const wrapper = new require('./src/repositories/ValidatedRepository').ValidatedRepository(notary, repository, debug);
+    return wrapper;
 };
 
 /**

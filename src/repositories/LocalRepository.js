@@ -90,7 +90,7 @@ const LocalRepository = function(directory, debug) {
      * 
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = async function() {
+    this.getURL = function() {
         try {
             return bali.reference('file:' + directory);
         } catch (cause) {
@@ -98,7 +98,7 @@ const LocalRepository = function(directory, debug) {
                 $module: '/bali/repositories/LocalRepository',
                 $procedure: '$getURL',
                 $exception: '$unexpected',
-                $text: bali.text('An unexpected error occurred while attempting to retrieve the URL for the repository.')
+                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -136,7 +136,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $name: name,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a citation.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -172,7 +172,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$fetchCitation',
                 $exception: '$unexpected',
                 $name: name,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a citation.')
+                $text: 'An unexpected error occurred while attempting to fetch a citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -211,7 +211,7 @@ const LocalRepository = function(directory, debug) {
                     $exception: '$citationExists',
                     $url: bali.reference('file:' + directory),
                     $file: filename,
-                    $text: bali.text('The citation to be created already exists.')
+                    $text: 'The citation to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -227,7 +227,7 @@ const LocalRepository = function(directory, debug) {
                 $exception: '$unexpected',
                 $name: name,
                 $citation: citation,
-                $text: bali.text('An unexpected error occurred while attempting to create a citation.')
+                $text: 'An unexpected error occurred while attempting to create a citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -263,7 +263,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $draftId: draftId,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a draft.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -299,7 +299,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$fetchDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a draft.')
+                $text: 'An unexpected error occurred while attempting to fetch a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -340,7 +340,7 @@ const LocalRepository = function(directory, debug) {
                 $exception: '$unexpected',
                 $draftId: draftId,
                 $draft: draft,
-                $text: bali.text('An unexpected error occurred while attempting to save a draft.')
+                $text: 'An unexpected error occurred while attempting to save a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -373,7 +373,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
                 $draftId: draftId,
-                $text: bali.text('An unexpected error occurred while attempting to delete a draft.')
+                $text: 'An unexpected error occurred while attempting to delete a draft.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -409,7 +409,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $documentId: documentId,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a document.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -445,7 +445,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$fetchDocument',
                 $exception: '$unexpected',
                 $documentId: documentId,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a document.')
+                $text: 'An unexpected error occurred while attempting to fetch a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -484,7 +484,7 @@ const LocalRepository = function(directory, debug) {
                     $exception: '$fileExists',
                     $url: bali.reference('file:' + directory),
                     $file: filename,
-                    $text: bali.text('The document to be created already exists.')
+                    $text: 'The document to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -500,7 +500,7 @@ const LocalRepository = function(directory, debug) {
                 $exception: '$unexpected',
                 $documentId: documentId,
                 $document: document,
-                $text: bali.text('An unexpected error occurred while attempting to create a document.')
+                $text: 'An unexpected error occurred while attempting to create a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -536,7 +536,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$typeExists',
                 $exception: '$unexpected',
                 $typeId: typeId,
-                $text: bali.text('An unexpected error occurred while attempting to verify the existence of a type.')
+                $text: 'An unexpected error occurred while attempting to verify the existence of a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -572,7 +572,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$fetchType',
                 $exception: '$unexpected',
                 $typeId: typeId,
-                $text: bali.text('An unexpected error occurred while attempting to fetch a type.')
+                $text: 'An unexpected error occurred while attempting to fetch a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -611,7 +611,7 @@ const LocalRepository = function(directory, debug) {
                     $exception: '$fileExists',
                     $url: bali.reference('file:' + directory),
                     $file: filename,
-                    $text: bali.text('The type to be created already exists.')
+                    $text: 'The type to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
@@ -627,7 +627,7 @@ const LocalRepository = function(directory, debug) {
                 $exception: '$unexpected',
                 $typeId: typeId,
                 $type: type,
-                $text: bali.text('An unexpected error occurred while attempting to create a type.')
+                $text: 'An unexpected error occurred while attempting to create a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -669,7 +669,7 @@ const LocalRepository = function(directory, debug) {
                 $exception: '$unexpected',
                 $queueId: queueId,
                 $message: message,
-                $text: bali.text('An unexpected error occurred while attempting to queue a message.')
+                $text: 'An unexpected error occurred while attempting to queue a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -725,7 +725,7 @@ const LocalRepository = function(directory, debug) {
                 $procedure: '$dequeueMessage',
                 $exception: '$unexpected',
                 $queueId: queueId,
-                $text: bali.text('An unexpected error occurred while attempting to dequeue a message.')
+                $text: 'An unexpected error occurred while attempting to dequeue a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -770,7 +770,7 @@ const pathExists = async function(path, debug) {
                 $procedure: '$pathExists',
                 $exception: '$unexpected',
                 $path: path,
-                $text: bali.text('An unexpected error occurred while attempting to check a path.')
+                $text: 'An unexpected error occurred while attempting to check a path.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -801,7 +801,7 @@ const deletePath = async function(path, debug) {
             $procedure: '$deletePath',
             $exception: '$unexpected',
             $path: path,
-            $text: bali.text('An unexpected error occurred while attempting to delete a path.')
+            $text: 'An unexpected error occurred while attempting to delete a path.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;
@@ -833,7 +833,7 @@ const listDirectory = async function(directory, debug) {
             $procedure: '$listDirectory',
             $exception: '$unexpected',
             $directory: directory,
-            $text: bali.text('An unexpected error occurred while attempting to list a directory.')
+            $text: 'An unexpected error occurred while attempting to list a directory.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;
@@ -863,7 +863,7 @@ const createDirectory = async function(directory, debug) {
             $procedure: '$createDirectory',
             $exception: '$unexpected',
             $directory: directory,
-            $text: bali.text('An unexpected error occurred while attempting to create a directory.')
+            $text: 'An unexpected error occurred while attempting to create a directory.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;
@@ -900,7 +900,7 @@ const readComponent = async function(file, debug) {
             $procedure: '$readFile',
             $exception: '$unexpected',
             $file: file,
-            $text: bali.text('An unexpected error occurred while attempting to read a file.')
+            $text: 'An unexpected error occurred while attempting to read a file.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;
@@ -935,7 +935,7 @@ const writeComponent = async function(file, component, mode, debug) {
             $exception: '$unexpected',
             $file: file,
             $source: source,
-            $text: bali.text('An unexpected error occurred while attempting to write a file.')
+            $text: 'An unexpected error occurred while attempting to write a file.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;
