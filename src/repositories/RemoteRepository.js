@@ -42,8 +42,10 @@ const EOL = '\n';
  * @returns {Object} The new S3 document repository.
  */
 const RemoteRepository = function(notary, url, debug) {
-    // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
+    if (debug > 2) console.log('Initializing the proxy to remote repository: ' + url);
+
+    // validate the arguments
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/RemoteRepository', '$RemoteRepository', '$notary', notary, [
@@ -103,6 +105,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.citationExists = async function(name) {
         try {
+            if (debug > 2) console.log('Checking to see if citation exists: ' + name);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -116,6 +120,7 @@ const RemoteRepository = function(notary, url, debug) {
             name = citations + name.slice(1);  // prepend the context and remove redundant slash
             const exists = await sendRequest(credentials, '$citationExists', url, 'HEAD', name);
 
+            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
             return exists;
         } catch (cause) {
             const exception = bali.exception({
@@ -140,6 +145,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.fetchCitation = async function(name) {
         try {
+            if (debug > 2) console.log('Fetching citation: ' + name);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -153,6 +160,7 @@ const RemoteRepository = function(notary, url, debug) {
             name = citations + name.slice(1);  // prepend the context and remove redundant slash
             const citation = await sendRequest(credentials, '$fetchCitation', url, 'GET', name);
 
+            if (debug > 2) console.log('Citation: ' + citation);
             return citation;
         } catch (cause) {
             const exception = bali.exception({
@@ -176,6 +184,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.createCitation = async function(name, citation) {
         try {
+            if (debug > 2) console.log('Creating citation: ' + name + ' ' + citation);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -192,6 +202,7 @@ const RemoteRepository = function(notary, url, debug) {
             name = citations + name.slice(1);  // prepend the context and remove redundant slash
             await sendRequest(credentials, '$createCitation', url, 'POST', name, citation);
 
+            if (debug > 2) console.log('Success.');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -216,6 +227,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.draftExists = async function(draftId) {
         try {
+            if (debug > 2) console.log('Checking to see if draft exists: ' + draftId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -229,6 +242,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = drafts + draftId;  // prepend the context
             const exists = await sendRequest(credentials, '$draftExists', url, 'HEAD', name);
 
+            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
             return exists;
         } catch (cause) {
             const exception = bali.exception({
@@ -253,6 +267,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.fetchDraft = async function(draftId) {
         try {
+            if (debug > 2) console.log('Fetching draft: ' + draftId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -266,6 +282,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = drafts + draftId;  // prepend the context
             const draft = await sendRequest(credentials, '$fetchDraft', url, 'GET', name);
 
+            if (debug > 2) console.log('Draft: ' + draft);
             return draft;
         } catch (cause) {
             const exception = bali.exception({
@@ -289,6 +306,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.saveDraft = async function(draftId, draft) {
         try {
+            if (debug > 2) console.log('Save draft: ' + draftId + ' ' + draft);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -305,6 +324,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = drafts + draftId;  // prepend the context
             await sendRequest(credentials, '$saveDraft', url, 'PUT', name, draft);
 
+            if (debug > 2) console.log('Success.');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -327,6 +347,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.deleteDraft = async function(draftId) {
         try {
+            if (debug > 2) console.log('Delete draft: ' + draftId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -340,6 +362,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = drafts + draftId;  // prepend the context
             await sendRequest(credentials, '$deleteDraft', url, 'DELETE', name);
 
+            if (debug > 2) console.log('Success.');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -363,6 +386,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.documentExists = async function(documentId) {
         try {
+            if (debug > 2) console.log('Checking to see if document exists: ' + documentId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -376,6 +401,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = documents + documentId;  // prepend the context
             const exists = await sendRequest(credentials, '$documentExists', url, 'HEAD', name);
 
+            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
             return exists;
         } catch (cause) {
             const exception = bali.exception({
@@ -400,6 +426,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.fetchDocument = async function(documentId) {
         try {
+            if (debug > 2) console.log('Fetching document: ' + documentId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -413,6 +441,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = documents + documentId;  // prepend the context
             const document = await sendRequest(credentials, '$fetchDocument', url, 'GET', name);
 
+            if (debug > 2) console.log('Document: ' + document);
             return document;
         } catch (cause) {
             const exception = bali.exception({
@@ -436,6 +465,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.createDocument = async function(documentId, document) {
         try {
+            if (debug > 2) console.log('Creating document: ' + documentId + ' ' + document);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -452,6 +483,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = documents + documentId;  // prepend the context
             await sendRequest(credentials, '$createDocument', url, 'POST', name, document);
 
+            if (debug > 2) console.log('Success.');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -476,6 +508,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.typeExists = async function(typeId) {
         try {
+            if (debug > 2) console.log('Checking to see if type exists: ' + typeId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -488,6 +522,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = types + typeId;  // prepend the context
             const exists = await componentExists(configuration.typeBucket, name, debug);
 
+            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
             return exists;
         } catch (cause) {
             const exception = bali.exception({
@@ -512,6 +547,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.fetchType = async function(typeId) {
         try {
+            if (debug > 2) console.log('Fetching type: ' + typeId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -524,6 +561,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = types + typeId;  // prepend the context
             const type = await readComponent(configuration.typeBucket, name, debug);
 
+            if (debug > 2) console.log('Type: ' + type);
             return type;
         } catch (cause) {
             const exception = bali.exception({
@@ -547,6 +585,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.createType = async function(typeId, type) {
         try {
+            if (debug > 2) console.log('Creating type: ' + typeId + ' ' + type);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -575,6 +615,7 @@ const RemoteRepository = function(notary, url, debug) {
             // create the new type
             await writeComponent(configuration.typeBucket, name, type, debug);
 
+            if (debug > 2) console.log('Success.');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -597,6 +638,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.queueMessage = async function(queueId, message) {
         try {
+            if (debug > 2) console.log('Queue message: ' + queueId + ' ' + message);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -613,6 +656,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = queues + queueId;  // prepend the context
             await sendRequest(credentials, '$queueMessage', url, 'PUT', name, message);
 
+            if (debug > 2) console.log('Success.');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -636,6 +680,8 @@ const RemoteRepository = function(notary, url, debug) {
      */
     this.dequeueMessage = async function(queueId) {
         try {
+            if (debug > 2) console.log('Dequeue message: ' + queueId);
+
             // validate the arguments
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -649,6 +695,7 @@ const RemoteRepository = function(notary, url, debug) {
             const name = queues + queueId;  // prepend the context
             const message = await sendRequest(credentials, '$dequeueMessage', url, 'GET', name);
 
+            if (debug > 2) console.log('Message: ' + message);
             return message;
         } catch (cause) {
             const exception = bali.exception({
