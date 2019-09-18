@@ -83,7 +83,7 @@ exports.local = function(directory, debug) {
  * @returns {Object} A singleton object containing the initialized document repository.
  */
 exports.remote = function(notary, url, debug) {
-    const repository = require('./src/repositories/RemoteRepository').repository(notary, url, debug);
+    const repository = new require('./src/repositories/RemoteRepository').RemoteRepository(notary, url, debug);
     return repository;
 };
 

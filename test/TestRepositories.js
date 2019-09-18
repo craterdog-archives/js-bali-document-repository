@@ -18,6 +18,7 @@ const account = bali.tag();
 const api = require('bali-digital-notary');
 const securityModule = api.ssm(directory);
 const notary = api.notary(securityModule, account, directory);
+const url = 'http://localhost:3000';
 const Repositories = require('../index');
 
 const configuration = {
@@ -33,6 +34,7 @@ const repositories = {
     'Local Repository': Repositories.local(directory, debug),
     'Cached Repository': Repositories.cached(Repositories.local(directory, debug), debug),
     'Validated Repository': Repositories.validated(notary, Repositories.local(directory, debug), debug),
+    'Remote Repository': Repositories.remote(notary, url, debug),
     'S3 Repository': Repositories.s3(configuration, debug)
 };
 

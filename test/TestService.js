@@ -28,8 +28,8 @@ const invalidCredentials = async function(request) {
         const credentials = bali.component(decodeURI(encoded).slice(2, -2));  // strip off double quote delimiters
         const citation = credentials.getValue('$component');
         const certificateId = citation.getValue('$tag').getValue() + citation.getValue('$version');
-        const document = (await repository.fetchDocument(certificateId)) || request.body;  // may be self-signed
-        const certificate = bali.component(document).getValue('$component');
+        const document = (await repository.fetchDocument(certificateId)) || bali.component(request.body);  // may be self-signed
+        const certificate = document.getValue('$component');
         const isValid = await notary.validDocument(credentials, certificate);
         return !isValid;
     } catch (cause) {
@@ -126,13 +126,13 @@ const postCitation = async function(request, response) {
             response.end();
             return;
         }
-        const citation = request.body;
         if (await repository.citationExists(name)) {
             message = 'Test Service: The named document citation already exists.';
             if (debug > 2) console.log(message + EOL);
             response.writeHead(409, message);
             response.end();
         } else {
+            const citation = bali.component(request.body);
             await repository.createCitation(name, citation);
             message = 'Test Service: The named document citation was created.';
             if (debug > 2) console.log(message + EOL);
@@ -289,13 +289,13 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        const draft = request.body;
         if (await repository.documentExists(draftId)) {
             message = 'A committed document with this version already exists.';
             if (debug > 2) console.log(message + EOL);
             response.writeHead(409, message);
             response.end();
         } else {
+            const draft = bali.component(request.body);
             await repository.saveDraft(draftId, draft);
             message = 'Test Service: The draft document was saved.';
             if (debug > 2) console.log(message + EOL);
@@ -423,7 +423,7 @@ const postDocument = async function(request, response) {
     var message;
     try {
         const documentId = request.params.identifier;
-        const document = request.body;
+        const document = bali.component(request.body);
         message = 'Test Service: POST ' + request.originalUrl + ' ' + document;
         if (debug > 2) console.log(message + EOL);
         if (await invalidCredentials(request)) {
@@ -478,6 +478,151 @@ const deleteDocument = async function(request, response) {
         message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
         message = 'Notarized documents cannot be deleted.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(405, message);
+        response.end();
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const pingType = async function(request, response) {
+    var message;
+    try {
+        const typeId = request.params.identifier;
+        message = 'Test Service: HEAD ' + request.originalUrl;
+        if (debug > 2) console.log(message + EOL);
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(403, message);
+            response.end();
+            return;
+        }
+        if (await repository.typeExists(typeId)) {
+            message = 'Test Service: The notarized type exists.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(200, message);
+            response.end();
+        } else {
+            message = 'Test Service: The notarized type does not exist.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(404, message);
+            response.end();
+        }
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const getType = async function(request, response) {
+    var message;
+    try {
+        const typeId = request.params.identifier;
+        message = 'Test Service: GET ' + request.originalUrl;
+        if (debug > 2) console.log(message + EOL);
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(403, message);
+            response.end();
+            return;
+        }
+        const type = await repository.fetchType(typeId);
+        if (type) {
+            const data = type.toString();
+            message = 'Test Service: The notarized type was retrieved.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(200, message, {
+                'Content-Length': data.length,
+                'Content-Type': 'application/bali',
+                'Cache-Control': 'immutable'
+            });
+            message = '    result: ' + data;
+            if (debug > 2) console.log(message + EOL);
+            response.end(data);
+        } else {
+            message = 'Test Service: The notarized type does not exist.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(404, message);
+            response.end();
+        }
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const postType = async function(request, response) {
+    var message;
+    try {
+        const typeId = request.params.identifier;
+        const type = bali.component(request.body);
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + type;
+        if (debug > 2) console.log(message + EOL);
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(403, message);
+            response.end();
+            return;
+        }
+        if (await repository.typeExists(typeId)) {
+            message = 'A committed type with this version already exists.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(409, message);
+            response.end();
+        } else {
+            await repository.createType(typeId, type);
+            message = 'Test Service: The notarized type was created.';
+            if (debug > 2) console.log(message + EOL);
+            response.writeHead(201, message);
+            response.end();
+        }
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const putType = async function(request, response) {
+    var message;
+    try {
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        if (debug > 2) console.log(message + EOL);
+        message = 'Notarized types cannot be updated.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(405, message);
+        response.end();
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const deleteType = async function(request, response) {
+    var message;
+    try {
+        message = 'Test Service: DELETE ' + request.originalUrl;
+        if (debug > 2) console.log(message + EOL);
+        message = 'Notarized types cannot be deleted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -557,7 +702,7 @@ const putMessage = async function(request, response) {
             response.end();
             return;
         }
-        message = request.body;
+        message = bali.component(request.body);
         await repository.queueMessage(queueId, message);
         message = 'A message was added to the queue.';
         if (debug > 2) console.log(message + EOL);
@@ -635,6 +780,13 @@ documentRouter.get('/:identifier', getDocument);
 documentRouter.put('/:identifier', putDocument);
 documentRouter.delete('/:identifier', deleteDocument);
 
+const typeRouter = express.Router();
+typeRouter.head('/:identifier', pingType);
+typeRouter.post('/:identifier', postType);
+typeRouter.get('/:identifier', getType);
+typeRouter.put('/:identifier', putType);
+typeRouter.delete('/:identifier', deleteType);
+
 const queueRouter = express.Router();
 queueRouter.head('/:identifier', pingQueue);
 queueRouter.post('/:identifier', postQueue);
@@ -645,10 +797,11 @@ queueRouter.delete('/:identifier', deleteQueue);
 const service = express();
 
 service.use(bodyParser.text({ type: 'application/bali' }));
-service.use('/citation', citationRouter);
-service.use('/draft', draftRouter);
-service.use('/document', documentRouter);
-service.use('/queue', queueRouter);
+service.use('/citations', citationRouter);
+service.use('/drafts', draftRouter);
+service.use('/documents', documentRouter);
+service.use('/types', typeRouter);
+service.use('/queues', queueRouter);
 
 service.listen(3000, function() {
     var message = 'Service: Server running on port 3000';
