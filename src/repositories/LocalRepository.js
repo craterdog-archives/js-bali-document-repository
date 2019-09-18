@@ -128,8 +128,8 @@ const LocalRepository = function(directory, debug) {
             await createDirectory(citations, debug);
 
             // check for existence
-            const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            const exists = await componentExists(filename, debug);
+            name = citations + name.replace(/\//g, '_');  // replace '/'s with '_'s
+            const exists = await componentExists(name, debug);
 
             return exists;
         } catch (cause) {
@@ -164,8 +164,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // fetch the citation
-            const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            const citation = await readComponent(filename, debug);
+            name = citations + name.replace(/\//g, '_');  // replace '/'s with '_'s
+            const citation = await readComponent(name, debug);
 
             return citation;
         } catch (cause) {
@@ -205,13 +205,13 @@ const LocalRepository = function(directory, debug) {
             await createDirectory(citations, debug);
 
             // make sure the citation doesn't already exist
-            const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            if (await componentExists(filename, debug)) {
+            name = citations + name.replace(/\//g, '_');  // replace '/'s with '_'s
+            if (await componentExists(name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/LocalRepository',
                     $procedure: '$createCitation',
                     $exception: '$citationExists',
-                    $file: filename,
+                    $name: name,
                     $text: 'The citation to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
@@ -219,7 +219,7 @@ const LocalRepository = function(directory, debug) {
             }
 
             // create the new citation
-            await writeComponent(filename, citation, READONLY, debug);
+            await writeComponent(name, citation, READONLY, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -254,8 +254,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // check for existence
-            const filename = drafts + draftId + '.bali';
-            const exists = await componentExists(filename, debug);
+            const name = drafts + draftId;
+            const exists = await componentExists(name, debug);
 
             return exists;
         } catch (cause) {
@@ -290,8 +290,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // fetch the draft document
-            const filename = drafts + draftId + '.bali';
-            const draft = await readComponent(filename, debug);
+            const name = drafts + draftId;
+            const draft = await readComponent(name, debug);
 
             return draft;
         } catch (cause) {
@@ -331,8 +331,8 @@ const LocalRepository = function(directory, debug) {
             await createDirectory(drafts, debug);
 
             // save the draft document
-            const filename = drafts + draftId + '.bali';
-            await writeComponent(filename, draft, UPDATEABLE, debug);
+            const name = drafts + draftId;
+            await writeComponent(name, draft, UPDATEABLE, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -365,8 +365,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // delete the draft document
-            const filename = drafts + draftId + '.bali';
-            await deleteComponent(filename, debug);
+            const name = drafts + draftId;
+            await deleteComponent(name, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -400,8 +400,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // check the existence
-            const filename = documents + documentId + '.bali';
-            const exists = await componentExists(filename, debug);
+            const name = documents + documentId;
+            const exists = await componentExists(name, debug);
 
             return exists;
         } catch (cause) {
@@ -436,8 +436,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // fetch the document
-            const filename = documents + documentId + '.bali';
-            const document = await readComponent(filename, debug);
+            const name = documents + documentId;
+            const document = await readComponent(name, debug);
 
             return document;
         } catch (cause) {
@@ -477,13 +477,13 @@ const LocalRepository = function(directory, debug) {
             await createDirectory(documents, debug);
 
             // make sure the document doesn't already exist
-            const filename = documents + documentId + '.bali';
-            if (await componentExists(filename, debug)) {
+            const name = documents + documentId;
+            if (await componentExists(name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/LocalRepository',
                     $procedure: '$createDocument',
-                    $exception: '$fileExists',
-                    $file: filename,
+                    $exception: '$documentExists',
+                    $name: name,
                     $text: 'The document to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
@@ -491,7 +491,7 @@ const LocalRepository = function(directory, debug) {
             }
 
             // create the new document
-            await writeComponent(filename, document, READONLY, debug);
+            await writeComponent(name, document, READONLY, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -526,8 +526,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // check the existence
-            const filename = types + typeId + '.bali';
-            const exists = await componentExists(filename, debug);
+            const name = types + typeId;
+            const exists = await componentExists(name, debug);
 
             return exists;
         } catch (cause) {
@@ -562,8 +562,8 @@ const LocalRepository = function(directory, debug) {
             }
 
             // fetch the type
-            const filename = types + typeId + '.bali';
-            const type = await readComponent(filename, debug);
+            const name = types + typeId;
+            const type = await readComponent(name, debug);
 
             return type;
         } catch (cause) {
@@ -603,13 +603,13 @@ const LocalRepository = function(directory, debug) {
             await createDirectory(types, debug);
 
             // make sure the type doesn't already exist
-            const filename = types + typeId + '.bali';
-            if (await componentExists(filename, debug)) {
+            const name = types + typeId;
+            if (await componentExists(name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/LocalRepository',
                     $procedure: '$createType',
-                    $exception: '$fileExists',
-                    $file: filename,
+                    $exception: '$typeExists',
+                    $name: name,
                     $text: 'The type to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
@@ -617,7 +617,7 @@ const LocalRepository = function(directory, debug) {
             }
 
             // create the new type
-            await writeComponent(filename, type, READONLY, debug);
+            await writeComponent(name, type, READONLY, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -658,8 +658,8 @@ const LocalRepository = function(directory, debug) {
 
             // place the new message on the queue
             const messageId = bali.tag().getValue();
-            const filename = queue + messageId + '.bali';
-            await writeComponent(filename, message, UPDATEABLE, debug);
+            const name = queue + messageId;
+            await writeComponent(name, message, UPDATEABLE, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -703,10 +703,10 @@ const LocalRepository = function(directory, debug) {
                     const generator = bali.generator();
                     const index = generator.generateIndex(count) - 1;  // convert to zero based indexing
                     const messageFile = messages[index];
-                    const filename = queue + messageFile;
-                    message = await readComponent(filename, debug);
+                    const name = queue + messageFile;
+                    message = await readComponent(name, debug);
                     try {
-                        await deleteComponent(filename, debug);
+                        await deleteComponent(name, debug);
                         break; // we got there first
                     } catch (exception) {
                         // another process got there first
@@ -756,8 +756,12 @@ exports.LocalRepository = LocalRepository;
  */
 const listDirectory = async function(directory, debug) {
     try {
-        const components = await pfs.readdir(directory, 'utf8');
-        return components;
+        const list = await pfs.readdir(directory, 'utf8');
+        const names = [];
+        list.forEach(function(item) {
+            names.push(item.slice(0,-5));  // remove the suffix
+        });
+        return names;
     } catch (cause) {
         if (cause.code === 'ENOENT') {
             // the directory does not exist
@@ -824,7 +828,8 @@ const createDirectory = async function(directory, debug) {
  */
 const componentExists = async function(name, debug) {
     try {
-        await pfs.stat(name);
+        const file = name + '.bali';
+        await pfs.stat(file);
         // the component exists
         return true;
     } catch (cause) {
@@ -866,7 +871,8 @@ const readComponent = async function(name, debug) {
     try {
         var component;
         if (await componentExists(name, debug)) {
-            const source = await pfs.readFile(name, 'utf8');
+            const file = name + '.bali';
+            const source = await pfs.readFile(file, 'utf8');
             component = bali.component(source, debug);
         }
         return component;
@@ -901,8 +907,9 @@ const readComponent = async function(name, debug) {
  */
 const writeComponent = async function(name, component, mode, debug) {
     try {
+        const file = name + '.bali';
         const source = component.toString() + EOL;  // add POSIX compliant <EOL>
-        await pfs.writeFile(name, source, {encoding: 'utf8', mode: mode});
+        await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/LocalRepository',
@@ -933,7 +940,10 @@ const writeComponent = async function(name, component, mode, debug) {
  */
 const deleteComponent = async function(name, debug) {
     try {
-        if (await componentExists(name, debug)) await pfs.unlink(name);
+        if (await componentExists(name, debug)) {
+            const file = name + '.bali';
+            await pfs.unlink(file);
+        }
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/LocalRepository',

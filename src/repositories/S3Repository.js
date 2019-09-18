@@ -232,7 +232,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check for existence
-            const name = drafts + draftId + '.bali';
+            const name = drafts + draftId;
             const exists = await componentExists(configuration.draftBucket, name, debug);
 
             return exists;
@@ -268,7 +268,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the draft document
-            const name = drafts + draftId + '.bali';
+            const name = drafts + draftId;
             const draft = await readComponent(configuration.draftBucket, name, debug);
 
             return draft;
@@ -306,7 +306,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // save the draft document
-            const name = drafts + draftId + '.bali';
+            const name = drafts + draftId;
             await writeComponent(configuration.draftBucket, name, draft, debug);
 
         } catch (cause) {
@@ -340,7 +340,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // delete the draft document
-            const name = drafts + draftId + '.bali';
+            const name = drafts + draftId;
             await deleteComponent(configuration.draftBucket, name, debug);
 
         } catch (cause) {
@@ -375,7 +375,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check the existence
-            const name = documents + documentId + '.bali';
+            const name = documents + documentId;
             const exists = await componentExists(configuration.documentBucket, name, debug);
 
             return exists;
@@ -411,7 +411,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the document
-            const name = documents + documentId + '.bali';
+            const name = documents + documentId;
             const document = await readComponent(configuration.documentBucket, name, debug);
 
             return document;
@@ -449,12 +449,12 @@ const S3Repository = function(configuration, debug) {
             }
 
             // make sure the document doesn't already exist
-            const name = documents + documentId + '.bali';
+            const name = documents + documentId;
             if (await componentExists(configuration.documentBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
                     $procedure: '$createDocument',
-                    $exception: '$fileExists',
+                    $exception: '$documentExists',
                     $name: name,
                     $text: 'The document to be created already exists.'
                 });
@@ -498,7 +498,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check the existence
-            const name = types + typeId + '.bali';
+            const name = types + typeId;
             const exists = await componentExists(configuration.typeBucket, name, debug);
 
             return exists;
@@ -534,7 +534,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the type
-            const name = types + typeId + '.bali';
+            const name = types + typeId;
             const type = await readComponent(configuration.typeBucket, name, debug);
 
             return type;
@@ -572,12 +572,12 @@ const S3Repository = function(configuration, debug) {
             }
 
             // make sure the type doesn't already exist
-            const name = types + typeId + '.bali';
+            const name = types + typeId;
             if (await componentExists(configuration.typeBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
                     $procedure: '$createType',
-                    $exception: '$fileExists',
+                    $exception: '$typeExists',
                     $name: name,
                     $text: 'The type to be created already exists.'
                 });
@@ -624,7 +624,7 @@ const S3Repository = function(configuration, debug) {
             // place the new message on the queue
             const queue = queues + queueId + '/';
             const messageId = bali.tag().getValue();
-            const name = queue + messageId + '.bali';
+            const name = queue + messageId;
             await writeComponent(configuration.queueBucket, name, message, debug);
 
         } catch (cause) {
@@ -661,7 +661,8 @@ const S3Repository = function(configuration, debug) {
             // remove a message from the queue
             var message;
             while (true) {
-                const messages = await listDirectory(configuration.queueBucket, queueId, debug);
+                const queue = queues + queueId;
+                const messages = await listDirectory(configuration.queueBucket, queue, debug);
                 const count = messages.length;
                 if (count) {
                     // select a message at random since a distributed queue cannot guarantee FIFO
@@ -721,8 +722,13 @@ exports.S3Repository = S3Repository;
  */
 const listDirectory = async function(bucket, directory, debug) {
     try {
-        const components = await listObjects(bucket, directory);
-        return components;
+        const key = directory.slice(1);  // remove the leading slash
+        const list = await listObjects(bucket, key);
+        const names = [];
+        list.forEach(function(item) {
+            names.push('/' + item.Key.slice(0,-5));  // prepend a leading slash and remove the suffix
+        });
+        return names;
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/S3Repository',
@@ -754,9 +760,9 @@ const listDirectory = async function(bucket, directory, debug) {
  */
 const componentExists = async function(bucket, name, debug) {
     try {
-        await doesExist(bucket, name);
-        // the component exists
-        return true;
+        const key = name.slice(1) + '.bali';  // remove the leading slash and add suffix
+        const exists = await doesExist(bucket, key);
+        return exists;
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/S3Repository',
@@ -790,8 +796,10 @@ const componentExists = async function(bucket, name, debug) {
 const readComponent = async function(bucket, name, debug) {
     try {
         var component;
-        if (await doesExist(bucket, name)) {
-            const source = await getObject(bucket, name);
+        const key = name.slice(1) + '.bali';  // remove the leading slash and add suffix
+        const exists = await doesExist(bucket, key);
+        if (await doesExist(bucket, key)) {
+            const source = await getObject(bucket, key);
             component = bali.component(source, debug);
         }
         return component;
@@ -826,8 +834,9 @@ const readComponent = async function(bucket, name, debug) {
  */
 const writeComponent = async function(bucket, name, component, debug) {
     try {
+        const key = name.slice(1) + '.bali';  // remove the leading slash and add suffix
         const source = component.toString() + EOL;  // add POSIX compliant <EOL>
-        await putObject(bucket, name, source);
+        await putObject(bucket, key, source);
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/S3Repository',
@@ -859,8 +868,9 @@ const writeComponent = async function(bucket, name, component, debug) {
  */
 const deleteComponent = async function(bucket, name, debug) {
     try {
-        if (await doesExist(bucket, name)) {
-            await deleteObject(bucket, name);
+        const key = name.slice(1) + '.bali';  // remove the leading slash and add suffix
+        if (await doesExist(bucket, key)) {
+            await deleteObject(bucket, key);
         }
     } catch (cause) {
         const exception = bali.exception({

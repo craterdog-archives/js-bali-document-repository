@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 0;  // [0..3]
+const debug = 2;  // [0..3]
 const directory = 'test/config/';
 const mocha = require('mocha');
 const assert = require('chai').assert;
@@ -25,6 +25,7 @@ const configuration = {
     citationBucket: 'craterdog-bali-citations-us-west-2',
     draftBucket: 'craterdog-bali-drafts-us-west-2',
     documentBucket: 'craterdog-bali-documents-us-west-2',
+    typeBucket: 'craterdog-bali-types-us-west-2',
     queueBucket: 'craterdog-bali-queues-us-west-2'
 };
 
@@ -70,7 +71,7 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a citation name lifecycle', async function() {
-                const name = '/bali/certificates/' + tag + '/v1';
+                const name = '/bali/certificates/' + tag.getValue() + '/v1';
     
                 // make sure the new name does not yet exist in the repository
                 var exists = await repository.citationExists(name);
@@ -154,8 +155,6 @@ describe('Bali Nebula™ Document Repository', function() {
     
             it('should perform a message queue lifecycle', async function() {
                 const queueId = bali.tag().getValue();
-                const message = await notary.notarizeDocument(transaction);
-                const messageId = extractId(message);
     
     
                 // make sure the message queue is empty
@@ -163,6 +162,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(none).to.not.exist;
     
                 // queue up some messages
+                var message = await notary.notarizeDocument(transaction);
                 await repository.queueMessage(queueId, message);
                 await repository.queueMessage(queueId, message);
                 await repository.queueMessage(queueId, message);
