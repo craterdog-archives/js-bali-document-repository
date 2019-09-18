@@ -20,10 +20,19 @@ const securityModule = api.ssm(directory);
 const notary = api.notary(securityModule, account, directory);
 const Repositories = require('../index');
 
+const configuration = {
+    url: 'https://bali-nebula.net/repository/',
+    citationBucket: 'craterdog-bali-citations-us-west-2',
+    draftBucket: 'craterdog-bali-drafts-us-west-2',
+    documentBucket: 'craterdog-bali-documents-us-west-2',
+    queueBucket: 'craterdog-bali-queues-us-west-2'
+};
+
 const repositories = {
     'Local Repository': Repositories.local(directory, debug),
     'Cached Repository': Repositories.cached(Repositories.local(directory, debug), debug),
-    'Validated Repository': Repositories.validated(notary, Repositories.local(directory, debug), debug)
+    'Validated Repository': Repositories.validated(notary, Repositories.local(directory, debug), debug),
+    'S3 Repository': Repositories.s3(configuration, debug)
 };
 
 

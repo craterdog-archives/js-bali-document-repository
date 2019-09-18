@@ -102,7 +102,7 @@ exports.remote = function(notary, url, debug) {
  * @returns {Object} A singleton object containing the initialized document repository.
  */
 exports.s3 = function(configuration, debug) {
-    const repository = require('./src/repositories/S3Repository').repository(configuration, debug);
+    const repository = new require('./src/repositories/S3Repository').S3Repository(configuration, debug);
     return repository;
 };
 

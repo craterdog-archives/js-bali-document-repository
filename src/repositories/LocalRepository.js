@@ -32,8 +32,10 @@ const bali = require('bali-component-framework').api();
 // the POSIX end of line character
 const EOL = '\n';
 
+// file access permissions
 const READONLY = 0o400;
 const UPDATEABLE = 0o600;
+
 
 // PUBLIC FUNCTIONS
 
@@ -127,7 +129,7 @@ const LocalRepository = function(directory, debug) {
 
             // check for existence
             const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            const exists = await pathExists(filename, debug);
+            const exists = await componentExists(filename, debug);
 
             return exists;
         } catch (cause) {
@@ -204,12 +206,11 @@ const LocalRepository = function(directory, debug) {
 
             // make sure the citation doesn't already exist
             const filename = citations + name.replace(/\//g, '_') + '.bali';  // replace '/'s with '_'s
-            if (await pathExists(filename, debug)) {
+            if (await componentExists(filename, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/LocalRepository',
                     $procedure: '$createCitation',
                     $exception: '$citationExists',
-                    $url: bali.reference('file:' + directory),
                     $file: filename,
                     $text: 'The citation to be created already exists.'
                 });
@@ -254,7 +255,7 @@ const LocalRepository = function(directory, debug) {
 
             // check for existence
             const filename = drafts + draftId + '.bali';
-            const exists = await pathExists(filename, debug);
+            const exists = await componentExists(filename, debug);
 
             return exists;
         } catch (cause) {
@@ -365,7 +366,7 @@ const LocalRepository = function(directory, debug) {
 
             // delete the draft document
             const filename = drafts + draftId + '.bali';
-            await deletePath(filename, debug);
+            await deleteComponent(filename, debug);
 
         } catch (cause) {
             const exception = bali.exception({
@@ -400,7 +401,7 @@ const LocalRepository = function(directory, debug) {
 
             // check the existence
             const filename = documents + documentId + '.bali';
-            const exists = await pathExists(filename, debug);
+            const exists = await componentExists(filename, debug);
 
             return exists;
         } catch (cause) {
@@ -477,12 +478,11 @@ const LocalRepository = function(directory, debug) {
 
             // make sure the document doesn't already exist
             const filename = documents + documentId + '.bali';
-            if (await pathExists(filename, debug)) {
+            if (await componentExists(filename, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/LocalRepository',
                     $procedure: '$createDocument',
                     $exception: '$fileExists',
-                    $url: bali.reference('file:' + directory),
                     $file: filename,
                     $text: 'The document to be created already exists.'
                 });
@@ -527,7 +527,7 @@ const LocalRepository = function(directory, debug) {
 
             // check the existence
             const filename = types + typeId + '.bali';
-            const exists = await pathExists(filename, debug);
+            const exists = await componentExists(filename, debug);
 
             return exists;
         } catch (cause) {
@@ -604,12 +604,11 @@ const LocalRepository = function(directory, debug) {
 
             // make sure the type doesn't already exist
             const filename = types + typeId + '.bali';
-            if (await pathExists(filename, debug)) {
+            if (await componentExists(filename, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/LocalRepository',
                     $procedure: '$createType',
                     $exception: '$fileExists',
-                    $url: bali.reference('file:' + directory),
                     $file: filename,
                     $text: 'The type to be created already exists.'
                 });
@@ -696,7 +695,7 @@ const LocalRepository = function(directory, debug) {
             // remove a message from the queue
             const queue = queues + queueId + '/';
             var message;
-            while (await pathExists(queue, debug)) {
+            while (true) {
                 const messages = await listDirectory(queue, debug);
                 const count = messages.length;
                 if (count) {
@@ -707,7 +706,7 @@ const LocalRepository = function(directory, debug) {
                     const filename = queue + messageFile;
                     message = await readComponent(filename, debug);
                     try {
-                        await deletePath(filename, debug);
+                        await deleteComponent(filename, debug);
                         break; // we got there first
                     } catch (exception) {
                         // another process got there first
@@ -741,76 +740,8 @@ exports.LocalRepository = LocalRepository;
 // PRIVATE FUNCTIONS
 
 /**
- * This function determines whether or not the specified directory path exists.
- * 
- * @param {String} path The directory path. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Boolean} Whether or not the directory path exists.
- */
-const pathExists = async function(path, debug) {
-    try {
-        await pfs.stat(path);
-        // the path exists
-        return true;
-    } catch (cause) {
-        if (cause.code === 'ENOENT') {
-            // the path does not exist
-            return false;
-        } else {
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$pathExists',
-                $exception: '$unexpected',
-                $path: path,
-                $text: 'An unexpected error occurred while attempting to check a path.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    }
-};
-
-
-/**
- * This function deletes the specified directory path if it exists.
- * 
- * @param {String} path The directory path. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const deletePath = async function(path, debug) {
-    try {
-        if (await pathExists(path, debug)) await pfs.unlink(path);
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
-            $procedure: '$deletePath',
-            $exception: '$unexpected',
-            $path: path,
-            $text: 'An unexpected error occurred while attempting to delete a path.'
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function returns a list of the files contained in the specified directory.
+ * This function returns a list of the names of the components contained in the specified
+ * directory.
  * 
  * @param {String} directory The directory to be listed.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
@@ -821,22 +752,28 @@ const deletePath = async function(path, debug) {
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Array} An array containing the filenames of the files in the directory.
+ * @returns {Array} An array containing the names of the components in the directory.
  */
 const listDirectory = async function(directory, debug) {
     try {
-        const files = await pfs.readdir(directory, 'utf8');
-        return files;
+        const components = await pfs.readdir(directory, 'utf8');
+        return components;
     } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
-            $procedure: '$listDirectory',
-            $exception: '$unexpected',
-            $directory: directory,
-            $text: 'An unexpected error occurred while attempting to list a directory.'
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
+        if (cause.code === 'ENOENT') {
+            // the directory does not exist
+            return [];
+        } else {
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalRepository',
+                $procedure: '$listDirectory',
+                $exception: '$unexpected',
+                $directory: directory,
+                $text: 'An unexpected error occurred while attempting to list a directory.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
     }
 };
 
@@ -844,7 +781,7 @@ const listDirectory = async function(directory, debug) {
 /**
  * This function recursively creates the specified directory structure.
  * 
- * @param {String} directory The directory path to be created. 
+ * @param {String} directory The directory structure to be created. 
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -872,10 +809,9 @@ const createDirectory = async function(directory, debug) {
 
 
 /**
- * This function returns the contents of the specified file as a component, or as
- * <code>undefined</code> if it does not exist.
+ * This function determines whether or not the specified component exists.
  * 
- * @param {String} file The name of the file to be read.
+ * @param {String} name The name of the component.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -884,23 +820,63 @@ const createDirectory = async function(directory, debug) {
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Component} The component that was stored in the file.
+ * @returns {Boolean} Whether or not the component exists.
  */
-const readComponent = async function(file, debug) {
+const componentExists = async function(name, debug) {
+    try {
+        await pfs.stat(name);
+        // the component exists
+        return true;
+    } catch (cause) {
+        if (cause.code === 'ENOENT') {
+            // the component does not exist
+            return false;
+        } else {
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalRepository',
+                $procedure: '$componentExists',
+                $exception: '$unexpected',
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to look for a component.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    }
+};
+
+
+/**
+ * This function returns the specified component, or as <code>undefined</code> if it does
+ * not exist.
+ * 
+ * @param {String} name The name of the component to be read.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {Component} The component.
+ */
+const readComponent = async function(name, debug) {
     try {
         var component;
-        if (await pathExists(file, debug)) {
-            const source = await pfs.readFile(file, 'utf8');
+        if (await componentExists(name, debug)) {
+            const source = await pfs.readFile(name, 'utf8');
             component = bali.component(source, debug);
         }
         return component;
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/LocalRepository',
-            $procedure: '$readFile',
+            $procedure: '$readComponent',
             $exception: '$unexpected',
-            $file: file,
-            $text: 'An unexpected error occurred while attempting to read a file.'
+            $name: name,
+            $text: 'An unexpected error occurred while attempting to read a component from a file.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;
@@ -909,11 +885,10 @@ const readComponent = async function(file, debug) {
 
 
 /**
- * This function stores the specified component in the specified file using Bali Document
- * Notation™.
+ * This function stores the specified component in a file with the specified name.
  * 
- * @param {String} file The name of the file to be written to.
- * @param {Component} component The component to be stored in the file.
+ * @param {String} name The name of the component.
+ * @param {Component} component The component to be stored.
  * @param {Number} mode The access mode for the resulting file. 
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -924,18 +899,48 @@ const readComponent = async function(file, debug) {
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
  */
-const writeComponent = async function(file, component, mode, debug) {
+const writeComponent = async function(name, component, mode, debug) {
     try {
         const source = component.toString() + EOL;  // add POSIX compliant <EOL>
-        await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
+        await pfs.writeFile(name, source, {encoding: 'utf8', mode: mode});
     } catch (cause) {
         const exception = bali.exception({
             $module: '/bali/repositories/LocalRepository',
-            $procedure: '$writeFile',
+            $procedure: '$writeComponent',
             $exception: '$unexpected',
-            $file: file,
-            $source: source,
-            $text: 'An unexpected error occurred while attempting to write a file.'
+            $name: name,
+            $component: component,
+            $text: 'An unexpected error occurred while attempting to write a component to a file.'
+        }, cause);
+        if (debug > 0) console.error(exception.toString());
+        throw exception;
+    }
+};
+
+
+/**
+ * This function deletes the specified component if it exists.
+ * 
+ * @param {String} name The name of the component.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ */
+const deleteComponent = async function(name, debug) {
+    try {
+        if (await componentExists(name, debug)) await pfs.unlink(name);
+    } catch (cause) {
+        const exception = bali.exception({
+            $module: '/bali/repositories/LocalRepository',
+            $procedure: '$deleteComponent',
+            $exception: '$unexpected',
+            $name: name,
+            $text: 'An unexpected error occurred while attempting to delete a component.'
         }, cause);
         if (debug > 0) console.error(exception.toString());
         throw exception;

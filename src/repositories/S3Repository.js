@@ -9,276 +9,668 @@
  ************************************************************************/
 'use strict';
 
-
 /*
- * This module defines a singleton that implements an AWS S3 bucket based document
- * repository. It is designed to be used by a lambda based service that is running in
- * the AWS cloud. It treats documents as UTF-8 encoded strings.
+ * This class implements an AWS S3 bucket based document repository.  It treats
+ * documents as UTF-8 encoded strings.
  */
 const aws = new require('aws-sdk/clients/s3');
 const s3 = new aws({apiVersion: '2006-03-01'});
 const bali = require('bali-component-framework').api();
-const EOL = '\n';  // POSIX compliant end of line
+var config;
 
+
+// PRIVATE CONSTANTS
+
+// the POSIX end of line character
+const EOL = '\n';
+
+
+// PUBLIC FUNCTIONS
 
 /**
- * This function returns an object that implements the API for an AWS S3 based document
- * repository.
+ * This function creates a new instance of a S3 document repository.  If the
+ * repository does not yet exist it is created.
  * 
  * @param {Object} configuration An object containing the S3 configuration information. 
- * @param {Boolean} debug An optional flag that determines whether or not exceptions
- * will be logged to the error console.
- * @returns {Object} An object implementing the document repository interface.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {Object} The new S3 document repository.
  */
-exports.repository = function(configuration, debug) {
+const S3Repository = function(configuration, debug) {
+    // validate the arguments
+    if (debug === null || debug === undefined) debug = 0;  // default is off
+    if (debug > 1) {
+        const validator = bali.validator(debug);
+        validator.validateType('/bali/repositories/S3Repository', '$S3Repository', '$configuration', configuration, [
+            '/javascript/Object'
+        ]);
+    }
 
-    // return a singleton object for the API
-    return {
+    // setup the private attributes
+    config = configuration;
+    const base = '/bali/';
+    const citations = base + 'citations/';
+    const drafts = base + 'drafts/';
+    const documents = base + 'documents/';
+    const types = base + 'types/';
+    const queues = base + 'queues/';
 
-        /**
-         * This function returns a string providing attributes about this repository.
-         * 
-         * @returns {String} A string providing attributes about this repository.
-         */
-        toString: function() {
-            const catalog = bali.catalog({
-                $module: '/bali/repositories/S3Repository',
-                $url: this.getURL()
-            });
-            return catalog.toString();
-        },
+    /**
+     * This function returns a string providing attributes about this repository.
+     * 
+     * @returns {String} A string providing attributes about this repository.
+     */
+    this.toString = function() {
+        const catalog = bali.catalog({
+            $module: '/bali/repositories/S3Repository',
+            $url: this.getURL()
+        });
+        return catalog.toString();
+    };
 
-        /**
-         * This function returns a reference to this document repository.
-         * 
-         * @returns {Reference} A reference to this document repository.
-         */
-        getURL: function() {
+    /**
+     * This function returns a reference to this document repository.
+     * 
+     * @returns {Reference} A reference to this document repository.
+     */
+    this.getURL = function() {
+        try {
             return bali.reference(configuration.url);
-        },
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$getURL',
+                $exception: '$unexpected',
+                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
 
-        /**
-         * This function checks to see whether or not a document citation is associated
-         * with the specified name.
-         * 
-         * @param {String} name The unique name for the document citation being checked.
-         * @returns {Boolean} Whether or not the document citation exists.
-         */
-        citationExists: async function(name) {
-            const filename = name + '.bali';
-            const exists = await doesExist(configuration.citationBucket, filename);
-            return exists;
-        },
-
-        /**
-         * This function attempts to retrieve a document citation from the repository for
-         * the specified name.
-         * 
-         * @param {String} name The unique name for the document citation being fetched.
-         * @returns {String} The canonical source string for the document citation, or
-         * <code>undefined</code> if it doesn't exist.
-         */
-        fetchCitation: async function(name) {
-            var citation;
-            const filename = name + '.bali';
-            const exists = await doesExist(configuration.citationBucket, filename);
-            if (exists) {
-                citation = await getObject(configuration.citationBucket, filename);
-                citation = citation.toString().slice(0, -1);  // remove POSIX compliant <EOL>
+    /**
+     * This function checks to see whether or not a document citation is associated
+     * with the specified name.
+     * 
+     * @param {String} name The unique name for the document citation being checked.
+     * @returns {Boolean} Whether or not the document citation exists.
+     */
+    this.citationExists = async function(name) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$citationExists', '$name', name, [
+                    '/javascript/String'
+                ]);
             }
-            return citation;
-        },
 
-        /**
-         * This function associates a new name with the specified document citation in
-         * the repository.
-         * 
-         * @param {String} name The unique name for the specified document citation.
-         * @param {String} citation The canonical source string for the document citation.
-         */
-        createCitation: async function(name, citation) {
-            const filename = name + '.bali';
-            const exists = await doesExist(configuration.documentBucket, filename);
-            if (exists) {
+            // check for existence
+            const exists = await componentExists(configuration.citationBucket, name, debug);
+
+            return exists;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$citationExists',
+                $exception: '$unexpected',
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to verify the existence of a citation.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function attempts to retrieve a document citation from the repository for
+     * the specified name.
+     * 
+     * @param {String} name The unique name for the document citation being fetched.
+     * @returns {Catalog} A catalog containing the document citation or <code>undefined</code>
+     * if it doesn't exist.
+     */
+    this.fetchCitation = async function(name) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$fetchCitation', '$name', name, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // fetch the citation
+            const citation = await readComponent(configuration.citationBucket, name, debug);
+
+            return citation;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$fetchCitation',
+                $exception: '$unexpected',
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to fetch a citation.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function associates a new name with the specified document citation in
+     * the repository.
+     * 
+     * @param {String} name The unique name for the specified document citation.
+     * @param {Catalog} citation A catalog containing the document citation.
+     */
+    this.createCitation = async function(name, citation) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$createCitation', '$name', name, [
+                    '/javascript/String'
+                ]);
+                validator.validateType('/bali/repositories/S3Repository', '$createCitation', '$citation', citation, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+
+            // make sure the citation doesn't already exist
+            if (await componentExists(configuration.citationBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
                     $procedure: '$createCitation',
-                    $exception: '$fileExists',
-                    $url: this.getURL(),
-                    $file: bali.text(filename),
-                    $text: bali.text('The file to be written already exists.')
+                    $exception: '$citationExists',
+                    $name: name,
+                    $text: 'The citation to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-            citation = citation + EOL;  // add POSIX compliant <EOL>
-            await putObject(configuration.citationBucket, filename, citation);
-        },
 
-        /**
-         * This function checks to see whether or not a draft document is associated with the
-         * specified identifier.
-         * 
-         * @param {String} draftId The unique identifier (including version number) for
-         * the draft document being checked.
-         * @returns {Boolean} Whether or not the draft document exists.
-         */
-        draftExists: async function(draftId) {
-            const filename = draftId + '.bali';
-            const exists = await doesExist(configuration.draftBucket, filename);
-            return exists;
-        },
+            // create the new citation
+            await writeComponent(configuration.citationBucket, name, citation, debug);
 
-        /**
-         * This function attempts to retrieve the specified draft document from the repository.
-         * 
-         * @param {String} draftId The unique identifier (including version number) for
-         * the draft document being fetched.
-         * @returns {String} The canonical source string for the draft document, or
-         * <code>undefined</code> if it doesn't exist.
-         */
-        fetchDraft: async function(draftId) {
-            var draft;
-            const filename = draftId + '.bali';
-            const exists = await doesExist(configuration.draftBucket, filename);
-            if (exists) {
-                draft = await getObject(configuration.draftBucket, filename);
-                draft = draft.toString().slice(0, -1);  // remove POSIX compliant <EOL>
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$createCitation',
+                $exception: '$unexpected',
+                $name: name,
+                $citation: citation,
+                $text: 'An unexpected error occurred while attempting to create a citation.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function checks to see whether or not a draft document is associated with the
+     * specified identifier.
+     * 
+     * @param {String} draftId The unique identifier (including version number) for
+     * the draft document being checked.
+     * @returns {Boolean} Whether or not the draft document exists.
+     */
+    this.draftExists = async function(draftId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$draftExists', '$draftId', draftId, [
+                    '/javascript/String'
+                ]);
             }
+
+            // check for existence
+            const name = drafts + draftId + '.bali';
+            const exists = await componentExists(configuration.draftBucket, name, debug);
+
+            return exists;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$draftExists',
+                $exception: '$unexpected',
+                $draftId: draftId,
+                $text: 'An unexpected error occurred while attempting to verify the existence of a draft.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function attempts to retrieve the specified draft document from the repository.
+     * 
+     * @param {String} draftId The unique identifier (including version number) for
+     * the draft document being fetched.
+     * @returns {Catalog} A catalog containing the draft or <code>undefined</code>
+     * if it doesn't exist.
+     */
+    this.fetchDraft = async function(draftId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$fetchDraft', '$draftId', draftId, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // fetch the draft document
+            const name = drafts + draftId + '.bali';
+            const draft = await readComponent(configuration.draftBucket, name, debug);
+
             return draft;
-        },
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$fetchDraft',
+                $exception: '$unexpected',
+                $draftId: draftId,
+                $text: 'An unexpected error occurred while attempting to fetch a draft.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
 
-        /**
-         * This function saves a draft document in the repository.
-         * 
-         * @param {String} draftId The unique identifier (including version number) for
-         * the draft document being saved.
-         * @param {String} draft The canonical source string for the draft document.
-         */
-        saveDraft: async function(draftId, draft) {
-            const filename = draftId + '.bali';
-            const document = draft + EOL;  // add POSIX compliant <EOL>
-            await putObject(configuration.draftBucket, filename, document);
-        },
-
-        /**
-         * This function attempts to delete the specified draft document from the repository.
-         * 
-         * @param {String} draftId The unique identifier (including version number) for
-         * the draft document being deleted.
-         */
-        deleteDraft: async function(draftId) {
-            const filename = draftId + '.bali';
-            const exists = await doesExist(configuration.draftBucket, filename);
-            if (exists) {
-                await deleteObject(configuration.draftBucket, filename);
+    /**
+     * This function saves a draft document in the repository.
+     * 
+     * @param {String} draftId The unique identifier (including version number) for
+     * the draft document being saved.
+     * @param {Catalog} draft A catalog containing the draft document.
+     */
+    this.saveDraft = async function(draftId, draft) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$saveDraft', '$draftId', draftId, [
+                    '/javascript/String'
+                ]);
+                validator.validateType('/bali/repositories/S3Repository', '$saveDraft', '$draft', draft, [
+                    '/bali/collections/Catalog'
+                ]);
             }
-        },
 
-        /**
-         * This function checks to see whether or not a document is associated with the
-         * specified identifier.
-         * 
-         * @param {String} documentId The unique identifier (including version number) for
-         * the document being checked.
-         * @returns {Boolean} Whether or not the document exists.
-         */
-        documentExists: async function(documentId) {
-            const filename = documentId + '.bali';
-            const exists = await doesExist(configuration.documentBucket, filename);
+            // save the draft document
+            const name = drafts + draftId + '.bali';
+            await writeComponent(configuration.draftBucket, name, draft, debug);
+
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$saveDraft',
+                $exception: '$unexpected',
+                $draftId: draftId,
+                $draft: draft,
+                $text: 'An unexpected error occurred while attempting to save a draft.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function attempts to delete the specified draft document from the repository.
+     * 
+     * @param {String} draftId The unique identifier (including version number) for
+     * the draft document being deleted.
+     */
+    this.deleteDraft = async function(draftId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$deleteDraft', '$draftId', draftId, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // delete the draft document
+            const name = drafts + draftId + '.bali';
+            await deleteComponent(configuration.draftBucket, name, debug);
+
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$deleteDraft',
+                $exception: '$unexpected',
+                $draftId: draftId,
+                $text: 'An unexpected error occurred while attempting to delete a draft.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function checks to see whether or not a document is associated with the
+     * specified identifier.
+     * 
+     * @param {String} documentId The unique identifier (including version number) for
+     * the document being checked.
+     * @returns {Boolean} Whether or not the document exists.
+     */
+    this.documentExists = async function(documentId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$documentExists', '$documentId', documentId, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // check the existence
+            const name = documents + documentId + '.bali';
+            const exists = await componentExists(configuration.documentBucket, name, debug);
+
             return exists;
-        },
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$documentExists',
+                $exception: '$unexpected',
+                $documentId: documentId,
+                $text: 'An unexpected error occurred while attempting to verify the existence of a document.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
 
-        /**
-         * This function attempts to retrieve the specified document from the repository.
-         * 
-         * @param {String} documentId The unique identifier (including version number) for
-         * the document being fetched.
-         * @returns {String} The canonical source string for the document, or
-         * <code>undefined</code> if it doesn't exist.
-         */
-        fetchDocument: async function(documentId) {
-            var document;
-            const filename = documentId + '.bali';
-            const exists = await doesExist(configuration.documentBucket, filename);
-            if (exists) {
-                document = await getObject(configuration.documentBucket, filename);
-                document = document.toString().slice(0, -1);  // remove POSIX compliant <EOL>
+    /**
+     * This function attempts to retrieve the specified document from the repository.
+     * 
+     * @param {String} documentId The unique identifier (including version number) for
+     * the document being fetched.
+     * @returns {Catalog} A catalog containing the document or <code>undefined</code>
+     * if it doesn't exist.
+     */
+    this.fetchDocument = async function(documentId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$fetchDocument', '$documentId', documentId, [
+                    '/javascript/String'
+                ]);
             }
-            return document;
-        },
 
-        /**
-         * This function creates a new document in the repository.
-         * 
-         * @param {String} documentId The unique identifier (including version number) for
-         * the document being created.
-         * @param {String} document The canonical source string for the document.
-         */
-        createDocument: async function(documentId, document) {
-            const filename = documentId + '.bali';
-            const exists = await doesExist(configuration.documentBucket, filename);
-            if (exists) {
+            // fetch the document
+            const name = documents + documentId + '.bali';
+            const document = await readComponent(configuration.documentBucket, name, debug);
+
+            return document;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$fetchDocument',
+                $exception: '$unexpected',
+                $documentId: documentId,
+                $text: 'An unexpected error occurred while attempting to fetch a document.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function creates a new document in the repository.
+     * 
+     * @param {String} documentId The unique identifier (including version number) for
+     * the document being created.
+     * @param {Catalog} document A catalog containing the document.
+     */
+    this.createDocument = async function(documentId, document) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$createDocument', '$documentId', documentId, [
+                    '/javascript/String'
+                ]);
+                validator.validateType('/bali/repositories/S3Repository', '$createDocument', '$document', document, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+
+            // make sure the document doesn't already exist
+            const name = documents + documentId + '.bali';
+            if (await componentExists(configuration.documentBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
                     $procedure: '$createDocument',
                     $exception: '$fileExists',
-                    $url: this.getURL(),
-                    $file: bali.text(filename),
-                    $text: bali.text('The file to be written already exists.')
+                    $name: name,
+                    $text: 'The document to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-            document = document + EOL;  // add POSIX compliant <EOL>
-            await putObject(configuration.documentBucket, filename, document);
-        },
 
-        /**
-         * This function adds a new message onto the specified queue in the repository.
-         * 
-         * @param {String} queueId The unique identifier for the queue.
-         * @param {String} message The canonical source string for the message.
-         */
-        queueMessage: async function(queueId, message) {
-            const messageId = bali.tag().getValue();
-            const filename = queueId + '/' + messageId + '.bali';
-            const exists = await doesExist(configuration.queueBucket, filename);
-            if (exists) {
+            // create the new document
+            await writeComponent(configuration.documentBucket, name, document, debug);
+
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$createDocument',
+                $exception: '$unexpected',
+                $documentId: documentId,
+                $document: document,
+                $text: 'An unexpected error occurred while attempting to create a document.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function checks to see whether or not a type is associated with the
+     * specified identifier.
+     * 
+     * @param {String} typeId The unique identifier (including version number) for
+     * the type being checked.
+     * @returns {Boolean} Whether or not the type exists.
+     */
+    this.typeExists = async function(typeId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$typeExists', '$typeId', typeId, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // check the existence
+            const name = types + typeId + '.bali';
+            const exists = await componentExists(configuration.typeBucket, name, debug);
+
+            return exists;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$typeExists',
+                $exception: '$unexpected',
+                $typeId: typeId,
+                $text: 'An unexpected error occurred while attempting to verify the existence of a type.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function attempts to retrieve the specified type from the repository.
+     * 
+     * @param {String} typeId The unique identifier (including version number) for
+     * the type being fetched.
+     * @returns {Catalog} A catalog containing the type or <code>undefined</code>
+     * if it doesn't exist.
+     */
+    this.fetchType = async function(typeId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$fetchType', '$typeId', typeId, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // fetch the type
+            const name = types + typeId + '.bali';
+            const type = await readComponent(configuration.typeBucket, name, debug);
+
+            return type;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$fetchType',
+                $exception: '$unexpected',
+                $typeId: typeId,
+                $text: 'An unexpected error occurred while attempting to fetch a type.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function creates a new type in the repository.
+     * 
+     * @param {String} typeId The unique identifier (including version number) for
+     * the type being created.
+     * @param {Catalog} type A catalog containing the type.
+     */
+    this.createType = async function(typeId, type) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$createType', '$typeId', typeId, [
+                    '/javascript/String'
+                ]);
+                validator.validateType('/bali/repositories/S3Repository', '$createType', '$type', type, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+
+            // make sure the type doesn't already exist
+            const name = types + typeId + '.bali';
+            if (await componentExists(configuration.typeBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
-                    $procedure: '$queueMessage',
-                    $exception: '$messageExists',
-                    $message: bali.text(filename),
-                    $text: bali.text('The message to be written already exists.')
+                    $procedure: '$createType',
+                    $exception: '$fileExists',
+                    $name: name,
+                    $text: 'The type to be created already exists.'
                 });
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-            const document = message + EOL;  // add POSIX compliant <EOL>
-            await putObject(configuration.queueBucket, filename, document);
-        },
 
-        /**
-         * This function removes a message (at random) from the specified queue in the repository.
-         * 
-         * @param {String} queueId The unique identifier for the queue.
-         * @returns {String} The canonical source string for the message.
-         */
-        dequeueMessage: async function(queueId) {
+            // create the new type
+            await writeComponent(configuration.typeBucket, name, type, debug);
+
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$createType',
+                $exception: '$unexpected',
+                $typeId: typeId,
+                $type: type,
+                $text: 'An unexpected error occurred while attempting to create a type.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function adds a new message onto the specified queue in the repository.
+     * 
+     * @param {String} queueId The unique identifier for the queue.
+     * @param {Catalog} message A catalog containing the message.
+     */
+    this.queueMessage = async function(queueId, message) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$queueMessage', '$queueId', queueId, [
+                    '/javascript/String'
+                ]);
+                validator.validateType('/bali/repositories/S3Repository', '$queueMessage', '$message', message, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+
+            // place the new message on the queue
+            const queue = queues + queueId + '/';
+            const messageId = bali.tag().getValue();
+            const name = queue + messageId + '.bali';
+            await writeComponent(configuration.queueBucket, name, message, debug);
+
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$queueMessage',
+                $exception: '$unexpected',
+                $queueId: queueId,
+                $message: message,
+                $text: 'An unexpected error occurred while attempting to queue a message.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This function removes a message (at random) from the specified queue in the repository.
+     * 
+     * @param {String} queueId The unique identifier for the queue.
+     * @returns {Catalog} A catalog containing the message or <code>undefined</code>
+     * if it doesn't exist.
+     */
+    this.dequeueMessage = async function(queueId) {
+        try {
+            // validate the arguments
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/S3Repository', '$dequeueMessage', '$queueId', queueId, [
+                    '/javascript/String'
+                ]);
+            }
+
+            // remove a message from the queue
             var message;
             while (true) {
-                const messages = (await listObjects(configuration.queueBucket, queueId));
-                if (messages && messages.length) {
-                    // select a message a random since a distributed queue cannot guarantee FIFO
-                    const count = messages.length;
+                const messages = await listDirectory(configuration.queueBucket, queueId, debug);
+                const count = messages.length;
+                if (count) {
+                    // select a message at random since a distributed queue cannot guarantee FIFO
                     const generator = bali.generator();
                     const index = generator.generateIndex(count) - 1;  // convert to zero based indexing
-                    const filename = messages[index].Key;
-                    message = await getObject(configuration.queueBucket, filename);
-                    message = message.toString().slice(0, -1);  // remove POSIX compliant <EOL>
+                    const name = messages[index];
+                    message = await readComponent(configuration.queueBucket, name, debug);
                     try {
-                        await deleteObject(configuration.queueBucket, filename);
+                        await deleteComponent(configuration.queueBucket, name, debug);
                         break; // we got there first
                     } catch (exception) {
                         // another process got there first
@@ -288,14 +680,203 @@ exports.repository = function(configuration, debug) {
                     break;  // no more messages
                 }
             }
-            return message;
-        }
 
+            return message;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$dequeueMessage',
+                $exception: '$unexpected',
+                $queueId: queueId,
+                $text: 'An unexpected error occurred while attempting to dequeue a message.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
     };
+
+    return this;
 };
+S3Repository.prototype.constructor = S3Repository;
+exports.S3Repository = S3Repository;
 
 
 // PRIVATE FUNCTIONS
+
+/**
+ * This function returns a list of the names of the components contained in the specified
+ * directory.
+ * 
+ * @param {String} bucket The name of the s3 bucket.
+ * @param {String} directory The directory to be listed.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {Array} An array containing the names of the components in the directory.
+ */
+const listDirectory = async function(bucket, directory, debug) {
+    try {
+        const components = await listObjects(bucket, directory);
+        return components;
+    } catch (cause) {
+        const exception = bali.exception({
+            $module: '/bali/repositories/S3Repository',
+            $procedure: '$listDirectory',
+            $exception: '$unexpected',
+            $directory: directory,
+            $text: 'An unexpected error occurred while attempting to list a directory.'
+        }, cause);
+        if (debug > 0) console.error(exception.toString());
+        throw exception;
+    }
+};
+
+
+/**
+ * This function determines whether or not the specified component exists.
+ * 
+ * @param {String} bucket The name of the s3 bucket.
+ * @param {String} name The name of the component.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {Boolean} Whether or not the component exists.
+ */
+const componentExists = async function(bucket, name, debug) {
+    try {
+        await doesExist(bucket, name);
+        // the component exists
+        return true;
+    } catch (cause) {
+        const exception = bali.exception({
+            $module: '/bali/repositories/S3Repository',
+            $procedure: '$componentExists',
+            $exception: '$unexpected',
+            $name: name,
+            $text: 'An unexpected error occurred while attempting to look for a component.'
+        }, cause);
+        if (debug > 0) console.error(exception.toString());
+        throw exception;
+    }
+};
+
+
+/**
+ * This function returns the specified component, or as <code>undefined</code> if it does
+ * not exist.
+ * 
+ * @param {String} bucket The name of the s3 bucket.
+ * @param {String} name The name of the component to be read.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {Component} The component.
+ */
+const readComponent = async function(bucket, name, debug) {
+    try {
+        var component;
+        if (await doesExist(bucket, name)) {
+            const source = await getObject(bucket, name);
+            component = bali.component(source, debug);
+        }
+        return component;
+    } catch (cause) {
+        const exception = bali.exception({
+            $module: '/bali/repositories/S3Repository',
+            $procedure: '$readComponent',
+            $exception: '$unexpected',
+            $name: name,
+            $text: 'An unexpected error occurred while attempting to read a component from a file.'
+        }, cause);
+        if (debug > 0) console.error(exception.toString());
+        throw exception;
+    }
+};
+
+
+/**
+ * This function stores the specified component in a file with the specified name.
+ * 
+ * @param {String} bucket The name of the s3 bucket.
+ * @param {String} name The name of the component.
+ * @param {Component} component The component to be stored.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ */
+const writeComponent = async function(bucket, name, component, debug) {
+    try {
+        const source = component.toString() + EOL;  // add POSIX compliant <EOL>
+        await putObject(bucket, name, source);
+    } catch (cause) {
+        const exception = bali.exception({
+            $module: '/bali/repositories/S3Repository',
+            $procedure: '$writeComponent',
+            $exception: '$unexpected',
+            $name: name,
+            $component: component,
+            $text: 'An unexpected error occurred while attempting to write a component to a file.'
+        }, cause);
+        if (debug > 0) console.error(exception.toString());
+        throw exception;
+    }
+};
+
+
+/**
+ * This function deletes the specified component if it exists.
+ * 
+ * @param {String} bucket The name of the s3 bucket.
+ * @param {String} name The name of the component.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ */
+const deleteComponent = async function(bucket, name, debug) {
+    try {
+        if (await doesExist(bucket, name)) {
+            await deleteObject(bucket, name);
+        }
+    } catch (cause) {
+        const exception = bali.exception({
+            $module: '/bali/repositories/S3Repository',
+            $procedure: '$deleteComponent',
+            $exception: '$unexpected',
+            $name: name,
+            $text: 'An unexpected error occurred while attempting to delete a component.'
+        }, cause);
+        if (debug > 0) console.error(exception.toString());
+        throw exception;
+    }
+};
+
+
+// AWS S3 PROMISES
 
 const listObjects = async function(bucket, prefix) {
     return new Promise(function(resolve, reject) {
