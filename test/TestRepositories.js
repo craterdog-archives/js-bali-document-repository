@@ -51,12 +51,12 @@ describe('Bali Nebula™ Document Repository', function() {
             $price: '1.25($currency: $USD)',
             $tax: '1.07($currency: $USD)',
             $total: '13.57($currency: $USD)'
-        }, bali.parameters({
+        }, {
             $tag: bali.tag(),
             $version: bali.version(),
             $permissions: '/bali/permissions/public/v1',
             $previous: bali.pattern.NONE
-        }));
+        });
 
         describe('Test ' + key, function() {
             var tag;

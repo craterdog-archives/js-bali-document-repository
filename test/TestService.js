@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 0;  // [0..3]
+const debug = 2;  // [0..3]
 const directory = 'test/config/';
 const bali = require('bali-component-framework').api();
 const account = bali.tag();

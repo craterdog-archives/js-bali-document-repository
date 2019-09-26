@@ -732,14 +732,13 @@ const generateCredentials = async function(notary, debug) {
     debug = debug || false;
     try {
         const citation = await notary.getCitation();
-        const parameters = bali.parameters({
+        const document = citation.duplicate({
             $type: '/bali/notary/Citation/v1',
             $tag: bali.tag(),
             $version: bali.version(),
             $permissions: '/bali/permissions/private/v1',
             $previous: bali.pattern.NONE
         });
-        const document = citation.duplicate(parameters);
         const credentials = await notary.notarizeDocument(document);
         return credentials;
     } catch (cause) {
