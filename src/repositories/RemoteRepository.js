@@ -28,7 +28,7 @@ const EOL = '\n';
 /**
  * This function creates a new instance of a S3 document repository.  If the
  * repository does not yet exist it is created.
- * 
+ *
  * @param {DigitalNotary} notary The digital notary to be used to notarize the request credentials.
  * @param {String} url A string containing the URL for the remote document repository.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
@@ -65,7 +65,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function returns a string providing attributes about this repository.
-     * 
+     *
      * @returns {String} A string providing attributes about this repository.
      */
     this.toString = function() {
@@ -78,7 +78,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function returns a reference to this document repository.
-     * 
+     *
      * @returns {Reference} A reference to this document repository.
      */
     this.getURL = function() {
@@ -99,7 +99,7 @@ const RemoteRepository = function(notary, url, debug) {
     /**
      * This function checks to see whether or not a document citation is associated
      * with the specified name.
-     * 
+     *
      * @param {String} name The unique name for the document citation being checked.
      * @returns {Boolean} Whether or not the document citation exists.
      */
@@ -138,7 +138,7 @@ const RemoteRepository = function(notary, url, debug) {
     /**
      * This function attempts to retrieve a document citation from the repository for
      * the specified name.
-     * 
+     *
      * @param {String} name The unique name for the document citation being fetched.
      * @returns {Catalog} A catalog containing the document citation or <code>undefined</code>
      * if it doesn't exist.
@@ -178,7 +178,7 @@ const RemoteRepository = function(notary, url, debug) {
     /**
      * This function associates a new name with the specified document citation in
      * the repository.
-     * 
+     *
      * @param {String} name The unique name for the specified document citation.
      * @param {Catalog} citation A catalog containing the document citation.
      */
@@ -220,7 +220,7 @@ const RemoteRepository = function(notary, url, debug) {
     /**
      * This function checks to see whether or not a draft document is associated with the
      * specified identifier.
-     * 
+     *
      * @param {String} draftId The unique identifier (including version number) for
      * the draft document being checked.
      * @returns {Boolean} Whether or not the draft document exists.
@@ -259,7 +259,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function attempts to retrieve the specified draft document from the repository.
-     * 
+     *
      * @param {String} draftId The unique identifier (including version number) for
      * the draft document being fetched.
      * @returns {Catalog} A catalog containing the draft or <code>undefined</code>
@@ -299,7 +299,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function saves a draft document in the repository.
-     * 
+     *
      * @param {String} draftId The unique identifier (including version number) for
      * the draft document being saved.
      * @param {Catalog} draft A catalog containing the draft document.
@@ -341,7 +341,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function attempts to delete the specified draft document from the repository.
-     * 
+     *
      * @param {String} draftId The unique identifier (including version number) for
      * the draft document being deleted.
      */
@@ -379,7 +379,7 @@ const RemoteRepository = function(notary, url, debug) {
     /**
      * This function checks to see whether or not a document is associated with the
      * specified identifier.
-     * 
+     *
      * @param {String} documentId The unique identifier (including version number) for
      * the document being checked.
      * @returns {Boolean} Whether or not the document exists.
@@ -418,7 +418,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function attempts to retrieve the specified document from the repository.
-     * 
+     *
      * @param {String} documentId The unique identifier (including version number) for
      * the document being fetched.
      * @returns {Catalog} A catalog containing the document or <code>undefined</code>
@@ -458,7 +458,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function creates a new document in the repository.
-     * 
+     *
      * @param {String} documentId The unique identifier (including version number) for
      * the document being created.
      * @param {Catalog} document A catalog containing the document.
@@ -501,7 +501,7 @@ const RemoteRepository = function(notary, url, debug) {
     /**
      * This function checks to see whether or not a type is associated with the
      * specified identifier.
-     * 
+     *
      * @param {String} typeId The unique identifier (including version number) for
      * the type being checked.
      * @returns {Boolean} Whether or not the type exists.
@@ -539,7 +539,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function attempts to retrieve the specified type from the repository.
-     * 
+     *
      * @param {String} typeId The unique identifier (including version number) for
      * the type being fetched.
      * @returns {Catalog} A catalog containing the type or <code>undefined</code>
@@ -578,7 +578,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function creates a new type in the repository.
-     * 
+     *
      * @param {String} typeId The unique identifier (including version number) for
      * the type being created.
      * @param {Catalog} type A catalog containing the type.
@@ -632,7 +632,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function adds a new message onto the specified queue in the repository.
-     * 
+     *
      * @param {String} queueId The unique identifier for the queue.
      * @param {Catalog} message A catalog containing the message.
      */
@@ -673,7 +673,7 @@ const RemoteRepository = function(notary, url, debug) {
 
     /**
      * This function removes a message (at random) from the specified queue in the repository.
-     * 
+     *
      * @param {String} queueId The unique identifier for the queue.
      * @returns {Catalog} A catalog containing the message or <code>undefined</code>
      * if it doesn't exist.
@@ -722,7 +722,7 @@ exports.RemoteRepository = RemoteRepository;
  * This function generates a set of signed credentials for the client making a request on
  * the cloud repository. The credentials can be used by the cloud repository to authenticate
  * the client and verify their permissions.
- * 
+ *
  * @param {Object} notary An object that implements the API for the digital notary.
  * @param {Boolean} debug An optional flag that determines whether or not exceptions
  * will be logged to the error console.
@@ -732,13 +732,12 @@ const generateCredentials = async function(notary, debug) {
     debug = debug || false;
     try {
         const citation = await notary.getCitation();
-        const document = citation.duplicate({
-            $type: '/bali/notary/Citation/v1',
-            $tag: bali.tag(),
-            $version: bali.version(),
-            $permissions: '/bali/permissions/private/v1',
-            $previous: bali.pattern.NONE
-        });
+        const document = citation.duplicate();
+        document.setParameter('$type', '/bali/notary/Citation/v1');
+        document.setParameter('$tag', bali.tag());
+        document.setParameter('$version', bali.version());
+        document.setParameter('$permissions', '/bali/permissions/private/v1');
+        document.setParameter('$previous', bali.pattern.NONE);
         const credentials = await notary.notarizeDocument(document);
         return credentials;
     } catch (cause) {
@@ -758,8 +757,8 @@ const generateCredentials = async function(notary, debug) {
  * This function sends a RESTful web request to the web service specified by the url,
  * method, and resource name. If a document is included it is sent as the body of the
  * request. The result that is returned by the web service is returned from this function.
- * 
- * @param {Catalog} credentials The signed credentials for the client making the request. 
+ *
+ * @param {Catalog} credentials The signed credentials for the client making the request.
  * @param {String} functionName The name of the API function sending the request.
  * @param {String} url A string containing the URL of the web service.
  * @param {String} method The HTTP method type of the request.
@@ -848,7 +847,7 @@ const sendRequest = async function(credentials, functionName, url, method, name,
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
-        } 
+        }
         // the request could not be sent
         const exception = bali.exception({
             $module: '/bali/repositories/RemoteRepository',

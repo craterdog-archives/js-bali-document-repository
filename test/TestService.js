@@ -8,9 +8,9 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 2;  // [0..3]
+const debug = 0;  // [0..3]
 const directory = 'test/config/';
-const bali = require('bali-component-framework').api();
+const bali = require('bali-component-framework').api(debug);
 const account = bali.tag();
 const securityModule = require('bali-digital-notary').ssm(directory, debug);
 const notary = require('bali-digital-notary').notary(securityModule, account, directory, debug);

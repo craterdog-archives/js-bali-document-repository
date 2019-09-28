@@ -13,11 +13,11 @@ const directory = 'test/config/';
 const mocha = require('mocha');
 const assert = require('chai').assert;
 const expect = require('chai').expect;
-const bali = require('bali-component-framework').api();
+const bali = require('bali-component-framework').api(debug);
 const account = bali.tag();
 const api = require('bali-digital-notary');
-const securityModule = api.ssm(directory);
-const notary = api.notary(securityModule, account, directory);
+const securityModule = api.ssm(directory, debug);
+const notary = api.notary(securityModule, account, directory, debug);
 const url = 'http://localhost:3000';
 const Repositories = require('../index');
 
