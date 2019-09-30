@@ -65,7 +65,7 @@ describe('Bali Nebula™ Document Repository', function() {
     
             it('should create a self-signed certificate', async function() {
                 certificate = await notary.generateKey();
-                certificate = await notary.notarizeDocument(certificate);
+                certificate = await notary.notarizeComponent(certificate);
                 citation = await notary.activateKey(certificate);
                 tag = citation.getValue('$tag');
                 const certificateId = extractId(certificate);
@@ -92,7 +92,7 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a draft document lifecycle', async function() {
-                const draft = await notary.notarizeDocument(transaction);
+                const draft = await notary.notarizeComponent(transaction);
                 const draftId = extractId(draft);
     
                 // create a new draft in the repository
@@ -123,7 +123,7 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a committed document lifecycle', async function() {
-                const document = await notary.notarizeDocument(transaction);
+                const document = await notary.notarizeComponent(transaction);
                 const documentId = extractId(document);
     
                 // create a new document in the repository
@@ -164,7 +164,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(none).to.not.exist;
     
                 // queue up some messages
-                var message = await notary.notarizeDocument(transaction);
+                var message = await notary.notarizeComponent(transaction);
                 await repository.queueMessage(queueId, message);
                 await repository.queueMessage(queueId, message);
                 await repository.queueMessage(queueId, message);
