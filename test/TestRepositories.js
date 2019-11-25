@@ -58,6 +58,26 @@ describe('Bali Nebula™ Document Repository', function() {
             $previous: bali.pattern.NONE
         });
 
+        const code = bali.catalog({
+            $source: bali.catalog({
+                $protocol: notary.getProtocols()[0],
+                $timestamp: bali.moment(),
+                $tag: bali.tag(),
+                $version: bali.version(),
+                $digest: bali.component("'Z41S87YHGGV3BW2WHW72NMN3XQ1G146B1J4QGZF3NBTY1AGVDXHF6KK7YBNB89BZL4GDY2F457LBC7P0BR0T9TNJW4MKYYLC0VV6FC8'")
+            }, {
+                $type: bali.component('/bali/notary/Citation/v1')
+            }),
+            $literals: [],
+            $constants: {},
+            $procedures: {}
+        }, {
+            $tag: bali.tag(),
+            $version: bali.version(),
+            $permissions: '/bali/permissions/public/v1',
+            $previous: bali.pattern.NONE
+        });
+
         describe('Test ' + key, function() {
             var tag;
             var certificate;
@@ -65,7 +85,7 @@ describe('Bali Nebula™ Document Repository', function() {
     
             it('should create a self-signed certificate', async function() {
                 certificate = await notary.generateKey();
-                certificate = await notary.notarizeComponent(certificate);
+                certificate = await notary.notarizeDocument(certificate);
                 citation = await notary.activateKey(certificate);
                 tag = citation.getValue('$tag');
                 const certificateId = extractId(certificate);
@@ -92,7 +112,7 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a draft document lifecycle', async function() {
-                const draft = await notary.notarizeComponent(transaction);
+                const draft = await notary.notarizeDocument(transaction);
                 const draftId = extractId(draft);
     
                 // create a new draft in the repository
@@ -123,7 +143,7 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a committed document lifecycle', async function() {
-                const document = await notary.notarizeComponent(transaction);
+                const document = await notary.notarizeDocument(transaction);
                 const documentId = extractId(document);
     
                 // create a new document in the repository
@@ -156,7 +176,7 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a committed type lifecycle', async function() {
-                const type = await notary.notarizeComponent(transaction);
+                const type = await notary.notarizeDocument(code);
                 const typeId = extractId(type);
     
                 // create a new type in the repository
@@ -197,7 +217,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(none).to.not.exist;
     
                 // queue up some messages
-                var message = await notary.notarizeComponent(transaction);
+                var message = await notary.notarizeDocument(transaction);
                 await repository.queueMessage(queueId, message);
                 await repository.queueMessage(queueId, message);
                 await repository.queueMessage(queueId, message);
@@ -231,7 +251,7 @@ describe('Bali Nebula™ Document Repository', function() {
 
 const extractId = function(catalog) {
     var tag, version;
-    const component = catalog.getValue('$component');
+    const component = catalog.getValue('$document');
     if (component) {
         tag = component.getParameter('$tag');
         version = component.getParameter('$version');

@@ -702,7 +702,7 @@ const validateCitation = async function(notary, repository, citation, debug) {
 const validateDocument = async function(notary, repository, document, debug) {
     try {
         // make sure it really is a notarized document
-        const component = document.getValue('$component');
+        const component = document.getValue('$document');
         const certificateCitation = document.getValue('$certificate');
         const signature = document.getValue('$signature');
         if (!component || !certificateCitation || !signature) {
@@ -728,7 +728,7 @@ const validateDocument = async function(notary, repository, document, debug) {
         var certificate;
         if (!certificateCitation.isEqualTo(bali.pattern.NONE)) {
             certificate = await validateCitation(notary, repository, certificateCitation, debug);
-            certificate = certificate.getValue('$component');
+            certificate = certificate.getValue('$document');
         } else {
             certificate = component;  // the document is a self-signed certificate
         }

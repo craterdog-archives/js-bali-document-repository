@@ -722,13 +722,13 @@ const generateCredentials = async function(notary, debug) {
     debug = debug || false;
     try {
         const citation = await notary.getCitation();
-        const copy = citation.duplicate();
-        copy.setParameter('$type', '/bali/notary/Citation/v1');
-        copy.setParameter('$tag', bali.tag());
-        copy.setParameter('$version', bali.version());
-        copy.setParameter('$permissions', '/bali/permissions/private/v1');
-        copy.setParameter('$previous', bali.pattern.NONE);
-        const credentials = await notary.notarizeComponent(copy);
+        const document = citation.duplicate();
+        document.setParameter('$type', '/bali/notary/Citation/v1');
+        document.setParameter('$tag', bali.tag());
+        document.setParameter('$version', bali.version());
+        document.setParameter('$permissions', '/bali/permissions/private/v1');
+        document.setParameter('$previous', bali.pattern.NONE);
+        const credentials = await notary.notarizeDocument(document);
         return credentials;
     } catch (cause) {
         const exception = bali.exception({
