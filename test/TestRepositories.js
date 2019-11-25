@@ -155,6 +155,39 @@ describe('Bali Nebula™ Document Repository', function() {
     
             });
     
+            it('should perform a committed type lifecycle', async function() {
+                const type = await notary.notarizeComponent(transaction);
+                const typeId = extractId(type);
+    
+                // create a new type in the repository
+                await repository.createType(typeId, type);
+    
+                // make sure the same draft does not exist in the repository
+                var exists = await repository.draftExists(typeId);
+                expect(exists).is.false;
+    
+                // make sure the new type exists in the repository
+                exists = await repository.typeExists(typeId);
+                expect(exists).is.true;
+    
+                // fetch the new type from the repository
+                const result = await repository.fetchType(typeId);
+                expect(type.isEqualTo(result)).is.true;
+    
+                // make sure the new type still exists in the repository
+                exists = await repository.typeExists(typeId);
+                expect(exists).is.true;
+    
+                // attempt to create the same type in the repository
+                try {
+                    await repository.createType(typeId, type);
+                    assert.fail('The attempt to create the same type should have failed.');
+                } catch (error) {
+                    // expected
+                };
+    
+            });
+    
             it('should perform a message queue lifecycle', async function() {
                 const queueId = bali.tag().getValue();
     
@@ -206,7 +239,7 @@ const extractId = function(catalog) {
         tag = catalog.getValue('$tag');
         version = catalog.getValue('$version');
     }
-    const id = tag.getValue() + version;
+    const id = tag.getValue() + '/' + version;
     return id;
 };
 

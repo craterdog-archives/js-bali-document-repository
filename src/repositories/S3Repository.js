@@ -66,7 +66,7 @@ const S3Repository = function(configuration, debug) {
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/S3Repository',
-            $url: this.getURL()
+            $url: this.getURI()
         });
         return catalog.toString();
     };
@@ -76,15 +76,15 @@ const S3Repository = function(configuration, debug) {
      * 
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = function() {
+    this.getURI = function() {
         try {
             return bali.reference(configuration.url);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Repository',
-                $procedure: '$getURL',
+                $procedure: '$getURI',
                 $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
+                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

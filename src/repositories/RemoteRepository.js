@@ -30,7 +30,7 @@ const EOL = '\n';
  * repository does not yet exist it is created.
  *
  * @param {DigitalNotary} notary The digital notary to be used to notarize the request credentials.
- * @param {String} url A string containing the URL for the remote document repository.
+ * @param {String} url A string containing the URI for the remote document repository.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -71,7 +71,7 @@ const RemoteRepository = function(notary, url, debug) {
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/RemoteRepository',
-            $url: this.getURL()
+            $url: this.getURI()
         });
         return catalog.toString();
     };
@@ -81,15 +81,15 @@ const RemoteRepository = function(notary, url, debug) {
      *
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = function() {
+    this.getURI = function() {
         try {
             return bali.reference(url);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$getURL',
+                $procedure: '$getURI',
                 $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
+                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -519,8 +519,9 @@ const RemoteRepository = function(notary, url, debug) {
             }
 
             // check the existence
+            const credentials = await generateCredentials(notary, debug);
             const name = types + typeId;  // prepend the context
-            const exists = await componentExists(configuration.typeBucket, name, debug);
+            const exists = await sendRequest(credentials, '$typeExists', url, 'HEAD', name);
 
             if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
             return exists;
@@ -558,8 +559,9 @@ const RemoteRepository = function(notary, url, debug) {
             }
 
             // fetch the type
+            const credentials = await generateCredentials(notary, debug);
             const name = types + typeId;  // prepend the context
-            const type = await readComponent(configuration.typeBucket, name, debug);
+            const type = await sendRequest(credentials, '$fetchType', url, 'GET', name);
 
             if (debug > 2) console.log('Type: ' + type);
             return type;
@@ -598,22 +600,10 @@ const RemoteRepository = function(notary, url, debug) {
                 ]);
             }
 
-            // make sure the type doesn't already exist
-            const name = types + typeId;  // prepend the context
-            if (await componentExists(configuration.typeBucket, name, debug)) {
-                const exception = bali.exception({
-                    $module: '/bali/repositories/RemoteRepository',
-                    $procedure: '$createType',
-                    $exception: '$typeExists',
-                    $name: name,
-                    $text: 'The type to be created already exists.'
-                });
-                if (debug) console.error(exception.toString());
-                throw exception;
-            }
-
             // create the new type
-            await writeComponent(configuration.typeBucket, name, type, debug);
+            const credentials = await generateCredentials(notary, debug);
+            const name = types + typeId;  // prepend the context
+            await sendRequest(credentials, '$createType', url, 'POST', name, type);
 
             if (debug > 2) console.log('Success.');
         } catch (cause) {
@@ -760,7 +750,7 @@ const generateCredentials = async function(notary, debug) {
  *
  * @param {Catalog} credentials The signed credentials for the client making the request.
  * @param {String} functionName The name of the API function sending the request.
- * @param {String} url A string containing the URL of the web service.
+ * @param {String} url A string containing the URI of the web service.
  * @param {String} method The HTTP method type of the request.
  * @param {String} name The name of the specific resource being acted upon.
  * @param {Catalog} document An optional signed document to be passed to the web service.
@@ -772,10 +762,10 @@ const sendRequest = async function(credentials, functionName, url, method, name,
     debug = debug || false;
 
     const encoded = encodeURI('"' + EOL + credentials + EOL + '"');
-    // setup the request URL and options
-    const fullURL = url + name;
+    // setup the request URI and options
+    const fullURI = url + name;
     const options = {
-        url: fullURL,
+        url: fullURI,
         method: method,
         //timeout: 1000,
         responseType: 'text',

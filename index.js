@@ -71,7 +71,7 @@ exports.local = function(directory, debug) {
  * This function initializes a remote document repository for the Bali Nebula™.
  * 
  * @param {Object} notary An object that implements the digital notary API.
- * @param {Reference} url A reference that defines the URL for the remote repository.
+ * @param {Reference} url A reference that defines the URI for the remote repository.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>

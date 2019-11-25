@@ -63,7 +63,7 @@ const ValidatedRepository = function(notary, repository, debug) {
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/ValidatedRepository',
-            $url: this.getURL()
+            $url: this.getURI()
         });
         return catalog.toString();
     };
@@ -73,15 +73,15 @@ const ValidatedRepository = function(notary, repository, debug) {
      * 
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = function() {
+    this.getURI = function() {
         try {
-            return repository.getURL();
+            return repository.getURI();
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedRepository',
-                $procedure: '$getURL',
+                $procedure: '$getURI',
                 $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
+                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -646,7 +646,7 @@ exports.ValidatedRepository = ValidatedRepository;
  */
 const validateCitation = async function(notary, repository, citation, debug) {
     try {
-        const documentId = citation.getValue('$tag').getValue() + citation.getValue('$version');
+        const documentId = citation.getValue('$tag').getValue() + '/' + citation.getValue('$version');
         const document = await repository.fetchDocument(documentId);
         if (!document) {
             const exception = bali.exception({

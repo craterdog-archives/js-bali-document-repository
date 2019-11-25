@@ -9,6 +9,9 @@ echo "Emptying the drafts bucket..."
 echo "Emptying the documents bucket..."
 ./scripts/empty-bucket craterdog-bali-documents-us-west-2
 
+echo "Emptying the types bucket..."
+./scripts/empty-bucket craterdog-bali-types-us-west-2
+
 echo "Emptying the queues bucket..."
 ./scripts/empty-bucket craterdog-bali-queues-us-west-2
 

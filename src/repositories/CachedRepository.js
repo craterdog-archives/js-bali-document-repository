@@ -66,7 +66,7 @@ const CachedRepository = function(repository, debug) {
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/CachedRepository',
-            $url: this.getURL()
+            $url: this.getURI()
         });
         return catalog.toString();
     };
@@ -76,15 +76,15 @@ const CachedRepository = function(repository, debug) {
      * 
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = function() {
+    this.getURI = function() {
         try {
-            return repository.getURL();
+            return repository.getURI();
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedRepository',
-                $procedure: '$getURL',
+                $procedure: '$getURI',
                 $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
+                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

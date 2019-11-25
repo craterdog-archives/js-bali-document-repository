@@ -82,7 +82,7 @@ const LocalRepository = function(directory, debug) {
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/LocalRepository',
-            $url: this.getURL()
+            $url: this.getURI()
         });
         return catalog.toString();
     };
@@ -92,15 +92,15 @@ const LocalRepository = function(directory, debug) {
      * 
      * @returns {Reference} A reference to this document repository.
      */
-    this.getURL = function() {
+    this.getURI = function() {
         try {
             return bali.reference('file:' + directory);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$getURL',
+                $procedure: '$getURI',
                 $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URL for the repository.'
+                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

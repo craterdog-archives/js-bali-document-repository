@@ -27,7 +27,7 @@ const invalidCredentials = async function(request) {
         const encoded = request.headers['nebula-credentials'];
         const credentials = bali.component(decodeURI(encoded).slice(2, -2));  // strip off double quote delimiters
         const citation = credentials.getValue('$component');
-        const certificateId = citation.getValue('$tag').getValue() + citation.getValue('$version');
+        const certificateId = citation.getValue('$tag').getValue() + '/' + citation.getValue('$version');
         const document = (await repository.fetchDocument(certificateId)) || bali.component(request.body);  // may be self-signed
         const certificate = document.getValue('$component');
         const isValid = await notary.validDocument(credentials, certificate);
@@ -760,39 +760,40 @@ const getMessage = async function(request, response) {
 // SERVICE INITIALIZATION
 
 const citationRouter = express.Router();
-citationRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingCitation);
-citationRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postCitation);
-citationRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getCitation);
-citationRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putCitation);
-citationRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteCitation);
+// Note: the leading slash is part of the citation name identifier
+citationRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingCitation);
+citationRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postCitation);
+citationRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getCitation);
+citationRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putCitation);
+citationRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteCitation);
 
 const draftRouter = express.Router();
-draftRouter.head('/:identifier', pingDraft);
-draftRouter.post('/:identifier', postDraft);
-draftRouter.get('/:identifier', getDraft);
-draftRouter.put('/:identifier', putDraft);
-draftRouter.delete('/:identifier', deleteDraft);
+draftRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDraft);
+draftRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDraft);
+draftRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDraft);
+draftRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDraft);
+draftRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDraft);
 
 const documentRouter = express.Router();
-documentRouter.head('/:identifier', pingDocument);
-documentRouter.post('/:identifier', postDocument);
-documentRouter.get('/:identifier', getDocument);
-documentRouter.put('/:identifier', putDocument);
-documentRouter.delete('/:identifier', deleteDocument);
+documentRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDocument);
+documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
+documentRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDocument);
+documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
+documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 
 const typeRouter = express.Router();
-typeRouter.head('/:identifier', pingType);
-typeRouter.post('/:identifier', postType);
-typeRouter.get('/:identifier', getType);
-typeRouter.put('/:identifier', putType);
-typeRouter.delete('/:identifier', deleteType);
+typeRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingType);
+typeRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postType);
+typeRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getType);
+typeRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putType);
+typeRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteType);
 
 const queueRouter = express.Router();
-queueRouter.head('/:identifier', pingQueue);
-queueRouter.post('/:identifier', postQueue);
-queueRouter.get('/:identifier', getMessage);
-queueRouter.put('/:identifier', putMessage);
-queueRouter.delete('/:identifier', deleteQueue);
+queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingQueue);
+queueRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postQueue);
+queueRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getMessage);
+queueRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
+queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteQueue);
 
 const service = express();
 
