@@ -48,7 +48,7 @@ const pingCitation = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -81,7 +81,7 @@ const getCitation = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -122,7 +122,7 @@ const postCitation = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -193,7 +193,7 @@ const pingDraft = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -226,7 +226,7 @@ const getDraft = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -285,7 +285,7 @@ const putDraft = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -320,7 +320,7 @@ const deleteDraft = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -354,7 +354,7 @@ const pingDocument = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -387,7 +387,7 @@ const getDocument = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -429,7 +429,7 @@ const postDocument = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -499,7 +499,7 @@ const pingType = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -532,7 +532,7 @@ const getType = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -574,7 +574,7 @@ const postType = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -698,7 +698,7 @@ const putMessage = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
@@ -726,7 +726,7 @@ const getMessage = async function(request, response) {
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(403, message);
+            response.writeHead(401, message);
             response.end();
             return;
         }
