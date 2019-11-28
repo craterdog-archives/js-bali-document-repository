@@ -51,13 +51,6 @@ const S3Repository = function(configuration, debug) {
         ]);
     }
 
-    // setup the private attributes
-    const citations = 'citations/';
-    const drafts = 'drafts/';
-    const documents = 'documents/';
-    const types = 'types/';
-    const queues = 'queues/';
-
     /**
      * This function returns a string providing attributes about this repository.
      * 
@@ -109,7 +102,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check for existence
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
+            name = name.slice(1);  // prepend the context and remove redundant slash
             const exists = await componentExists(configuration.citationBucket, name, debug);
 
             return exists;
@@ -145,7 +138,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the citation
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
+            name = name.slice(1);  // prepend the context and remove redundant slash
             const citation = await readComponent(configuration.citationBucket, name, debug);
 
             return citation;
@@ -183,7 +176,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // make sure the citation doesn't already exist
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
+            name = name.slice(1);  // prepend the context and remove redundant slash
             if (await componentExists(configuration.citationBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
@@ -232,7 +225,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check for existence
-            const name = drafts + draftId;  // prepend the context
+            const name = draftId;  // prepend the context
             const exists = await componentExists(configuration.draftBucket, name, debug);
 
             return exists;
@@ -268,7 +261,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the draft document
-            const name = drafts + draftId;  // prepend the context
+            const name = draftId;  // prepend the context
             const draft = await readComponent(configuration.draftBucket, name, debug);
 
             return draft;
@@ -306,7 +299,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // save the draft document
-            const name = drafts + draftId;  // prepend the context
+            const name = draftId;  // prepend the context
             await writeComponent(configuration.draftBucket, name, draft, debug);
 
         } catch (cause) {
@@ -340,7 +333,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // delete the draft document
-            const name = drafts + draftId;  // prepend the context
+            const name = draftId;  // prepend the context
             await deleteComponent(configuration.draftBucket, name, debug);
 
         } catch (cause) {
@@ -375,7 +368,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check the existence
-            const name = documents + documentId;  // prepend the context
+            const name = documentId;  // prepend the context
             const exists = await componentExists(configuration.documentBucket, name, debug);
 
             return exists;
@@ -411,7 +404,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the document
-            const name = documents + documentId;  // prepend the context
+            const name = documentId;  // prepend the context
             const document = await readComponent(configuration.documentBucket, name, debug);
 
             return document;
@@ -449,7 +442,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // make sure the document doesn't already exist
-            const name = documents + documentId;  // prepend the context
+            const name = documentId;  // prepend the context
             if (await componentExists(configuration.documentBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
@@ -498,7 +491,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // check the existence
-            const name = types + typeId;  // prepend the context
+            const name = typeId;  // prepend the context
             const exists = await componentExists(configuration.typeBucket, name, debug);
 
             return exists;
@@ -534,7 +527,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // fetch the type
-            const name = types + typeId;  // prepend the context
+            const name = typeId;  // prepend the context
             const type = await readComponent(configuration.typeBucket, name, debug);
 
             return type;
@@ -572,7 +565,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // make sure the type doesn't already exist
-            const name = types + typeId;  // prepend the context
+            const name = typeId;  // prepend the context
             if (await componentExists(configuration.typeBucket, name, debug)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/S3Repository',
@@ -622,7 +615,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // place the new message on the queue
-            const queue = queues + queueId + '/';
+            const queue = queueId + '/';
             const messageId = bali.tag().getValue();
             const name = queue + messageId;  // prepend the context
             await writeComponent(configuration.queueBucket, name, message, debug);
@@ -659,7 +652,7 @@ const S3Repository = function(configuration, debug) {
             }
 
             // remove a message from the queue
-            const queue = queues + queueId + '/';
+            const queue = queueId + '/';
             var message;
             while (true) {
                 const messages = await listDirectory(configuration.queueBucket, queue, debug);

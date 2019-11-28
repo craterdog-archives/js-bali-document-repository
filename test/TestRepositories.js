@@ -18,6 +18,7 @@ const account = bali.tag();
 const api = require('bali-digital-notary');
 const securityModule = api.ssm(directory, debug);
 const notary = api.notary(securityModule, account, directory, debug);
+//const url = 'https://bali-nebula.net/repository/';
 const url = 'http://localhost:3000';
 const Repositories = require('../index');
 
