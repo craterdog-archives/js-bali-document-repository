@@ -24,5 +24,3 @@ Project contributors are always welcome. Create a
 new things to the project. When you are ready to contribute the changes create a subsequent
 ["pull request"](https://help.github.com/articles/about-pull-requests/). Any questions and
 comments can be sent to [craterdog@gmail.com](mailto:craterdog@gmail.com).
-![Logo](docs/images/CraterDogLogo.png)
-
