@@ -251,7 +251,7 @@ describe('Bali Nebula™ Document Repository', function() {
 
 const extractId = function(catalog) {
     var tag, version;
-    const component = catalog.getValue('$document');
+    const component = catalog.getValue('$content');
     if (component) {
         tag = component.getParameter('$tag');
         version = component.getParameter('$version');

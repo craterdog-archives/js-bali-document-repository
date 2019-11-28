@@ -26,10 +26,10 @@ const invalidCredentials = async function(request) {
     try {
         const encoded = request.headers['nebula-credentials'];
         const credentials = bali.component(decodeURI(encoded).slice(2, -2));  // strip off double quote delimiters
-        const citation = credentials.getValue('$document');
+        const citation = credentials.getValue('$content');
         const certificateId = citation.getValue('$tag').getValue() + '/' + citation.getValue('$version');
         const document = (await repository.fetchDocument(certificateId)) || bali.component(request.body);  // may be self-signed
-        const certificate = document.getValue('$document');
+        const certificate = document.getValue('$content');
         const isValid = await notary.validDocument(credentials, certificate);
         return !isValid;
     } catch (cause) {
