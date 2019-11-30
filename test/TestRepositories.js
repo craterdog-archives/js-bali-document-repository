@@ -132,10 +132,17 @@ describe('Bali Nebula™ Document Repository', function() {
                 const result = await repository.fetchDraft(draftId);
                 expect(draft.isEqualTo(result)).is.true;
     
-                // delete the new draft from the repository
+                // update the existing draft in the repository
+                await repository.saveDraft(draftId, draft);
+
+                // make sure the updated draft exists in the repository
+                var exists = await repository.draftExists(draftId);
+                expect(exists).is.true;
+
+                // delete the draft from the repository
                 await repository.deleteDraft(draftId);
     
-                // make sure the new draft no longer exists in the repository
+                // make sure the draft no longer exists in the repository
                 exists = await repository.draftExists(draftId);
                 expect(exists).is.false;
     
