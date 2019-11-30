@@ -168,7 +168,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(exists).is.true;
     
                 // attempt to create the same document in the repository
-                assert.rejects(async function() {
+                await assert.rejects(async function() {
                     await repository.createDocument(documentId, document);
                 });
     
@@ -198,7 +198,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(exists).is.true;
     
                 // attempt to create the same type in the repository
-                assert.rejects(async function() {
+                await assert.rejects(async function() {
                     await repository.createType(typeId, type);
                 });
     
