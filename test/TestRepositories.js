@@ -11,14 +11,15 @@
 const debug = 0;  // [0..3]
 const directory = 'test/config/';
 const mocha = require('mocha');
-const assert = require('chai').assert;
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+const assert = require('assert');
 const bali = require('bali-component-framework').api(debug);
 const account = bali.tag();
 const api = require('bali-digital-notary');
 const securityModule = api.ssm(directory, debug);
 const notary = api.notary(securityModule, account, directory, debug);
-//const url = 'https://bali-nebula.net/repository/';
+//const url = 'https://bali-nebula.net/repository';
 const url = 'http://localhost:3000';
 const Repositories = require('../index');
 
@@ -167,12 +168,9 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(exists).is.true;
     
                 // attempt to create the same document in the repository
-                try {
+                assert.rejects(async function() {
                     await repository.createDocument(documentId, document);
-                    assert.fail('The attempt to create the same document should have failed.');
-                } catch (error) {
-                    // expected
-                };
+                });
     
             });
     
@@ -200,12 +198,9 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(exists).is.true;
     
                 // attempt to create the same type in the repository
-                try {
+                assert.rejects(async function() {
                     await repository.createType(typeId, type);
-                    assert.fail('The attempt to create the same type should have failed.');
-                } catch (error) {
-                    // expected
-                };
+                });
     
             });
     

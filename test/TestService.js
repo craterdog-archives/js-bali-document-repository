@@ -153,7 +153,7 @@ const putCitation = async function(request, response) {
     try {
         var message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         if (debug > 2) console.log(message + EOL);
-        message = 'Named document citations cannot be updated.';
+        message = 'Test Service: Named document citations cannot be updated.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -171,7 +171,7 @@ const deleteCitation = async function(request, response) {
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Named document citations cannot be deleted.';
+        message = 'Test Service: Named document citations cannot be deleted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -263,7 +263,7 @@ const postDraft = async function(request, response) {
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 2) console.log(message + EOL);
-        message = 'Draft documents cannot be posted.';
+        message = 'Test Service: Draft documents cannot be posted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -289,15 +289,16 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.documentExists(draftId)) {
-            message = 'A committed document with this version already exists.';
+        const updated = await repository.documentExists(draftId);
+        const draft = bali.component(request.body);
+        await repository.saveDraft(draftId, draft);
+        if (updated) {
+            message = 'Test Service: The draft document was updated.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(409, message);
+            response.writeHead(204, message);
             response.end();
         } else {
-            const draft = bali.component(request.body);
-            await repository.saveDraft(draftId, draft);
-            message = 'Test Service: The draft document was saved.';
+            message = 'Test Service: The draft document was created.';
             if (debug > 2) console.log(message + EOL);
             response.writeHead(201, message);
             response.end();
@@ -434,7 +435,7 @@ const postDocument = async function(request, response) {
             return;
         }
         if (await repository.documentExists(documentId)) {
-            message = 'A committed document with this version already exists.';
+            message = 'Test Service: A committed document with this version already exists.';
             if (debug > 2) console.log(message + EOL);
             response.writeHead(409, message);
             response.end();
@@ -459,7 +460,7 @@ const putDocument = async function(request, response) {
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         if (debug > 2) console.log(message + EOL);
-        message = 'Notarized documents cannot be updated.';
+        message = 'Test Service: Notarized documents cannot be updated.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -477,7 +478,7 @@ const deleteDocument = async function(request, response) {
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Notarized documents cannot be deleted.';
+        message = 'Test Service: Notarized documents cannot be deleted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -579,7 +580,7 @@ const postType = async function(request, response) {
             return;
         }
         if (await repository.typeExists(typeId)) {
-            message = 'A committed type with this version already exists.';
+            message = 'Test Service: A committed type with this version already exists.';
             if (debug > 2) console.log(message + EOL);
             response.writeHead(409, message);
             response.end();
@@ -604,7 +605,7 @@ const putType = async function(request, response) {
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         if (debug > 2) console.log(message + EOL);
-        message = 'Notarized types cannot be updated.';
+        message = 'Test Service: Notarized types cannot be updated.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -622,7 +623,7 @@ const deleteType = async function(request, response) {
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Notarized types cannot be deleted.';
+        message = 'Test Service: Notarized types cannot be deleted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -640,7 +641,7 @@ const pingQueue = async function(request, response) {
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Queues cannot be pinged.';
+        message = 'Test Service: Queues cannot be pinged.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -658,7 +659,7 @@ const postQueue = async function(request, response) {
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 2) console.log(message + EOL);
-        message = 'Queues cannot be created.';
+        message = 'Test Service: Queues cannot be created.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -676,7 +677,7 @@ const deleteQueue = async function(request, response) {
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Queues cannot be deleted.';
+        message = 'Test Service: Queues cannot be deleted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -704,7 +705,7 @@ const putMessage = async function(request, response) {
         }
         message = bali.component(request.body);
         await repository.queueMessage(queueId, message);
-        message = 'A message was added to the queue.';
+        message = 'Test Service: A message was added to the queue.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(201, message);
         response.end();
@@ -733,7 +734,7 @@ const getMessage = async function(request, response) {
         message = await repository.dequeueMessage(queueId);
         if (message) {
             const data = message.toString();
-            message = 'A message was removed from the queue.';
+            message = 'Test Service: A message was removed from the queue.';
             response.writeHead(200, message, {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
