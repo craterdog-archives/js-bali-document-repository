@@ -643,8 +643,8 @@ const RemoteRepository = function(notary, url, debug) {
 
             // place the new message on the queue
             const credentials = await generateCredentials(notary, debug);
-            const name = queues + queueId;  // prepend the context
-            await sendRequest(credentials, '$queueMessage', url, 'PUT', name, message);
+            const queue = queues + queueId;  // prepend the context
+            await sendRequest(credentials, '$queueMessage', url, 'POST', queue, message);
 
             if (debug > 2) console.log('Success.');
         } catch (cause) {
@@ -682,8 +682,8 @@ const RemoteRepository = function(notary, url, debug) {
 
             // remove a message from the queue
             const credentials = await generateCredentials(notary, debug);
-            const name = queues + queueId;  // prepend the context
-            const message = await sendRequest(credentials, '$dequeueMessage', url, 'GET', name);
+            const queue = queues + queueId;  // prepend the context
+            const message = await sendRequest(credentials, '$dequeueMessage', url, 'DELETE', queue);
 
             if (debug > 2) console.log('Message: ' + message);
             return message;
@@ -745,25 +745,25 @@ const generateCredentials = async function(notary, debug) {
 
 /**
  * This function sends a RESTful web request to the web service specified by the url,
- * method, and resource name. If a document is included it is sent as the body of the
+ * method, and resource identifier. If a document is included it is sent as the body of the
  * request. The result that is returned by the web service is returned from this function.
  *
  * @param {Catalog} credentials The signed credentials for the client making the request.
  * @param {String} functionName The name of the API function sending the request.
  * @param {String} url A string containing the URI of the web service.
  * @param {String} method The HTTP method type of the request.
- * @param {String} name The name of the specific resource being acted upon.
+ * @param {String} identifier The identifier of the specific resource being acted upon.
  * @param {Catalog} document An optional signed document to be passed to the web service.
  * @param {Boolean} debug An optional flag that determines whether or not exceptions
  * will be logged to the error console.
  * @returns {Boolean|Catalog} The result of the request.
  */
-const sendRequest = async function(credentials, functionName, url, method, name, document, debug) {
+const sendRequest = async function(credentials, functionName, url, method, identifier, document, debug) {
     debug = debug || false;
 
     const encoded = encodeURI('"' + EOL + credentials + EOL + '"');
     // setup the request URI and options
-    const fullURI = url + name;
+    const fullURI = url + identifier;
     const options = {
         url: fullURI,
         method: method,
@@ -792,7 +792,6 @@ const sendRequest = async function(credentials, functionName, url, method, name,
         var result;
         switch (method) {
             case 'HEAD':
-            case 'DELETE':
                 return true;  // the document did exist
             default:
                 if (response.data && response.data.length) {
@@ -805,7 +804,6 @@ const sendRequest = async function(credentials, functionName, url, method, name,
             // the server responded with an error status
             switch (method) {
                 case 'HEAD':
-                case 'DELETE':
                     if (cause.response.status === 404) return false;  // the document didn't exist
                 default:
                     // continue with the exception processing

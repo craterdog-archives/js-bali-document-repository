@@ -325,18 +325,11 @@ const deleteDraft = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.draftExists(draftId)) {
-            await repository.deleteDraft(draftId);
-            message = 'Test Service: The draft document was deleted.';
-            if (debug > 2) console.log(message + EOL);
-            response.writeHead(200, message);
-            response.end();
-        } else {
-            message = 'Test Service: The draft document does not exist.';
-            if (debug > 2) console.log(message + EOL);
-            response.writeHead(404, message);
-            response.end();
-        }
+        await repository.deleteDraft(draftId);
+        message = 'Test Service: The draft document was deleted.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(200, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 2) console.log(message + EOL);
@@ -636,12 +629,12 @@ const deleteType = async function(request, response) {
 };
 
 
-const pingQueue = async function(request, response) {
+const pingMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Test Service: Queues cannot be pinged.';
+        message = 'Test Service: Messages cannot be pinged.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -654,30 +647,12 @@ const pingQueue = async function(request, response) {
 };
 
 
-const postQueue = async function(request, response) {
+const getMessage = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: GET ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
-        message = 'Test Service: Queues cannot be created.';
-        if (debug > 2) console.log(message + EOL);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 2) console.log(message + EOL);
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const deleteQueue = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 2) console.log(message + EOL);
-        message = 'Test Service: Queues cannot be deleted.';
+        message = 'Test Service: Messages cannot be retrieved without being deleted.';
         if (debug > 2) console.log(message + EOL);
         response.writeHead(405, message);
         response.end();
@@ -690,11 +665,11 @@ const deleteQueue = async function(request, response) {
 };
 
 
-const putMessage = async function(request, response) {
+const postMessage = async function(request, response) {
     var message;
     try {
         const queueId = request.params.identifier;
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 2) console.log(message + EOL);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -718,11 +693,29 @@ const putMessage = async function(request, response) {
 };
 
 
-const getMessage = async function(request, response) {
+const putMessage = async function(request, response) {
+    var message;
+    try {
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        if (debug > 2) console.log(message + EOL);
+        message = 'Test Service: Messages cannot be updated.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(405, message);
+        response.end();
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 2) console.log(message + EOL);
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const deleteMessage = async function(request, response) {
     var message;
     try {
         const queueId = request.params.identifier;
-        message = 'Test Service: GET ' + request.originalUrl;
+        message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 2) console.log(message + EOL);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -746,7 +739,9 @@ const getMessage = async function(request, response) {
         } else {
             message = 'Test Service: The queue is empty.';
             if (debug > 2) console.log(message + EOL);
-            response.writeHead(204, message);
+            response.writeHead(204, message, {
+                'Cache-Control': 'no-store'
+            });
             response.end();
         }
     } catch (e) {
@@ -763,38 +758,38 @@ const getMessage = async function(request, response) {
 const citationRouter = express.Router();
 // Note: the leading slash is part of the citation name identifier
 citationRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingCitation);
-citationRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postCitation);
 citationRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getCitation);
+citationRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postCitation);
 citationRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putCitation);
 citationRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteCitation);
 
 const draftRouter = express.Router();
 draftRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDraft);
-draftRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDraft);
 draftRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDraft);
+draftRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDraft);
 draftRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDraft);
 draftRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDraft);
 
 const documentRouter = express.Router();
 documentRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDocument);
-documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
 documentRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDocument);
+documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
 documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
 documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 
 const typeRouter = express.Router();
 typeRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingType);
-typeRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postType);
 typeRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getType);
+typeRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postType);
 typeRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putType);
 typeRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteType);
 
 const queueRouter = express.Router();
-queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingQueue);
-queueRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postQueue);
+queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingMessage);
 queueRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getMessage);
+queueRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postMessage);
 queueRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
-queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteQueue);
+queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 
 const service = express();
 
