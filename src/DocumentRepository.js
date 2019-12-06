@@ -10,8 +10,8 @@
 'use strict';
 
 /*
- * This class defines the interface to a document repository.  It treats
- * documents as UTF-8 encoded strings.
+ * This class defines a document repository that is backed by any of a set of possible storage
+ * mechanisms.  It treats documents as UTF-8 encoded strings.
  */
 const bali = require('bali-component-framework').api();
 
@@ -19,9 +19,9 @@ const bali = require('bali-component-framework').api();
 // REPOSITORY API
 
 /**
- * This function creates a new instance of a document repository interface.
+ * This function creates a new instance of a document repository.
  * 
- * @param {Reference} repository A reference to the URI for this repository.
+ * @param {Object} storage The storage mechanism to be used to maintain the documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -32,24 +32,24 @@ const bali = require('bali-component-framework').api();
  * </pre>
  * @returns {Object} The new document repository.
  */
-const RepositoryAPI = function(repository, debug) {
+const DocumentRepository = function(storage, debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/RepositoryAPI', '$RepositoryAPI', '$repository', repository, [
+        validator.validateType('/bali/repositories/DocumentRepository', '$DocumentRepository', '$storage', storage, [
             '/javascript/Object'
         ]);
     }
 
     /**
-     * This method returns a string describing this repository API.
+     * This method returns a string describing this document repository.
      * 
-     * @returns {String} A string describing this repository API.
+     * @returns {String} A string describing this document repository.
      */
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/RepositoryAPI',
-            $repository: this.repository
+            $module: '/bali/repositories/DocumentRepository',
+            $storage: this.storage
         });
         return catalog.toString();
     };
@@ -65,14 +65,14 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$citationExists', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$citationExists', '$name', name, [
                     '/bali/elements/Name'
                 ]);
             }
-            return await repository.citationExists(name);
+            return await storage.citationExists(name);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $name: name,
@@ -95,14 +95,14 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchCitation', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchCitation', '$name', name, [
                     '/bali/elements/Name'
                 ]);
             }
-            return await repository.readCitation(name);
+            return await storage.readCitation(name);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$fetchCitation',
                 $exception: '$unexpected',
                 $name: name,
@@ -124,17 +124,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createCitation', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createCitation', '$name', name, [
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createCitation', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createCitation', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await repository.writeCitation(name, citation);
+            await storage.writeCitation(name, citation);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$createCitation',
                 $exception: '$unexpected',
                 $name: name,
@@ -158,17 +158,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$draftExists', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$draftExists', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$draftExists', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$draftExists', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.documentExists('drafts', tag, version);
+            return await storage.documentExists('drafts', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -194,17 +194,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchDraft', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDraft', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchDraft', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDraft', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.readDocument('drafts', tag, version);
+            return await storage.readDocument('drafts', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$fetchDraft',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -229,20 +229,20 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$saveDraft', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$saveDraft', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$version', version, [
                     '/bali/elements/Version'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$saveDraft', '$draft', draft, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$draft', draft, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await repository.writeDocument('drafts', tag, version, draft);
+            await storage.writeDocument('drafts', tag, version, draft);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$saveDraft',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -267,17 +267,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$deleteDraft', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$deleteDraft', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$deleteDraft', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$deleteDraft', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.deleteDocument('drafts', tag, version);
+            return await storage.deleteDocument('drafts', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -301,17 +301,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$documentExists', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$documentExists', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$documentExists', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$documentExists', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.documentExists('documents', tag, version);
+            return await storage.documentExists('documents', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -335,17 +335,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchDocument', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDocument', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchDocument', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDocument', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.readDocument('documents', tag, version);
+            return await storage.readDocument('documents', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$fetchDocument',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -370,20 +370,20 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createDocument', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createDocument', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$version', version, [
                     '/bali/elements/Version'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createDocument', '$document', document, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await repository.writeDocument('documents', tag, version, document);
+            await storage.writeDocument('documents', tag, version, document);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$createDocument',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -408,17 +408,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$typeExists', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$typeExists', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$typeExists', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$typeExists', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.documentExists('types', tag, version);
+            return await storage.documentExists('types', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$typeExists',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -442,17 +442,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchType', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchType', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$fetchType', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$fetchType', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
-            return await repository.readDocument('types', tag, version);
+            return await storage.readDocument('types', tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$fetchType',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -477,20 +477,20 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createType', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createType', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$version', version, [
                     '/bali/elements/Version'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$createType', '$type', type, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$type', type, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await repository.writeDocument('types', tag, version, type);
+            await storage.writeDocument('types', tag, version, type);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$createType',
                 $exception: '$unexpected',
                 $tag: tag,
@@ -515,17 +515,17 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$queueMessage', '$queue', queue, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$queueMessage', '$queue', queue, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$queueMessage', '$message', message, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$queueMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await repository.addMessage(queue, message);
+            await storage.addMessage(queue, message);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$queueMessage',
                 $exception: '$unexpected',
                 $queue: queue,
@@ -548,14 +548,14 @@ const RepositoryAPI = function(repository, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RepositoryAPI', '$dequeueMessage', '$queue', queue, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$dequeueMessage', '$queue', queue, [
                     '/bali/elements/Tag'
                 ]);
             }
-            return await repository.removeMessage(queue);
+            return await storage.removeMessage(queue);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RepositoryAPI',
+                $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$dequeueMessage',
                 $exception: '$unexpected',
                 $queue: queue,
@@ -568,5 +568,5 @@ const RepositoryAPI = function(repository, debug) {
 
     return this;
 };
-RepositoryAPI.prototype.constructor = RepositoryAPI;
-exports.RepositoryAPI = RepositoryAPI;
+DocumentRepository.prototype.constructor = DocumentRepository;
+exports.DocumentRepository = DocumentRepository;

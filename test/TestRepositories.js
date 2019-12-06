@@ -22,7 +22,6 @@ const uri = 'http://localhost:3000';
 const Repositories = require('../');
 
 const configuration = {
-    uri: 'https://bali-nebula.net/repository/',
     citations: 'craterdog-bali-citations-us-west-2',
     drafts: 'craterdog-bali-drafts-us-west-2',
     documents: 'craterdog-bali-documents-us-west-2',
@@ -31,11 +30,11 @@ const configuration = {
 };
 
 const repositories = {
-    'Local Repository': Repositories.api(Repositories.local(directory, debug), debug),
-    'Cached Repository': Repositories.api(Repositories.cached(Repositories.local(directory, debug), debug), debug),
-    'Validated Repository': Repositories.api(Repositories.validated(Repositories.local(directory, debug), debug), debug),
-    'Remote Repository': Repositories.api(Repositories.remote(notary, uri, debug), debug),
-    'S3 Repository': Repositories.api(Repositories.s3(configuration, debug), debug)
+    'Local Repository': Repositories.repository(Repositories.local(directory, debug), debug),
+    'Cached Repository': Repositories.repository(Repositories.cached(Repositories.local(directory, debug), debug), debug),
+    'Validated Repository': Repositories.repository(Repositories.validated(Repositories.local(directory, debug), debug), debug),
+    'Remote Repository': Repositories.repository(Repositories.remote(notary, uri, debug), debug),
+    'S3 Repository': Repositories.repository(Repositories.s3(configuration, debug), debug)
 };
 
 

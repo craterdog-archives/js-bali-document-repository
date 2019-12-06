@@ -267,7 +267,7 @@ const validateCitation = async function(notary, repository, citation, debug) {
                 $module: '/bali/repositories/ValidatedRepository',
                 $procedure: '$validateCitation',
                 $exception: '$missingDocument',
-                $documentId: documentId,
+                $citation: citation,
                 $text: 'The cited document does not exist.'
             });
             if (debug) console.error(exception.toString());
@@ -334,13 +334,12 @@ const validateDocument = async function(notary, repository, document, debug) {
         // validate the previous version of the document if one exists
         const previousCitation = content.getParameter('$previous');
         if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
-            // validate the document citation to the previous version of the document
             await validateCitation(notary, repository, previousCitation, debug);
         }
 
         // validate the certificate if one exists
         var certificate;
-        if (!certificateCitation.isEqualTo(bali.pattern.NONE)) {
+        if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
             certificate = await validateCitation(notary, repository, certificateCitation, debug);
             certificate = certificate.getValue('$content');
         } else {

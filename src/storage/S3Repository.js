@@ -49,7 +49,6 @@ const S3Repository = function(configuration, debug) {
             '/javascript/Object'
         ]);
     }
-    const uri = configuration.uri;
 
     this.toString = function() {
         const catalog = bali.catalog({
@@ -69,7 +68,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $name: name,
                 $text: 'An unexpected error occurred while checking whether or not a citation exists.'
             }, cause);
@@ -92,7 +91,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$readCitation',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to read a citation from the repository.'
             }, cause);
@@ -113,7 +112,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$writeCitation',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $name: name,
                 $citation: citation,
                 $text: 'An unexpected error occurred while attempting to write a citation to the repository.'
@@ -133,7 +132,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $type: type,
                 $tag: tag,
                 $version: version,
@@ -158,7 +157,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $type: type,
                 $tag: tag,
                 $version: version,
@@ -181,7 +180,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $type: type,
                 $tag: tag,
                 $version: version,
@@ -208,7 +207,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$deleteDocument',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $type: type,
                 $tag: tag,
                 $version: version,
@@ -231,7 +230,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $queue: queue,
                 $identifier: identifier,
                 $message: message,
@@ -268,7 +267,7 @@ const S3Repository = function(configuration, debug) {
                 $module: '/bali/repositories/S3Repository',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $uri: uri,
+                $configuration: configuration,
                 $queue: queue,
                 $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
             }, cause);
