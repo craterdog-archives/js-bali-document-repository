@@ -17,20 +17,14 @@ const axios = require('axios');
 const bali = require('bali-component-framework').api();
 
 
-// PRIVATE CONSTANTS
-
-// the POSIX end of line character
-const EOL = '\n';
-
-
-// PUBLIC FUNCTIONS
+// DOCUMENT REPOSITORY
 
 /**
- * This function creates a new instance of a S3 document repository.  If the
- * repository does not yet exist it is created.
+ * This function creates a new instance of a remote document repository proxy.
  *
  * @param {DigitalNotary} notary The digital notary to be used to notarize the request credentials.
- * @param {String} url A string containing the URI for the remote document repository.
+ * @param {String} uri A string containing the URI for the remote document repository with no
+ * trailing slash.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -39,11 +33,10 @@ const EOL = '\n';
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new S3 document repository.
+ * @returns {Object} The new remote document repository.
  */
-const RemoteRepository = function(notary, url, debug) {
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    if (debug > 2) console.log('Initializing the proxy to remote repository: ' + url);
+const RemoteRepository = function(notary, uri, debug) {
+    if (debug > 2) console.log('Initializing the proxy to the remote repository: ' + uri);
 
     // validate the arguments
     if (debug > 1) {
@@ -51,651 +44,180 @@ const RemoteRepository = function(notary, url, debug) {
         validator.validateType('/bali/repositories/RemoteRepository', '$RemoteRepository', '$notary', notary, [
             '/javascript/Object'
         ]);
-        validator.validateType('/bali/repositories/RemoteRepository', '$RemoteRepository', '$url', url, [
+        validator.validateType('/bali/repositories/RemoteRepository', '$RemoteRepository', '$uri', uri, [
             '/javascript/String'
         ]);
     }
 
-    // setup the private attributes
-    const citations = '/citations/';
-    const drafts = '/drafts/';
-    const documents = '/documents/';
-    const types = '/types/';
-    const queues = '/queues/';
-
-    /**
-     * This function returns a string providing attributes about this repository.
-     *
-     * @returns {String} A string providing attributes about this repository.
-     */
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/RemoteRepository',
-            $url: this.getURI()
+            $uri: uri
         });
         return catalog.toString();
     };
 
-    /**
-     * This function returns a reference to this document repository.
-     *
-     * @returns {Reference} A reference to this document repository.
-     */
-    this.getURI = function() {
-        try {
-            return bali.reference(url);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$getURI',
-                $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function checks to see whether or not a document citation is associated
-     * with the specified name.
-     *
-     * @param {String} name The unique name for the document citation being checked.
-     * @returns {Boolean} Whether or not the document citation exists.
-     */
     this.citationExists = async function(name) {
         try {
-            if (debug > 2) console.log('Checking to see if citation exists: ' + name);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$citationExists', '$name', name, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check for existence
-            const credentials = await generateCredentials(notary, debug);
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
-            const exists = await sendRequest(credentials, '$citationExists', url, 'HEAD', name);
-
-            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
-            return exists;
+            return await sendRequest(notary, uri, 'HEAD', 'citations', name, undefined, undefined, debug);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
+                $uri: uri,
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a citation.'
+                $text: 'An unexpected error occurred while checking whether or not a citation exists.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function attempts to retrieve a document citation from the repository for
-     * the specified name.
-     *
-     * @param {String} name The unique name for the document citation being fetched.
-     * @returns {Catalog} A catalog containing the document citation or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchCitation = async function(name) {
+    this.readCitation = async function(name) {
         try {
-            if (debug > 2) console.log('Fetching citation: ' + name);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$fetchCitation', '$name', name, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the citation
-            const credentials = await generateCredentials(notary, debug);
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
-            const citation = await sendRequest(credentials, '$fetchCitation', url, 'GET', name);
-
-            if (debug > 2) console.log('Citation: ' + citation);
-            return citation;
+            return await sendRequest(notary, uri, 'GET', 'citations', name, undefined, undefined, debug);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$fetchCitation',
+                $procedure: '$readCitation',
                 $exception: '$unexpected',
+                $uri: uri,
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to fetch a citation.'
+                $text: 'An unexpected error occurred while attempting to read a citation from the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function associates a new name with the specified document citation in
-     * the repository.
-     *
-     * @param {String} name The unique name for the specified document citation.
-     * @param {Catalog} citation A catalog containing the document citation.
-     */
-    this.createCitation = async function(name, citation) {
+    this.writeCitation = async function(name, citation) {
         try {
-            if (debug > 2) console.log('Creating citation: ' + name + ' ' + citation);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$createCitation', '$name', name, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/RemoteRepository', '$createCitation', '$citation', citation, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the new citation
-            const credentials = await generateCredentials(notary, debug);
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
-            await sendRequest(credentials, '$createCitation', url, 'POST', name, citation);
-
-            if (debug > 2) console.log('Success.');
+            await sendRequest(notary, uri, 'POST', 'citations', name, undefined, citation, debug);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$createCitation',
+                $procedure: '$writeCitation',
                 $exception: '$unexpected',
+                $uri: uri,
                 $name: name,
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to create a citation.'
+                $text: 'An unexpected error occurred while attempting to write a citation to the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function checks to see whether or not a draft document is associated with the
-     * specified identifier.
-     *
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being checked.
-     * @returns {Boolean} Whether or not the draft document exists.
-     */
-    this.draftExists = async function(draftId) {
+    this.documentExists = async function(type, tag, version) {
         try {
-            if (debug > 2) console.log('Checking to see if draft exists: ' + draftId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$draftExists', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check for existence
-            const credentials = await generateCredentials(notary, debug);
-            const name = drafts + draftId;  // prepend the context
-            const exists = await sendRequest(credentials, '$draftExists', url, 'HEAD', name);
-
-            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
-            return exists;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$draftExists',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function attempts to retrieve the specified draft document from the repository.
-     *
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being fetched.
-     * @returns {Catalog} A catalog containing the draft or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchDraft = async function(draftId) {
-        try {
-            if (debug > 2) console.log('Fetching draft: ' + draftId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$fetchDraft', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the draft document
-            const credentials = await generateCredentials(notary, debug);
-            const name = drafts + draftId;  // prepend the context
-            const draft = await sendRequest(credentials, '$fetchDraft', url, 'GET', name);
-
-            if (debug > 2) console.log('Draft: ' + draft);
-            return draft;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$fetchDraft',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $text: 'An unexpected error occurred while attempting to fetch a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function saves a draft document in the repository.
-     *
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being saved.
-     * @param {Catalog} draft A catalog containing the draft document.
-     */
-    this.saveDraft = async function(draftId, draft) {
-        try {
-            if (debug > 2) console.log('Save draft: ' + draftId + ' ' + draft);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$saveDraft', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/RemoteRepository', '$saveDraft', '$draft', draft, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // save the draft document
-            const credentials = await generateCredentials(notary, debug);
-            const name = drafts + draftId;  // prepend the context
-            await sendRequest(credentials, '$saveDraft', url, 'PUT', name, draft);
-
-            if (debug > 2) console.log('Success.');
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$saveDraft',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $draft: draft,
-                $text: 'An unexpected error occurred while attempting to save a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function attempts to delete the specified draft document from the repository.
-     *
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being deleted.
-     */
-    this.deleteDraft = async function(draftId) {
-        try {
-            if (debug > 2) console.log('Delete draft: ' + draftId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$deleteDraft', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // delete the draft document
-            const credentials = await generateCredentials(notary, debug);
-            const name = drafts + draftId;  // prepend the context
-            await sendRequest(credentials, '$deleteDraft', url, 'DELETE', name);
-
-            if (debug > 2) console.log('Success.');
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$deleteDraft',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $text: 'An unexpected error occurred while attempting to delete a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function checks to see whether or not a document is associated with the
-     * specified identifier.
-     *
-     * @param {String} documentId The unique identifier (including version number) for
-     * the document being checked.
-     * @returns {Boolean} Whether or not the document exists.
-     */
-    this.documentExists = async function(documentId) {
-        try {
-            if (debug > 2) console.log('Checking to see if document exists: ' + documentId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$documentExists', '$documentId', documentId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check the existence
-            const credentials = await generateCredentials(notary, debug);
-            const name = documents + documentId;  // prepend the context
-            const exists = await sendRequest(credentials, '$documentExists', url, 'HEAD', name);
-
-            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
-            return exists;
+            return await sendRequest(notary, uri, 'HEAD', type, tag, version, undefined, debug);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
-                $documentId: documentId,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function attempts to retrieve the specified document from the repository.
-     *
-     * @param {String} documentId The unique identifier (including version number) for
-     * the document being fetched.
-     * @returns {Catalog} A catalog containing the document or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchDocument = async function(documentId) {
-        try {
-            if (debug > 2) console.log('Fetching document: ' + documentId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$fetchDocument', '$documentId', documentId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the document
-            const credentials = await generateCredentials(notary, debug);
-            const name = documents + documentId;  // prepend the context
-            const document = await sendRequest(credentials, '$fetchDocument', url, 'GET', name);
-
-            if (debug > 2) console.log('Document: ' + document);
-            return document;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$fetchDocument',
-                $exception: '$unexpected',
-                $documentId: documentId,
-                $text: 'An unexpected error occurred while attempting to fetch a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function creates a new document in the repository.
-     *
-     * @param {String} documentId The unique identifier (including version number) for
-     * the document being created.
-     * @param {Catalog} document A catalog containing the document.
-     */
-    this.createDocument = async function(documentId, document) {
-        try {
-            if (debug > 2) console.log('Creating document: ' + documentId + ' ' + document);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$createDocument', '$documentId', documentId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/RemoteRepository', '$createDocument', '$document', document, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the new document
-            const credentials = await generateCredentials(notary, debug);
-            const name = documents + documentId;  // prepend the context
-            await sendRequest(credentials, '$createDocument', url, 'POST', name, document);
-
-            if (debug > 2) console.log('Success.');
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$createDocument',
-                $exception: '$unexpected',
-                $documentId: documentId,
-                $document: document,
-                $text: 'An unexpected error occurred while attempting to create a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function checks to see whether or not a type is associated with the
-     * specified identifier.
-     *
-     * @param {String} typeId The unique identifier (including version number) for
-     * the type being checked.
-     * @returns {Boolean} Whether or not the type exists.
-     */
-    this.typeExists = async function(typeId) {
-        try {
-            if (debug > 2) console.log('Checking to see if type exists: ' + typeId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$typeExists', '$typeId', typeId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check the existence
-            const credentials = await generateCredentials(notary, debug);
-            const name = types + typeId;  // prepend the context
-            const exists = await sendRequest(credentials, '$typeExists', url, 'HEAD', name);
-
-            if (debug > 2) console.log(exists ? 'It exists.' : 'It does not exist.');
-            return exists;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$typeExists',
-                $exception: '$unexpected',
-                $typeId: typeId,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a type.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function attempts to retrieve the specified type from the repository.
-     *
-     * @param {String} typeId The unique identifier (including version number) for
-     * the type being fetched.
-     * @returns {Catalog} A catalog containing the type or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchType = async function(typeId) {
-        try {
-            if (debug > 2) console.log('Fetching type: ' + typeId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$fetchType', '$typeId', typeId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the type
-            const credentials = await generateCredentials(notary, debug);
-            const name = types + typeId;  // prepend the context
-            const type = await sendRequest(credentials, '$fetchType', url, 'GET', name);
-
-            if (debug > 2) console.log('Type: ' + type);
-            return type;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$fetchType',
-                $exception: '$unexpected',
-                $typeId: typeId,
-                $text: 'An unexpected error occurred while attempting to fetch a type.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function creates a new type in the repository.
-     *
-     * @param {String} typeId The unique identifier (including version number) for
-     * the type being created.
-     * @param {Catalog} type A catalog containing the type.
-     */
-    this.createType = async function(typeId, type) {
-        try {
-            if (debug > 2) console.log('Creating type: ' + typeId + ' ' + type);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$createType', '$typeId', typeId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/RemoteRepository', '$createType', '$type', type, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the new type
-            const credentials = await generateCredentials(notary, debug);
-            const name = types + typeId;  // prepend the context
-            await sendRequest(credentials, '$createType', url, 'POST', name, type);
-
-            if (debug > 2) console.log('Success.');
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$createType',
-                $exception: '$unexpected',
-                $typeId: typeId,
+                $uri: uri,
                 $type: type,
-                $text: 'An unexpected error occurred while attempting to create a type.'
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while checking whether or not a document exists.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function adds a new message onto the specified queue in the repository.
-     *
-     * @param {String} queueId The unique identifier for the queue.
-     * @param {Catalog} message A catalog containing the message.
-     */
-    this.queueMessage = async function(queueId, message) {
+    this.readDocument = async function(type, tag, version) {
         try {
-            if (debug > 2) console.log('Queue message: ' + queueId + ' ' + message);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$queueMessage', '$queueId', queueId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/RemoteRepository', '$queueMessage', '$message', message, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // place the new message on the queue
-            const credentials = await generateCredentials(notary, debug);
-            const queue = queues + queueId;  // prepend the context
-            await sendRequest(credentials, '$queueMessage', url, 'POST', queue, message);
-
-            if (debug > 2) console.log('Success.');
+            return await sendRequest(notary, uri, 'GET', type, tag, version, undefined, debug);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$queueMessage',
+                $procedure: '$readDocument',
                 $exception: '$unexpected',
-                $queueId: queueId,
+                $uri: uri,
+                $type: type,
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to read a document from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.writeDocument = async function(type, tag, version, document) {
+        try {
+            const method = (type === 'drafts') ? 'PUT' : 'POST';
+            await sendRequest(notary, uri, method, type, tag, version, document, debug);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteRepository',
+                $procedure: '$writeDocument',
+                $exception: '$unexpected',
+                $uri: uri,
+                $type: type,
+                $tag: tag,
+                $version: version,
+                $document: document,
+                $text: 'An unexpected error occurred while attempting to write a document to the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.deleteDocument = async function(type, tag, version) {
+        try {
+            return await sendRequest(notary, uri, 'DELETE', type, tag, version, undefined, debug);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteRepository',
+                $procedure: '$deleteDocument',
+                $exception: '$unexpected',
+                $uri: uri,
+                $type: type,
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to delete a document from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.addMessage = async function(queue, message) {
+        try {
+            await sendRequest(notary, uri, 'PUT', 'queues', queue, undefined, message, debug);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteRepository',
+                $procedure: '$addMessage',
+                $exception: '$unexpected',
+                $uri: uri,
+                $queue: queue,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to queue a message.'
+                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function removes a message (at random) from the specified queue in the repository.
-     *
-     * @param {String} queueId The unique identifier for the queue.
-     * @returns {Catalog} A catalog containing the message or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.dequeueMessage = async function(queueId) {
+    this.removeMessage = async function(queue) {
         try {
-            if (debug > 2) console.log('Dequeue message: ' + queueId);
-
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/RemoteRepository', '$dequeueMessage', '$queueId', queueId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // remove a message from the queue
-            const credentials = await generateCredentials(notary, debug);
-            const queue = queues + queueId;  // prepend the context
-            const message = await sendRequest(credentials, '$dequeueMessage', url, 'DELETE', queue);
-
-            if (debug > 2) console.log('Message: ' + message);
-            return message;
+            return await sendRequest(notary, uri, 'DELETE', 'queues', queue, undefined, undefined, debug);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$dequeueMessage',
+                $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $queueId: queueId,
-                $text: 'An unexpected error occurred while attempting to dequeue a message.'
+                $uri: uri,
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
@@ -708,62 +230,39 @@ exports.RemoteRepository = RemoteRepository;
 
 // PRIVATE FUNCTIONS
 
-/**
- * This function generates a set of signed credentials for the client making a request on
- * the cloud repository. The credentials can be used by the cloud repository to authenticate
- * the client and verify their permissions.
- *
- * @param {Object} notary An object that implements the API for the digital notary.
- * @param {Boolean} debug An optional flag that determines whether or not exceptions
- * will be logged to the error console.
- * @returns {Catalog} The newly generated credentials.
- */
-const generateCredentials = async function(notary, debug) {
-    debug = debug || false;
-    try {
-        const citation = await notary.getCitation();
-        const document = citation.duplicate();
-        document.setParameter('$type', '/bali/notary/Citation/v1');
-        document.setParameter('$tag', bali.tag());
-        document.setParameter('$version', bali.version());
-        document.setParameter('$permissions', '/bali/permissions/private/v1');
-        document.setParameter('$previous', bali.pattern.NONE);
-        const credentials = await notary.notarizeDocument(document);
-        return credentials;
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/services/RemoteRepository',
-            $procedure: '$generateCredentials',
-            $exception: '$unexpected',
-            $text: bali.text('An unexpected error occurred while attempting to generate credentials.')
-        }, cause);
-        if (debug) console.error(exception.toString());
-        throw exception;
-    }
-};
-
+// the POSIX end of line character
+const EOL = '\n';
 
 /**
- * This function sends a RESTful web request to the web service specified by the url,
- * method, and resource identifier. If a document is included it is sent as the body of the
+ * This function sends a RESTful web request to the web service specified by the URI, method,
+ * type, resource identifier and version. If a document is included it is sent as the body of the
  * request. The result that is returned by the web service is returned from this function.
  *
- * @param {Catalog} credentials The signed credentials for the client making the request.
- * @param {String} functionName The name of the API function sending the request.
- * @param {String} url A string containing the URI of the web service.
+ * @param {Object} notary An object that implements the API for the digital notary.
+ * @param {String} uri A string containing the URI of the web service.
  * @param {String} method The HTTP method type of the request.
- * @param {String} identifier The identifier of the specific resource being acted upon.
+ * @param {String} type The type of resource being acted upon.
+ * @param {Name|Tag} identifier The identifier of the specific resource being acted upon.
+ * @param {Version} version The version of the specific resource being acted upon.
  * @param {Catalog} document An optional signed document to be passed to the web service.
  * @param {Boolean} debug An optional flag that determines whether or not exceptions
  * will be logged to the error console.
  * @returns {Boolean|Catalog} The result of the request.
  */
-const sendRequest = async function(credentials, functionName, url, method, identifier, document, debug) {
-    debug = debug || false;
+const sendRequest = async function(notary, uri, method, type, identifier, version, document, debug) {
 
-    const encoded = encodeURI('"' + EOL + credentials + EOL + '"');
+    // generate the credentials
+    var citation = await notary.getCitation();
+    citation = citation.duplicate();
+    citation.setParameter('$type', '/bali/notary/Citation/v1');
+    citation.setParameter('$tag', bali.tag());
+    citation.setParameter('$version', bali.version());
+    citation.setParameter('$permissions', '/bali/permissions/private/v1');
+    citation.setParameter('$previous', bali.pattern.NONE);
+    const credentials = await notary.notarizeDocument(citation);
+
     // setup the request URI and options
-    const fullURI = url + identifier;
+    const fullURI = uri + '/' + type + '/' + identifier.toString().slice(1) + (version ? '/' + version : '');
     const options = {
         url: fullURI,
         method: method,
@@ -774,7 +273,7 @@ const sendRequest = async function(credentials, functionName, url, method, ident
         },
         headers: {
             //'User-Agent': 'Bali Nebula™ API 1.0',
-            'Nebula-Credentials': encoded
+            'Nebula-Credentials': encodeURI('"' + EOL + credentials + EOL + '"')
         }
     };
 
@@ -795,7 +294,7 @@ const sendRequest = async function(credentials, functionName, url, method, ident
                 return true;  // the document did exist
             default:
                 if (response.data && response.data.length) {
-                    result = bali.component(response.data, debug);
+                    result = bali.component(response.data);
                 }
             }
         return result;
@@ -810,9 +309,9 @@ const sendRequest = async function(credentials, functionName, url, method, ident
             }
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: functionName,
+                $procedure: '$sendRequest',
                 $exception: '$invalidRequest',
-                $url: bali.reference(options.url),
+                $uri: bali.reference(fullURI),
                 $method: bali.text(method),
                 $status: cause.response.status,
                 $details: bali.text(cause.response.statusText),
@@ -825,9 +324,9 @@ const sendRequest = async function(credentials, functionName, url, method, ident
             // the request was sent but no response was received
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
-                $procedure: functionName,
+                $procedure: '$sendRequest',
                 $exception: '$serverDown',
-                $url: bali.reference(options.url),
+                $uri: bali.reference(fullURI),
                 $method: bali.text(method),
                 $status: cause.request.status,
                 $details: bali.text(cause.request.statusText),
@@ -839,10 +338,10 @@ const sendRequest = async function(credentials, functionName, url, method, ident
         // the request could not be sent
         const exception = bali.exception({
             $module: '/bali/repositories/RemoteRepository',
-            $procedure: functionName,
+            $procedure: '$sendRequest',
             $exception: '$malformedRequest',
-            $url: bali.reference(options.url),
-            $method: bali.text(options.method),
+            $uri: bali.reference(fullURI),
+            $method: bali.text(method),
             $document: document,
             $text: bali.text('The request was not formed correctly.')
         }, cause);

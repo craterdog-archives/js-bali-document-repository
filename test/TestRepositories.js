@@ -9,35 +9,33 @@
  ************************************************************************/
 
 const debug = 0;  // [0..3]
-const directory = 'test/config/';
 const mocha = require('mocha');
 const chai = require('chai');
 const expect = chai.expect;
 const assert = require('assert');
 const bali = require('bali-component-framework').api(debug);
 const account = bali.tag();
-const api = require('bali-digital-notary');
-const securityModule = api.ssm(directory, debug);
-const notary = api.notary(securityModule, account, directory, debug);
-//const url = 'https://bali-nebula.net/repository';
-const url = 'http://localhost:3000';
-const Repositories = require('../index');
+const directory = 'test/config';
+const notary = require('bali-digital-notary').test(account, directory, debug);
+//const uri = 'https://bali-nebula.net/repository';
+const uri = 'http://localhost:3000';
+const Repositories = require('../');
 
 const configuration = {
-    url: 'https://bali-nebula.net/repository/',
-    citationBucket: 'craterdog-bali-citations-us-west-2',
-    draftBucket: 'craterdog-bali-drafts-us-west-2',
-    documentBucket: 'craterdog-bali-documents-us-west-2',
-    typeBucket: 'craterdog-bali-types-us-west-2',
-    queueBucket: 'craterdog-bali-queues-us-west-2'
+    uri: 'https://bali-nebula.net/repository/',
+    citations: 'craterdog-bali-citations-us-west-2',
+    drafts: 'craterdog-bali-drafts-us-west-2',
+    documents: 'craterdog-bali-documents-us-west-2',
+    types: 'craterdog-bali-types-us-west-2',
+    queues: 'craterdog-bali-queues-us-west-2'
 };
 
 const repositories = {
-    'Local Repository': Repositories.local(directory, debug),
-    'Cached Repository': Repositories.cached(Repositories.local(directory, debug), debug),
-    'Validated Repository': Repositories.validated(notary, Repositories.local(directory, debug), debug),
-    'Remote Repository': Repositories.remote(notary, url, debug),
-    'S3 Repository': Repositories.s3(configuration, debug)
+    'Local Repository': Repositories.api(Repositories.local(directory, debug), debug),
+    'Cached Repository': Repositories.api(Repositories.cached(Repositories.local(directory, debug), debug), debug),
+    'Validated Repository': Repositories.api(Repositories.validated(Repositories.local(directory, debug), debug), debug),
+    'Remote Repository': Repositories.api(Repositories.remote(notary, uri, debug), debug),
+    'S3 Repository': Repositories.api(Repositories.s3(configuration, debug), debug)
 };
 
 
@@ -82,20 +80,21 @@ describe('Bali Nebula™ Document Repository', function() {
 
         describe('Test ' + key, function() {
             var tag;
-            var certificate;
+            var version;
             var citation;
+            var certificate;
     
             it('should create a self-signed certificate', async function() {
                 certificate = await notary.generateKey();
+                tag = certificate.getParameter('$tag');
+                version = certificate.getParameter('$version');
                 certificate = await notary.notarizeDocument(certificate);
                 citation = await notary.activateKey(certificate);
-                tag = citation.getValue('$tag');
-                const certificateId = extractId(certificate);
-                await repository.createDocument(certificateId, certificate);
+                await repository.createDocument(tag, version, certificate);
             });
     
             it('should perform a citation name lifecycle', async function() {
-                const name = '/bali/certificates/' + tag.getValue() + '/v1';
+                const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
     
                 // make sure the new name does not yet exist in the repository
                 var exists = await repository.citationExists(name);
@@ -114,130 +113,133 @@ describe('Bali Nebula™ Document Repository', function() {
             });
     
             it('should perform a draft document lifecycle', async function() {
+                tag = transaction.getParameter('$tag');
+                version = transaction.getParameter('$version');
                 const draft = await notary.notarizeDocument(transaction);
-                const draftId = extractId(draft);
     
                 // create a new draft in the repository
-                await repository.saveDraft(draftId, draft);
+                await repository.saveDraft(tag, version, draft);
     
                 // make sure the new draft exists in the repository
-                var exists = await repository.draftExists(draftId);
+                var exists = await repository.draftExists(tag, version);
                 expect(exists).is.true;
     
                 // make sure the same document does not exist in the repository
-                exists = await repository.documentExists(draftId);
+                exists = await repository.documentExists(tag, version);
                 expect(exists).is.false;
     
                 // fetch the new draft from the repository
-                const result = await repository.fetchDraft(draftId);
+                const result = await repository.fetchDraft(tag, version);
                 expect(draft.isEqualTo(result)).is.true;
     
                 // update the existing draft in the repository
-                await repository.saveDraft(draftId, draft);
+                await repository.saveDraft(tag, version, draft);
 
                 // make sure the updated draft exists in the repository
-                var exists = await repository.draftExists(draftId);
+                var exists = await repository.draftExists(tag, version);
                 expect(exists).is.true;
 
                 // delete the draft from the repository
-                await repository.deleteDraft(draftId);
+                await repository.deleteDraft(tag, version);
     
                 // make sure the draft no longer exists in the repository
-                exists = await repository.draftExists(draftId);
+                exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
     
                 // delete a non-existent draft from the repository
-                await repository.deleteDraft(draftId);
+                await repository.deleteDraft(tag, version);
     
             });
     
             it('should perform a committed document lifecycle', async function() {
+                tag = transaction.getParameter('$tag');
+                version = transaction.getParameter('$version');
                 const document = await notary.notarizeDocument(transaction);
-                const documentId = extractId(document);
     
                 // create a new document in the repository
-                await repository.createDocument(documentId, document);
+                await repository.createDocument(tag, version, document);
     
                 // make sure the same draft does not exist in the repository
-                var exists = await repository.draftExists(documentId);
+                var exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
     
                 // make sure the new document exists in the repository
-                exists = await repository.documentExists(documentId);
+                exists = await repository.documentExists(tag, version);
                 expect(exists).is.true;
     
                 // fetch the new document from the repository
-                const result = await repository.fetchDocument(documentId);
+                const result = await repository.fetchDocument(tag, version);
                 expect(document.isEqualTo(result)).is.true;
     
                 // make sure the new document still exists in the repository
-                exists = await repository.documentExists(documentId);
+                exists = await repository.documentExists(tag, version);
                 expect(exists).is.true;
     
                 // attempt to create the same document in the repository
                 await assert.rejects(async function() {
-                    await repository.createDocument(documentId, document);
+                    await repository.createDocument(tag, version, document);
                 });
     
             });
     
             it('should perform a committed type lifecycle', async function() {
+                tag = code.getParameter('$tag');
+                version = code.getParameter('$version');
                 const type = await notary.notarizeDocument(code);
-                const typeId = extractId(type);
     
                 // create a new type in the repository
-                await repository.createType(typeId, type);
+                await repository.createType(tag, version, type);
     
                 // make sure the same draft does not exist in the repository
-                var exists = await repository.draftExists(typeId);
+                var exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
     
                 // make sure the new type exists in the repository
-                exists = await repository.typeExists(typeId);
+                exists = await repository.typeExists(tag, version);
                 expect(exists).is.true;
     
                 // fetch the new type from the repository
-                const result = await repository.fetchType(typeId);
+                const result = await repository.fetchType(tag, version);
                 expect(type.isEqualTo(result)).is.true;
     
                 // make sure the new type still exists in the repository
-                exists = await repository.typeExists(typeId);
+                exists = await repository.typeExists(tag, version);
                 expect(exists).is.true;
     
                 // attempt to create the same type in the repository
                 await assert.rejects(async function() {
-                    await repository.createType(typeId, type);
+                    await repository.createType(tag, version, type);
                 });
     
             });
     
             it('should perform a message queue lifecycle', async function() {
-                const queueId = bali.tag().getValue();
+                const queue = bali.tag();
     
     
                 // make sure the message queue is empty
-                var none = await repository.dequeueMessage(queueId);
+                var none = await repository.dequeueMessage(queue);
                 expect(none).to.not.exist;
     
                 // queue up some messages
                 var message = await notary.notarizeDocument(transaction);
-                await repository.queueMessage(queueId, message);
-                await repository.queueMessage(queueId, message);
-                await repository.queueMessage(queueId, message);
+                await repository.queueMessage(queue, message);
+                await repository.queueMessage(queue, message);
+                await repository.queueMessage(queue, message);
     
                 // dequeue the messages
-                var result = await repository.dequeueMessage(queueId);
+                var result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
                 expect(message.isEqualTo(result)).is.true;
-                result = await repository.dequeueMessage(queueId);
+                result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
                 expect(message.isEqualTo(result)).is.true;
-                result = await repository.dequeueMessage(queueId);
+                result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
                 expect(message.isEqualTo(result)).is.true;
     
                 // make sure the message queue is empty
-                none = await repository.dequeueMessage(queueId);
+                none = await repository.dequeueMessage(queue);
                 expect(none).to.not.exist;
     
             });
@@ -251,18 +253,3 @@ describe('Bali Nebula™ Document Repository', function() {
     }
 
 });
-
-const extractId = function(catalog) {
-    var tag, version;
-    const component = catalog.getValue('$content');
-    if (component) {
-        tag = component.getParameter('$tag');
-        version = component.getParameter('$version');
-    } else {
-        tag = catalog.getValue('$tag');
-        version = catalog.getValue('$version');
-    }
-    const id = tag.getValue() + '/' + version;
-    return id;
-};
-

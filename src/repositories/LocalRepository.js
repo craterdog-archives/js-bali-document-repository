@@ -32,12 +32,8 @@ const bali = require('bali-component-framework').api();
 // the POSIX end of line character
 const EOL = '\n';
 
-// file access permissions
-const READONLY = 0o400;
-const UPDATEABLE = 0o600;
 
-
-// PUBLIC FUNCTIONS
+// DOCUMENT REPOSITORY
 
 /**
  * This function creates a new instance of a local document repository.  If the
@@ -57,6 +53,7 @@ const UPDATEABLE = 0o600;
  */
 const LocalRepository = function(directory, debug) {
     // validate the arguments
+    directory = directory || os.homedir() + '/.bali/';
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
@@ -66,667 +63,206 @@ const LocalRepository = function(directory, debug) {
         ]);
     }
 
-    // setup the private attributes
-    directory = directory || os.homedir() + '/.bali/';
-    const citations = directory + 'citations/';
-    const drafts = directory + 'drafts/';
-    const documents = directory + 'documents/';
-    const types = directory + 'types/';
-    const queues = directory + 'queues/';
-
-    /**
-     * This function returns a string providing attributes about this repository.
-     * 
-     * @returns {String} A string providing attributes about this repository.
-     */
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/LocalRepository',
-            $url: this.getURI()
+            $directory: directory
         });
         return catalog.toString();
     };
 
-    /**
-     * This function returns a reference to this document repository.
-     * 
-     * @returns {Reference} A reference to this document repository.
-     */
-    this.getURI = function() {
-        try {
-            return bali.reference('file:' + directory);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$getURI',
-                $exception: '$unexpected',
-                $text: 'An unexpected error occurred while attempting to retrieve the URI for the repository.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function checks to see whether or not a document citation is associated
-     * with the specified name.
-     * 
-     * @param {String} name The unique name for the document citation being checked.
-     * @returns {Boolean} Whether or not the document citation exists.
-     */
     this.citationExists = async function(name) {
+        const file = generateFilename(directory, 'citations', name);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$citationExists', '$name', name, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // create the directory if necessary
-            await createDirectory(citations, debug);
-
-            // check for existence
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
-            const exists = await componentExists(name, debug);
-
-            return exists;
+            await pfs.stat(file);  // attempt to access the citation
+            return true; // no exception, the citation exists
         } catch (cause) {
+            if (cause.code === 'ENOENT') return false; // the citation does not exist
+            // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a citation.'
+                $file: file,
+                $text: 'An unexpected error occurred while checking whether or not a citation exists.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function attempts to retrieve a document citation from the repository for
-     * the specified name.
-     * 
-     * @param {String} name The unique name for the document citation being fetched.
-     * @returns {Catalog} A catalog containing the document citation or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchCitation = async function(name) {
+    this.readCitation = async function(name) {
+        const file = generateFilename(directory, 'citations', name);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchCitation', '$name', name, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the citation
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
-            const citation = await readComponent(name, debug);
-
-            return citation;
+            const source = await pfs.readFile(file, 'utf8');
+            return bali.component(source);
         } catch (cause) {
+            if (cause.code === 'ENOENT') return undefined; // the citation does not exist
+            // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$fetchCitation',
+                $procedure: '$readCitation',
                 $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to fetch a citation.'
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to read a citation from the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function associates a new name with the specified document citation in
-     * the repository.
-     * 
-     * @param {String} name The unique name for the specified document citation.
-     * @param {Catalog} citation A catalog containing the document citation.
-     */
-    this.createCitation = async function(name, citation) {
+    this.writeCitation = async function(name, citation) {
+        const file = generateFilename(directory, 'citations', name);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$createCitation', '$name', name, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$createCitation', '$citation', citation, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the directory if necessary
-            await createDirectory(citations, debug);
-
-            // make sure the citation doesn't already exist
-            name = citations + name.slice(1);  // prepend the context and remove redundant slash
-            if (await componentExists(name, debug)) {
-                const exception = bali.exception({
-                    $module: '/bali/repositories/LocalRepository',
-                    $procedure: '$createCitation',
-                    $exception: '$citationExists',
-                    $name: name,
-                    $text: 'The citation to be created already exists.'
-                });
-                if (debug) console.error(exception.toString());
-                throw exception;
-            }
-
-            // create the new citation
-            await writeComponent(name, citation, READONLY, debug);
-
+            const path = file.slice(0, file.lastIndexOf('/'));
+            await pfs.mkdir(path, {recursive: true, mode: 0o700});
+            const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
+            await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$createCitation',
+                $procedure: '$writeCitation',
                 $exception: '$unexpected',
-                $name: name,
+                $file: file,
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to create a citation.'
+                $text: 'An unexpected error occurred while attempting to write a citation to the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function checks to see whether or not a draft document is associated with the
-     * specified identifier.
-     * 
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being checked.
-     * @returns {Boolean} Whether or not the draft document exists.
-     */
-    this.draftExists = async function(draftId) {
+    this.documentExists = async function(type, tag, version) {
+        const file = generateFilename(directory, type, tag, version);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$draftExists', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check for existence
-            const name = drafts + draftId;  // prepend the context
-            const exists = await componentExists(name, debug);
-
-            return exists;
+            await pfs.stat(file);  // attempt to access the document
+            return true; // no exception, the document exists
         } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$draftExists',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function attempts to retrieve the specified draft document from the repository.
-     * 
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being fetched.
-     * @returns {Catalog} A catalog containing the draft or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchDraft = async function(draftId) {
-        try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchDraft', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the draft document
-            const name = drafts + draftId;  // prepend the context
-            const draft = await readComponent(name, debug);
-
-            return draft;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$fetchDraft',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $text: 'An unexpected error occurred while attempting to fetch a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function saves a draft document in the repository.
-     * 
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being saved.
-     * @param {Catalog} draft A catalog containing the draft document.
-     */
-    this.saveDraft = async function(draftId, draft) {
-        try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$saveDraft', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$saveDraft', '$draft', draft, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the directory if necessary
-            await createDirectory(drafts, debug);
-
-            // save the draft document
-            const name = drafts + draftId;  // prepend the context
-            await writeComponent(name, draft, UPDATEABLE, debug);
-
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$saveDraft',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $draft: draft,
-                $text: 'An unexpected error occurred while attempting to save a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function attempts to delete the specified draft document from the repository.
-     * 
-     * @param {String} draftId The unique identifier (including version number) for
-     * the draft document being deleted.
-     */
-    this.deleteDraft = async function(draftId) {
-        try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$deleteDraft', '$draftId', draftId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // delete the draft document
-            const name = drafts + draftId;  // prepend the context
-            await deleteComponent(name, debug);
-
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$deleteDraft',
-                $exception: '$unexpected',
-                $draftId: draftId,
-                $text: 'An unexpected error occurred while attempting to delete a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function checks to see whether or not a document is associated with the
-     * specified identifier.
-     * 
-     * @param {String} documentId The unique identifier (including version number) for
-     * the document being checked.
-     * @returns {Boolean} Whether or not the document exists.
-     */
-    this.documentExists = async function(documentId) {
-        try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$documentExists', '$documentId', documentId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check the existence
-            const name = documents + documentId;  // prepend the context
-            const exists = await componentExists(name, debug);
-
-            return exists;
-        } catch (cause) {
+            if (cause.code === 'ENOENT') return false; // the document does not exist
+            // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
-                $documentId: documentId,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a document.'
+                $file: file,
+                $text: 'An unexpected error occurred while checking whether or not a document exists.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function attempts to retrieve the specified document from the repository.
-     * 
-     * @param {String} documentId The unique identifier (including version number) for
-     * the document being fetched.
-     * @returns {Catalog} A catalog containing the document or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchDocument = async function(documentId) {
+    this.readDocument = async function(type, tag, version) {
+        const file = generateFilename(directory, type, tag, version);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchDocument', '$documentId', documentId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the document
-            const name = documents + documentId;  // prepend the context
-            const document = await readComponent(name, debug);
-
-            return document;
+            const source = await pfs.readFile(file, 'utf8');
+            return bali.component(source);
         } catch (cause) {
+            if (cause.code === 'ENOENT') return undefined; // the document does not exist
+            // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$fetchDocument',
+                $procedure: '$readDocument',
                 $exception: '$unexpected',
-                $documentId: documentId,
-                $text: 'An unexpected error occurred while attempting to fetch a document.'
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to read a document from the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function creates a new document in the repository.
-     * 
-     * @param {String} documentId The unique identifier (including version number) for
-     * the document being created.
-     * @param {Catalog} document A catalog containing the document.
-     */
-    this.createDocument = async function(documentId, document) {
+    this.writeDocument = async function(type, tag, version, document) {
+        const file = generateFilename(directory, type, tag, version);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$createDocument', '$documentId', documentId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$createDocument', '$document', document, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the directory if necessary
-            await createDirectory(documents, debug);
-
-            // make sure the document doesn't already exist
-            const name = documents + documentId;  // prepend the context
-            if (await componentExists(name, debug)) {
-                const exception = bali.exception({
-                    $module: '/bali/repositories/LocalRepository',
-                    $procedure: '$createDocument',
-                    $exception: '$documentExists',
-                    $name: name,
-                    $text: 'The document to be created already exists.'
-                });
-                if (debug) console.error(exception.toString());
-                throw exception;
-            }
-
-            // create the new document
-            await writeComponent(name, document, READONLY, debug);
-
+            const path = file.slice(0, file.lastIndexOf('/'));
+            await pfs.mkdir(path, {recursive: true, mode: 0o700});
+            const mode = (type === 'drafts') ? 0o600 : 0o400;
+            const source = document.toString() + EOL;  // add POSIX compliant <EOL>
+            await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$createDocument',
+                $procedure: '$writeDocument',
                 $exception: '$unexpected',
-                $documentId: documentId,
+                $file: file,
                 $document: document,
-                $text: 'An unexpected error occurred while attempting to create a document.'
+                $text: 'An unexpected error occurred while attempting to write a document to the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function checks to see whether or not a type is associated with the
-     * specified identifier.
-     * 
-     * @param {String} typeId The unique identifier (including version number) for
-     * the type being checked.
-     * @returns {Boolean} Whether or not the type exists.
-     */
-    this.typeExists = async function(typeId) {
+    this.deleteDocument = async function(type, tag, version) {
+        const file = generateFilename(directory, type, tag, version);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$typeExists', '$typeId', typeId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // check the existence
-            const name = types + typeId;  // prepend the context
-            const exists = await componentExists(name, debug);
-
-            return exists;
+            const source = await pfs.readFile(file, 'utf8');
+            await pfs.unlink(file);  // delete the document
+            return bali.component(source);
         } catch (cause) {
+            if (cause.code === 'ENOENT') return undefined; // the document does not exist
+            // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$typeExists',
+                $procedure: '$deleteDocument',
                 $exception: '$unexpected',
-                $typeId: typeId,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a type.'
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to delete a document from the repository.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function attempts to retrieve the specified type from the repository.
-     * 
-     * @param {String} typeId The unique identifier (including version number) for
-     * the type being fetched.
-     * @returns {Catalog} A catalog containing the type or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.fetchType = async function(typeId) {
+    this.addMessage = async function(queue, message) {
+        const identifier = bali.tag().getValue();  // strip off the leading '#'
+        const file = generateFilename(directory, 'queues', queue, identifier);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$fetchType', '$typeId', typeId, [
-                    '/javascript/String'
-                ]);
-            }
-
-            // fetch the type
-            const name = types + typeId;  // prepend the context
-            const type = await readComponent(name, debug);
-
-            return type;
+            const path = file.slice(0, file.lastIndexOf('/'));
+            await pfs.mkdir(path, {recursive: true, mode: 0o700});
+            const source = message.toString() + EOL;  // add POSIX compliant <EOL>
+            await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$fetchType',
+                $procedure: '$addMessage',
                 $exception: '$unexpected',
-                $typeId: typeId,
-                $text: 'An unexpected error occurred while attempting to fetch a type.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function creates a new type in the repository.
-     * 
-     * @param {String} typeId The unique identifier (including version number) for
-     * the type being created.
-     * @param {Catalog} type A catalog containing the type.
-     */
-    this.createType = async function(typeId, type) {
-        try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$createType', '$typeId', typeId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$createType', '$type', type, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the directory if necessary
-            await createDirectory(types, debug);
-
-            // make sure the type doesn't already exist
-            const name = types + typeId;  // prepend the context
-            if (await componentExists(name, debug)) {
-                const exception = bali.exception({
-                    $module: '/bali/repositories/LocalRepository',
-                    $procedure: '$createType',
-                    $exception: '$typeExists',
-                    $name: name,
-                    $text: 'The type to be created already exists.'
-                });
-                if (debug) console.error(exception.toString());
-                throw exception;
-            }
-
-            // create the new type
-            await writeComponent(name, type, READONLY, debug);
-
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$createType',
-                $exception: '$unexpected',
-                $typeId: typeId,
-                $type: type,
-                $text: 'An unexpected error occurred while attempting to create a type.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This function adds a new message onto the specified queue in the repository.
-     * 
-     * @param {String} queueId The unique identifier for the queue.
-     * @param {Catalog} message A catalog containing the message.
-     */
-    this.queueMessage = async function(queueId, message) {
-        try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$queueMessage', '$queueId', queueId, [
-                    '/javascript/String'
-                ]);
-                validator.validateType('/bali/repositories/LocalRepository', '$queueMessage', '$message', message, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-
-            // create the directory if necessary
-            const queue = queues + queueId + '/';
-            await createDirectory(queue, debug);
-
-            // place the new message on the queue
-            const messageId = bali.tag().getValue();
-            const name = queue + messageId;  // prepend the context
-            await writeComponent(name, message, UPDATEABLE, debug);
-
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$queueMessage',
-                $exception: '$unexpected',
-                $queueId: queueId,
+                $file: file,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to queue a message.'
+                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    /**
-     * This function removes a message (at random) from the specified queue in the repository.
-     * 
-     * @param {String} queueId The unique identifier for the queue.
-     * @returns {Catalog} A catalog containing the message or <code>undefined</code>
-     * if it doesn't exist.
-     */
-    this.dequeueMessage = async function(queueId) {
+    this.removeMessage = async function(queue) {
+        const path = generatePath(directory, 'queues', queue);
         try {
-            // validate the arguments
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/LocalRepository', '$dequeueMessage', '$queueId', queueId, [
-                    '/javascript/String'
-                ]);
+            const files = await pfs.readdir(path, 'utf8');
+            if (files.length) {
+                const messages = bali.list(files);
+                const generator = bali.generator();
+                const index = generator.generateIndex(messages.getSize());
+                const filename = path + '/' + messages.getItem(index).getValue();
+                const source = await pfs.readFile(filename, 'utf8');
+                await pfs.unlink(filename);  // delete the file
+                return bali.component(source);
+            } else {
+                await pfs.rmdir(path);  // remove the empty directory
             }
-
-            // remove a message from the queue
-            const queue = queues + queueId + '/';
-            var message;
-            while (true) {
-                const messages = await listDirectory(queue, debug);
-                const count = messages.length;
-                if (count) {
-                    // select a message at random since a distributed queue cannot guarantee FIFO
-                    const generator = bali.generator();
-                    const index = generator.generateIndex(count) - 1;  // convert to zero based indexing
-                    const filename = messages[index];
-                    const name = queue + filename;  // prepend the context
-                    message = await readComponent(name, debug);
-                    try {
-                        await deleteComponent(name, debug);
-                        break; // we got there first
-                    } catch (exception) {
-                        // another process got there first
-                        message = undefined;
-                    }
-                } else {
-                    break;  // no more messages
-                }
-            }
-
-            return message;
         } catch (cause) {
+            if (cause.code === 'ENOENT') return undefined; // the directory does not exist
+            // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalRepository',
-                $procedure: '$dequeueMessage',
+                $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $queueId: queueId,
-                $text: 'An unexpected error occurred while attempting to dequeue a message.'
+                $path: path,
+                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
@@ -736,225 +272,16 @@ const LocalRepository = function(directory, debug) {
 LocalRepository.prototype.constructor = LocalRepository;
 exports.LocalRepository = LocalRepository;
 
-
-// PRIVATE FUNCTIONS
-
-/**
- * This function returns a list of the names of the components contained in the specified
- * directory.
- * 
- * @param {String} directory The directory to be listed.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Array} An array containing the names of the components in the directory.
- */
-const listDirectory = async function(directory, debug) {
-    try {
-        const list = await pfs.readdir(directory, 'utf8');
-        const names = [];
-        list.forEach(function(item) {
-            names.push(item.slice(0,-5));  // remove the file suffix
-        });
-        return names;
-    } catch (cause) {
-        if (cause.code === 'ENOENT') {
-            // the directory does not exist
-            return [];
-        } else {
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$listDirectory',
-                $exception: '$unexpected',
-                $directory: directory,
-                $text: 'An unexpected error occurred while attempting to list a directory.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    }
+const generatePath = function(directory, type, identifier) {
+    // the identifier is either a name beginning with '/' or a tag beginning with '#'
+    const path = directory + '/' + type + '/' + identifier.toString().slice(1);  // remove the leading '#' or '/'
+    return path;
 };
 
-
-/**
- * This function recursively creates the specified directory structure.
- * 
- * @param {String} directory The directory structure to be created. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const createDirectory = async function(directory, debug) {
-    try {
-        await pfs.mkdir(directory, {recursive: true, mode: 0o700});
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
-            $procedure: '$createDirectory',
-            $exception: '$unexpected',
-            $directory: directory,
-            $text: 'An unexpected error occurred while attempting to create a directory.'
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function determines whether or not the specified component exists.
- * 
- * @param {String} name The name of the component.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Boolean} Whether or not the component exists.
- */
-const componentExists = async function(name, debug) {
-    try {
-        const file = name + '.bali';  // append the file suffix
-        await pfs.stat(file);  // attempt to access the file
-        // the component exists
-        return true;
-    } catch (cause) {
-        if (cause.code === 'ENOENT') {
-            // the component does not exist
-            return false;
-        } else {
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
-                $procedure: '$componentExists',
-                $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to look for a component.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    }
-};
-
-
-/**
- * This function returns the specified component, or as <code>undefined</code> if it does
- * not exist.
- * 
- * @param {String} name The name of the component to be read.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Component} The component.
- */
-const readComponent = async function(name, debug) {
-    try {
-        var component;
-        if (await componentExists(name, debug)) {
-            const file = name + '.bali';  // append the file suffix
-            const source = await pfs.readFile(file, 'utf8');
-            component = bali.component(source, debug);
-        }
-        return component;
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
-            $procedure: '$readComponent',
-            $exception: '$unexpected',
-            $name: name,
-            $text: 'An unexpected error occurred while attempting to read a component from a file.'
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function stores the specified component in a file with the specified name.
- * 
- * @param {String} name The name of the component.
- * @param {Component} component The component to be stored.
- * @param {Number} mode The access mode for the resulting file. 
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const writeComponent = async function(name, component, mode, debug) {
-    try {
-        const file = name + '.bali';  // append the file suffix
-        const directory = file.slice(0, file.lastIndexOf('/'));  // remove the filename
-        await createDirectory(directory);  // recursively create the directory structure
-        const source = component.toString() + EOL;  // add POSIX compliant <EOL>
-        await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
-            $procedure: '$writeComponent',
-            $exception: '$unexpected',
-            $name: name,
-            $component: component,
-            $text: 'An unexpected error occurred while attempting to write a component to a file.'
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
-};
-
-
-/**
- * This function deletes the specified component if it exists.
- * 
- * @param {String} name The name of the component.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- */
-const deleteComponent = async function(name, debug) {
-    try {
-        if (await componentExists(name, debug)) {
-            const file = name + '.bali';  // append the file suffix
-            await pfs.unlink(file);  // delete the file
-        }
-    } catch (cause) {
-        const exception = bali.exception({
-            $module: '/bali/repositories/LocalRepository',
-            $procedure: '$deleteComponent',
-            $exception: '$unexpected',
-            $name: name,
-            $text: 'An unexpected error occurred while attempting to delete a component.'
-        }, cause);
-        if (debug > 0) console.error(exception.toString());
-        throw exception;
-    }
+const generateFilename = function(directory, type, identifier, version) {
+    // the identifier is either a name beginning with '/' or a tag beginning with '#'
+    var filename = generatePath(directory, type, identifier);
+    if (version) filename += '/' + version;
+    filename += '.bali';
+    return filename;
 };
