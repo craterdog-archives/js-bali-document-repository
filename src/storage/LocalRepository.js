@@ -308,7 +308,7 @@ const LocalRepository = function(root, debug) {
 
     const generatePath = function(type, directory) {
         // the directory is either a name beginning with '/' or a tag beginning with '#'
-        const path = root + '/' + type + '/' + directory.toString().slice(1);  // remove the leading '/' or '#'
+        const path = root + type + '/' + directory.toString().slice(1);  // remove the leading '/' or '#'
         return path;
     };
 
