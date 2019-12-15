@@ -10,7 +10,7 @@
 'use strict';
 
 /*
- * This class implements a proxy to a remote RESTful document repository.  It treats
+ * This class implements a proxy to a remote RESTful storage mechanism.  It treats
  * documents as UTF-8 encoded strings.
  */
 const axios = require('axios');
@@ -20,10 +20,10 @@ const bali = require('bali-component-framework').api();
 // DOCUMENT REPOSITORY
 
 /**
- * This function creates a new instance of a remote document repository proxy.
+ * This function creates a new instance of a remote storage mechanism proxy.
  *
  * @param {DigitalNotary} notary The digital notary to be used to notarize the request credentials.
- * @param {String} uri A string containing the URI for the remote document repository with no
+ * @param {String} uri A string containing the URI for the remote storage mechanism with no
  * trailing slash.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -33,25 +33,25 @@ const bali = require('bali-component-framework').api();
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new remote document repository.
+ * @returns {Object} The new remote storage mechanism.
  */
-const RemoteRepository = function(notary, uri, debug) {
+const RemoteStorage = function(notary, uri, debug) {
     if (debug > 2) console.log('Initializing the proxy to the remote repository: ' + uri);
 
     // validate the arguments
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/RemoteRepository', '$RemoteRepository', '$notary', notary, [
+        validator.validateType('/bali/repositories/RemoteStorage', '$RemoteStorage', '$notary', notary, [
             '/javascript/Object'
         ]);
-        validator.validateType('/bali/repositories/RemoteRepository', '$RemoteRepository', '$uri', uri, [
+        validator.validateType('/bali/repositories/RemoteStorage', '$RemoteStorage', '$uri', uri, [
             '/javascript/String'
         ]);
     }
 
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/RemoteRepository',
+            $module: '/bali/repositories/RemoteStorage',
             $uri: uri
         });
         return catalog.toString();
@@ -62,7 +62,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('HEAD', 'statics', resource, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$staticExists',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -79,7 +79,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('GET', 'statics', resource, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$readStatic',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -96,7 +96,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('HEAD', 'citations', name, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -113,7 +113,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('GET', 'citations', name, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$readCitation',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -130,7 +130,7 @@ const RemoteRepository = function(notary, uri, debug) {
             await sendRequest('POST', 'citations', name, undefined, citation);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$writeCitation',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -148,7 +148,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('HEAD', type, tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -167,7 +167,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('GET', type, tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -187,7 +187,7 @@ const RemoteRepository = function(notary, uri, debug) {
             await sendRequest(method, type, tag, version, document);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -207,7 +207,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('DELETE', type, tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$deleteDocument',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -226,7 +226,7 @@ const RemoteRepository = function(notary, uri, debug) {
             await sendRequest('PUT', 'queues', queue, undefined, message);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -244,7 +244,7 @@ const RemoteRepository = function(notary, uri, debug) {
             return await sendRequest('DELETE', 'queues', queue, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $uri: uri,
@@ -333,7 +333,7 @@ const RemoteRepository = function(notary, uri, debug) {
                         // continue with the exception processing
                 }
                 const exception = bali.exception({
-                    $module: '/bali/repositories/RemoteRepository',
+                    $module: '/bali/repositories/RemoteStorage',
                     $procedure: '$sendRequest',
                     $exception: '$invalidRequest',
                     $uri: bali.reference(fullURI),
@@ -348,7 +348,7 @@ const RemoteRepository = function(notary, uri, debug) {
             if (cause.request) {
                 // the request was sent but no response was received
                 const exception = bali.exception({
-                    $module: '/bali/repositories/RemoteRepository',
+                    $module: '/bali/repositories/RemoteStorage',
                     $procedure: '$sendRequest',
                     $exception: '$serverDown',
                     $uri: bali.reference(fullURI),
@@ -362,7 +362,7 @@ const RemoteRepository = function(notary, uri, debug) {
             }
             // the request could not be sent
             const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
+                $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$sendRequest',
                 $exception: '$malformedRequest',
                 $uri: bali.reference(fullURI),
@@ -377,5 +377,5 @@ const RemoteRepository = function(notary, uri, debug) {
     
     return this;
 };
-RemoteRepository.prototype.constructor = RemoteRepository;
-exports.RemoteRepository = RemoteRepository;
+RemoteStorage.prototype.constructor = RemoteStorage;
+exports.RemoteStorage = RemoteStorage;

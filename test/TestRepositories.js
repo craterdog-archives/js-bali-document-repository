@@ -31,11 +31,11 @@ const configuration = {
 };
 
 const repositories = {
-    'Local Repository': Repositories.repository(Repositories.local(directory, debug), debug),
-    'Cached Repository': Repositories.repository(Repositories.cached(Repositories.local(directory, debug), debug), debug),
-    'Validated Repository': Repositories.repository(Repositories.validated(notary, Repositories.local(directory, debug), debug), debug),
-    'Remote Repository': Repositories.repository(Repositories.remote(notary, uri, debug), debug),
-    'S3 Repository': Repositories.repository(Repositories.s3(configuration, debug), debug)
+    'Local Storage': Repositories.repository(Repositories.local(directory, debug), debug),
+    'Cached Storage': Repositories.repository(Repositories.cached(Repositories.local(directory, debug), debug), debug),
+    'Validated Storage': Repositories.repository(Repositories.validated(notary, Repositories.local(directory, debug), debug), debug),
+    'Remote Storage': Repositories.repository(Repositories.remote(notary, uri, debug), debug),
+    'S3 Storage': Repositories.repository(Repositories.s3(configuration, debug), debug)
 };
 
 

@@ -10,11 +10,11 @@
 'use strict';
 
 const DocumentRepository = require('./src/DocumentRepository').DocumentRepository;
-const CachedRepository = require('./src/storage/CachedRepository').CachedRepository;
-const LocalRepository = require('./src/storage/LocalRepository').LocalRepository;
-const RemoteRepository = require('./src/storage/RemoteRepository').RemoteRepository;
-const S3Repository = require('./src/storage/S3Repository').S3Repository;
-const ValidatedRepository = require('./src/storage/ValidatedRepository').ValidatedRepository;
+const CachedStorage = require('./src/storage/CachedStorage').CachedStorage;
+const LocalStorage = require('./src/storage/LocalStorage').LocalStorage;
+const RemoteStorage = require('./src/storage/RemoteStorage').RemoteStorage;
+const S3Storage = require('./src/storage/S3Storage').S3Storage;
+const ValidatedStorage = require('./src/storage/ValidatedStorage').ValidatedStorage;
 
 
 /**
@@ -34,7 +34,7 @@ const ValidatedRepository = require('./src/storage/ValidatedRepository').Validat
  * @returns {Object} The new cached storage mechanism instance.
  */
 const cached = function(storage, debug) {
-    return new CachedRepository(storage, debug);
+    return new CachedStorage(storage, debug);
 };
 exports.cached = cached;
 
@@ -58,7 +58,7 @@ exports.cached = cached;
  * @returns {Object} The new validating document repository wrapper.
  */
 const validated = function(notary, storage, debug) {
-    return new ValidatedRepository(notary, storage, debug);
+    return new ValidatedStorage(notary, storage, debug);
 };
 exports.validated = validated;
 
@@ -78,7 +78,7 @@ exports.validated = validated;
  * @returns {Object} The new file-based storage mechanism instance.
  */
 const local = function(directory, debug) {
-    return new LocalRepository(directory, debug);
+    return new LocalStorage(directory, debug);
 };
 exports.local = local;
 
@@ -99,7 +99,7 @@ exports.local = local;
  * @returns {Object} The new remote storage mechanism proxy.
  */
 const remote = function(notary, uri, debug) {
-    return new RemoteRepository(notary, uri, debug);
+    return new RemoteStorage(notary, uri, debug);
 };
 exports.remote = remote;
 
@@ -119,7 +119,7 @@ exports.remote = remote;
  * @returns {Object} The new AWS S3-based storage mechanism instance.
  */
 const s3 = function(configuration, debug) {
-    return new S3Repository(configuration, debug);
+    return new S3Storage(configuration, debug);
 };
 exports.s3 = s3;
 

@@ -16,7 +16,7 @@
 
 
 /*
- * This class implements a local filesystem based document repository.  It treats
+ * This class implements a local filesystem based storage mechanism.  It treats
  * documents as UTF-8 encoded strings.  It can be used for local testing of the
  * Bali Nebula™.  If a root directory is specified, it will be created and used as
  * the repository.  Otherwise, a repository directory will be created and used
@@ -36,7 +36,7 @@ const EOL = '\n';
 // DOCUMENT REPOSITORY
 
 /**
- * This function creates a new instance of a local document repository.  If the
+ * This function creates a new instance of a local storage mechanism.  If the
  * repository does not yet exist it is created.
  * 
  * @param {String} root An optional root directory to be used for local configuration storage. If
@@ -49,15 +49,15 @@ const EOL = '\n';
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new local document repository.
+ * @returns {Object} The new local storage mechanism.
  */
-const LocalRepository = function(root, debug) {
+const LocalStorage = function(root, debug) {
     // validate the arguments
     root = root || os.homedir() + '/.bali/';
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/LocalRepository', '$LocalRepository', '$root', root, [
+        validator.validateType('/bali/repositories/LocalStorage', '$LocalStorage', '$root', root, [
             '/javascript/Undefined',
             '/javascript/String'
         ]);
@@ -65,7 +65,7 @@ const LocalRepository = function(root, debug) {
 
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/LocalRepository',
+            $module: '/bali/repositories/LocalStorage',
             $root: root
         });
         return catalog.toString();
@@ -80,7 +80,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return false; // the static resource does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$staticExists',
                 $exception: '$unexpected',
                 $file: file,
@@ -99,7 +99,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return undefined; // the static resource does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readStatic',
                 $exception: '$unexpected',
                 $file: file,
@@ -119,7 +119,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return false; // the citation does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $file: file,
@@ -139,7 +139,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return undefined; // the citation does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readCitation',
                 $exception: '$unexpected',
                 $file: file,
@@ -159,7 +159,7 @@ const LocalRepository = function(root, debug) {
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeCitation',
                 $exception: '$unexpected',
                 $file: file,
@@ -180,7 +180,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return false; // the document does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $file: file,
@@ -200,7 +200,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return undefined; // the document does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $file: file,
@@ -221,7 +221,7 @@ const LocalRepository = function(root, debug) {
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $file: file,
@@ -243,7 +243,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return undefined; // the document does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$deleteDocument',
                 $exception: '$unexpected',
                 $file: file,
@@ -264,7 +264,7 @@ const LocalRepository = function(root, debug) {
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $file: file,
@@ -295,7 +295,7 @@ const LocalRepository = function(root, debug) {
             if (cause.code === 'ENOENT') return undefined; // the directory does not exist
             // something else went wrong
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalRepository',
+                $module: '/bali/repositories/LocalStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $path: path,
@@ -322,5 +322,5 @@ const LocalRepository = function(root, debug) {
 
     return this;
 };
-LocalRepository.prototype.constructor = LocalRepository;
-exports.LocalRepository = LocalRepository;
+LocalStorage.prototype.constructor = LocalStorage;
+exports.LocalStorage = LocalStorage;

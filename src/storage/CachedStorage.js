@@ -10,8 +10,8 @@
 'use strict';
 
 /*
- * This class implements a document repository wrapper that caches (locally) all documents
- * that have been retrieved from the wrapped document repository.  The documents are assumed
+ * This class implements a storage mechanism wrapper that caches (in memory) all documents
+ * that have been retrieved from the wrapped storage mechanism.  The documents are assumed
  * to be immutable so no cache consistency issues exist.
  */
 const bali = require('bali-component-framework').api();
@@ -20,7 +20,7 @@ const bali = require('bali-component-framework').api();
 // DOCUMENT REPOSITORY
 
 /**
- * This function creates a new instance of a cached document repository.  A remote repository
+ * This function creates a new instance of a cached storage mechanism.  A remote repository
  * is passed in and is used as the persistent store for all documents.
  * 
  * @param {Object} repository The actual repository that maintains documents.
@@ -32,21 +32,21 @@ const bali = require('bali-component-framework').api();
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new cached document repository.
+ * @returns {Object} The new cached storage mechanism.
  */
-const CachedRepository = function(repository, debug) {
+const CachedStorage = function(repository, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/CachedRepository', '$CachedRepository', '$repository', repository, [
+        validator.validateType('/bali/repositories/CachedStorage', '$CachedStorage', '$repository', repository, [
             '/javascript/Object'
         ]);
     }
 
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/CachedRepository',
+            $module: '/bali/repositories/CachedStorage',
             $repository: repository.toString()
         });
         return catalog.toString();
@@ -61,7 +61,7 @@ const CachedRepository = function(repository, debug) {
             return await repository.staticExists(resource);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$staticExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -88,7 +88,7 @@ const CachedRepository = function(repository, debug) {
             return object;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$readStatic',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -109,7 +109,7 @@ const CachedRepository = function(repository, debug) {
             return await repository.citationExists(name);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -136,7 +136,7 @@ const CachedRepository = function(repository, debug) {
             return citation;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$readCitation',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -157,7 +157,7 @@ const CachedRepository = function(repository, debug) {
             if (cache['citations']) cache['citations'].write(key, citation);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$writeCitation',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -179,7 +179,7 @@ const CachedRepository = function(repository, debug) {
             return await repository.documentExists(type, tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -208,7 +208,7 @@ const CachedRepository = function(repository, debug) {
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -231,7 +231,7 @@ const CachedRepository = function(repository, debug) {
             if (cache[type]) cache[type].write(key, document);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -252,7 +252,7 @@ const CachedRepository = function(repository, debug) {
             return await repository.deleteDocument(type, tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$deleteDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -272,7 +272,7 @@ const CachedRepository = function(repository, debug) {
             await repository.addMessage(queue, document);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -292,7 +292,7 @@ const CachedRepository = function(repository, debug) {
             return await repository.removeMessage(queue);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/CachedRepository',
+                $module: '/bali/repositories/CachedStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -312,8 +312,8 @@ const CachedRepository = function(repository, debug) {
 
     return this;
 };
-CachedRepository.prototype.constructor = CachedRepository;
-exports.CachedRepository = CachedRepository;
+CachedStorage.prototype.constructor = CachedStorage;
+exports.CachedStorage = CachedStorage;
 
 
 // DOCUMENT CACHE

@@ -10,9 +10,9 @@
 'use strict';
 
 /*
- * This class implements a document repository wrapper that validates all documents prior to
- * storing them in the wrapped document repository and after retrieving them from the wrapped
- * document repository.  The documents are validated using the public certificate of the
+ * This class implements a storage mechanism wrapper that validates all documents prior to
+ * storing them in the wrapped storage mechanism and after retrieving them from the wrapped
+ * storage mechanism.  The documents are validated using the public certificate of the
  * notary key used to notarize them.
  */
 const bali = require('bali-component-framework').api();
@@ -21,7 +21,7 @@ const bali = require('bali-component-framework').api();
 // PUBLIC FUNCTIONS
 
 /**
- * This function creates a new instance of a validated document repository.  A backend repository
+ * This function creates a new instance of a validated storage mechanism.  A backend repository
  * is passed in and is used as the repository for all documents.
  * 
  * @param {DigitalNotary} notary The digital notary to be used to validate the documents.
@@ -34,14 +34,14 @@ const bali = require('bali-component-framework').api();
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new validated document repository.
+ * @returns {Object} The new validated storage mechanism.
  */
-const ValidatedRepository = function(notary, repository, debug) {
+const ValidatedStorage = function(notary, repository, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/ValidatedRepository', '$ValidatedRepository', '$repository', repository, [
+        validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$repository', repository, [
             '/javascript/Object'
         ]);
     }
@@ -53,7 +53,7 @@ const ValidatedRepository = function(notary, repository, debug) {
      */
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/ValidatedRepository',
+            $module: '/bali/repositories/ValidatedStorage',
             $repository: repository.toString()
         });
         return catalog.toString();
@@ -64,7 +64,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return await repository.staticExists(resource);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$staticExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -81,7 +81,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return await repository.readStatic(resource);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$readStatic',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -98,7 +98,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return await repository.citationExists(name);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -117,7 +117,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return citation;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$readCitation',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -135,7 +135,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             await repository.writeCitation(name, citation);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$writeCitation',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -153,7 +153,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return await repository.documentExists(type, tag, version);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -174,7 +174,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -194,7 +194,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             await repository.writeDocument(type, tag, version, document);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -216,7 +216,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$deleteDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -236,7 +236,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             await repository.addMessage(queue, message);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -256,7 +256,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return message;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
@@ -289,7 +289,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             const document = await repository.readDocument('documents', tag, version);
             if (!document) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/ValidatedRepository',
+                    $module: '/bali/repositories/ValidatedStorage',
                     $procedure: '$validateCitation',
                     $exception: '$missingDocument',
                     $citation: citation,
@@ -302,7 +302,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             const matches = await notary.citationMatches(citation, document);
             if (!matches) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/ValidatedRepository',
+                    $module: '/bali/repositories/ValidatedStorage',
                     $procedure: '$validateCitation',
                     $exception: '$modifiedDocument',
                     $citation: citation,
@@ -315,7 +315,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$validateCitation',
                 $exception: '$unexpected',
                 $citation: citation,
@@ -344,7 +344,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             const signature = document.getValue('$signature');
             if (!content || !certificateCitation || !signature) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/ValidatedRepository',
+                    $module: '/bali/repositories/ValidatedStorage',
                     $procedure: '$validateDocument',
                     $exception: '$documentInvalid',
                     $document: document,
@@ -373,7 +373,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             const valid = await notary.validDocument(document, certificate);
             if (!valid) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/ValidatedRepository',
+                    $module: '/bali/repositories/ValidatedStorage',
                     $procedure: '$validateDocument',
                     $exception: '$documentInvalid',
                     $document: document,
@@ -385,7 +385,7 @@ const ValidatedRepository = function(notary, repository, debug) {
     
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$validateDocument',
                 $exception: '$unexpected',
                 $document: document,
@@ -414,7 +414,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             const signature = message.getValue('$signature');
             if (!content || !certificateCitation || !signature) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/ValidatedRepository',
+                    $module: '/bali/repositories/ValidatedStorage',
                     $procedure: '$validateMessage',
                     $exception: '$messageInvalid',
                     $message: message,
@@ -432,7 +432,7 @@ const ValidatedRepository = function(notary, repository, debug) {
             const valid = await notary.validDocument(message, certificate);
             if (!valid) {
                 const exception = bali.exception({
-                    $module: '/bali/repositories/ValidatedRepository',
+                    $module: '/bali/repositories/ValidatedStorage',
                     $procedure: '$validateMessage',
                     $exception: '$messageInvalid',
                     $message: message,
@@ -444,7 +444,7 @@ const ValidatedRepository = function(notary, repository, debug) {
     
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedRepository',
+                $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$validateMessage',
                 $exception: '$unexpected',
                 $message: message,
@@ -457,6 +457,6 @@ const ValidatedRepository = function(notary, repository, debug) {
     
     return this;
 };
-ValidatedRepository.prototype.constructor = ValidatedRepository;
-exports.ValidatedRepository = ValidatedRepository;
+ValidatedStorage.prototype.constructor = ValidatedStorage;
+exports.ValidatedStorage = ValidatedStorage;
 

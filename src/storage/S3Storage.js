@@ -10,7 +10,7 @@
 'use strict';
 
 /*
- * This class implements an AWS S3 bucket based document repository.  It treats
+ * This class implements an AWS S3 bucket based storage mechanism.  It treats
  * documents as UTF-8 encoded strings.
  */
 const aws = new require('aws-sdk/clients/s3');
@@ -27,7 +27,7 @@ const EOL = '\n';
 // DOCUMENT REPOSITORY
 
 /**
- * This function creates a new instance of an S3 document repository proxy.
+ * This function creates a new instance of an S3 storage mechanism proxy.
  * 
  * @param {Object} configuration An object containing the S3 configuration information. 
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
@@ -38,21 +38,21 @@ const EOL = '\n';
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new S3 document repository proxy.
+ * @returns {Object} The new S3 storage mechanism proxy.
  */
-const S3Repository = function(configuration, debug) {
+const S3Storage = function(configuration, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/S3Repository', '$S3Repository', '$configuration', configuration, [
+        validator.validateType('/bali/repositories/S3Storage', '$S3Storage', '$configuration', configuration, [
             '/javascript/Object'
         ]);
     }
 
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/S3Repository',
+            $module: '/bali/repositories/S3Storage',
             $configuration: configuration
         });
         return catalog.toString();
@@ -65,7 +65,7 @@ const S3Repository = function(configuration, debug) {
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$staticExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -84,7 +84,7 @@ const S3Repository = function(configuration, debug) {
             return await getObject(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$readStatic',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -103,7 +103,7 @@ const S3Repository = function(configuration, debug) {
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$citationExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -126,7 +126,7 @@ const S3Repository = function(configuration, debug) {
             return citation;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$readCitation',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -147,7 +147,7 @@ const S3Repository = function(configuration, debug) {
             await putObject(bucket, key, source);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$writeCitation',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -167,7 +167,7 @@ const S3Repository = function(configuration, debug) {
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -192,7 +192,7 @@ const S3Repository = function(configuration, debug) {
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -215,7 +215,7 @@ const S3Repository = function(configuration, debug) {
             await putObject(bucket, key, source);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -242,7 +242,7 @@ const S3Repository = function(configuration, debug) {
             return document;
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$deleteDocument',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -265,7 +265,7 @@ const S3Repository = function(configuration, debug) {
             await putObject(bucket, key, source);
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -302,7 +302,7 @@ const S3Repository = function(configuration, debug) {
             }
         } catch (cause) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Repository',
+                $module: '/bali/repositories/S3Storage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
@@ -356,8 +356,8 @@ const S3Repository = function(configuration, debug) {
 
     return this;
 };
-S3Repository.prototype.constructor = S3Repository;
-exports.S3Repository = S3Repository;
+S3Storage.prototype.constructor = S3Storage;
+exports.S3Storage = S3Storage;
 
 
 // AWS S3 PROMISIFICATION
