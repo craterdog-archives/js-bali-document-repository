@@ -58,10 +58,48 @@ const S3Repository = function(configuration, debug) {
         return catalog.toString();
     };
 
+    this.staticExists = async function(resource) {
+        try {
+            const bucket = configuration['static'];
+            const key = generateStaticKey(resource);
+            return await doesExist(bucket, key);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$staticExists',
+                $exception: '$unexpected',
+                $configuration: configuration,
+                $resource: resource,
+                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.readStatic = async function(resource) {
+        try {
+            const bucket = configuration['static'];
+            const key = generateStaticKey(resource);
+            return await getObject(bucket, key);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Repository',
+                $procedure: '$readStatic',
+                $exception: '$unexpected',
+                $configuration: configuration,
+                $resource: resource,
+                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.citationExists = async function(name) {
         try {
             const bucket = configuration['citations'];
-            const key = generateKey(name);
+            const key = generateNameKey(name);
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
@@ -80,7 +118,7 @@ const S3Repository = function(configuration, debug) {
     this.readCitation = async function(name) {
         try {
             const bucket = configuration['citations'];
-            const key = generateKey(name);
+            const key = generateNameKey(name);
             var citation = await getObject(bucket, key);
             if (citation) {
                 citation = bali.component(citation);
@@ -103,7 +141,7 @@ const S3Repository = function(configuration, debug) {
     this.writeCitation = async function(name, citation) {
         try {
             const bucket = configuration['citations'];
-            const key = generateKey(name);
+            const key = generateNameKey(name);
             if (await doesExist(bucket, key)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
@@ -125,7 +163,7 @@ const S3Repository = function(configuration, debug) {
     this.documentExists = async function(type, tag, version) {
         try {
             const bucket = configuration[type];
-            const key = generateKey(tag, version);
+            const key = generateDocumentKey(tag, version);
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
@@ -146,7 +184,7 @@ const S3Repository = function(configuration, debug) {
     this.readDocument = async function(type, tag, version) {
         try {
             const bucket = configuration[type];
-            const key = generateKey(tag, version);
+            const key = generateDocumentKey(tag, version);
             var document = await getObject(bucket, key);
             if (document) {
                 document = bali.component(document);
@@ -171,7 +209,7 @@ const S3Repository = function(configuration, debug) {
     this.writeDocument = async function(type, tag, version, document) {
         try {
             const bucket = configuration[type];
-            const key = generateKey(tag, version);
+            const key = generateDocumentKey(tag, version);
             if (type !== 'drafts' && await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
@@ -195,7 +233,7 @@ const S3Repository = function(configuration, debug) {
     this.deleteDocument = async function(type, tag, version) {
         try {
             const bucket = configuration[type];
-            const key = generateKey(tag, version);
+            const key = generateDocumentKey(tag, version);
             var document = await getObject(bucket, key);
             if (document) {
                 document = bali.component(document);
@@ -219,10 +257,10 @@ const S3Repository = function(configuration, debug) {
     };
 
     this.addMessage = async function(queue, message) {
-        const identifier = bali.tag().getValue();
+        const identifier = bali.tag();
         try {
             const bucket = configuration['queues'];
-            const key = generateKey(queue, identifier);
+            const key = generateMessageKey(queue, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
         } catch (cause) {
@@ -245,7 +283,7 @@ const S3Repository = function(configuration, debug) {
         try {
             while (true) {
                 const bucket = configuration['queues'];
-                var key = generatePrefix(queue);
+                var key = generateQueueKey(queue);
                 const list = await listObjects(bucket, key);
                 const count = list.length;
                 if (count === 0) break;  // no more messages
@@ -276,6 +314,46 @@ const S3Repository = function(configuration, debug) {
         }
     };
 
+    const generateStaticKey = function(resource) {
+        const suffix = resource.slice(resource.lastIndexOf('.'));
+        var path;
+        switch (suffix) {
+            case '.png':
+                path = 'images/';
+                break;
+            case '.css':
+                path = 'styles/';
+                break;
+            default:
+                path = 'pages/';
+        }
+        return path + resource;
+    };
+
+    const generateNameKey = function(name) {
+        var key = name.toString().slice(1);  // remove the leading '/'
+        key += '.bali';
+        return key;
+    };
+
+    const generateDocumentKey = function(tag, version) {
+        var key = tag.toString().slice(1);  // remove the leading '#'
+        key += '/' + version.toString();
+        key += '.bali';
+        return key;
+    };
+
+    const generateQueueKey = function(queue) {
+        return queue.toString().slice(1);  // remove the leading '#'
+    };
+
+    const generateMessageKey = function(queue, identifier) {
+        var key = queue.toString().slice(1);  // remove the leading '#'
+        key += '/' + identifier.toString().slice(1);  // remove the leading '#'
+        key += '.bali';
+        return key;
+    };
+
     return this;
 };
 S3Repository.prototype.constructor = S3Repository;
@@ -283,19 +361,6 @@ exports.S3Repository = S3Repository;
 
 
 // AWS S3 PROMISIFICATION
-
-const generatePrefix = function(path) {
-    return path.toString().slice(1);  // remove the leading '#' or '/'
-};
-
-
-const generateKey = function(path, identifier) {
-    var key = path.toString().slice(1);  // remove the leading '#' or '/'
-    if (identifier) key += '/' + identifier.toString();
-    key += '.bali';
-    return key;
-};
-
 
 const listObjects = function(bucket, prefix) {
     return new Promise(function(resolve, reject) {

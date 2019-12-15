@@ -26,13 +26,14 @@ const configuration = {
     drafts: 'craterdog-bali-drafts-us-west-2',
     documents: 'craterdog-bali-documents-us-west-2',
     types: 'craterdog-bali-types-us-west-2',
-    queues: 'craterdog-bali-queues-us-west-2'
+    queues: 'craterdog-bali-queues-us-west-2',
+    statics: 'craterdog-bali-web-us-west-2'
 };
 
 const repositories = {
     'Local Repository': Repositories.repository(Repositories.local(directory, debug), debug),
     'Cached Repository': Repositories.repository(Repositories.cached(Repositories.local(directory, debug), debug), debug),
-    'Validated Repository': Repositories.repository(Repositories.validated(Repositories.local(directory, debug), debug), debug),
+    'Validated Repository': Repositories.repository(Repositories.validated(notary, Repositories.local(directory, debug), debug), debug),
     'Remote Repository': Repositories.repository(Repositories.remote(notary, uri, debug), debug),
     'S3 Repository': Repositories.repository(Repositories.s3(configuration, debug), debug)
 };

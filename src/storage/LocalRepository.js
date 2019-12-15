@@ -18,9 +18,9 @@
 /*
  * This class implements a local filesystem based document repository.  It treats
  * documents as UTF-8 encoded strings.  It can be used for local testing of the
- * Bali Nebula™.  If a test directory is specified, it will be created and used as
+ * Bali Nebula™.  If a root directory is specified, it will be created and used as
  * the repository.  Otherwise, a repository directory will be created and used
- * within a '.bali/' directory in the home directory for the running process.
+ * within a '.bali/' root directory in the home directory for the running process.
  */
 const os = require('os');
 const pfs = require('fs').promises;
@@ -39,7 +39,7 @@ const EOL = '\n';
  * This function creates a new instance of a local document repository.  If the
  * repository does not yet exist it is created.
  * 
- * @param {String} directory An optional directory to be used for local configuration storage. If
+ * @param {String} root An optional root directory to be used for local configuration storage. If
  * no directory is specified, a directory called '.bali/' is created in the home directory.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -51,13 +51,13 @@ const EOL = '\n';
  * </pre>
  * @returns {Object} The new local document repository.
  */
-const LocalRepository = function(directory, debug) {
+const LocalRepository = function(root, debug) {
     // validate the arguments
-    directory = directory || os.homedir() + '/.bali/';
+    root = root || os.homedir() + '/.bali/';
     if (debug === null || debug === undefined) debug = 0;  // default is off
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/LocalRepository', '$LocalRepository', '$directory', directory, [
+        validator.validateType('/bali/repositories/LocalRepository', '$LocalRepository', '$root', root, [
             '/javascript/Undefined',
             '/javascript/String'
         ]);
@@ -66,13 +66,52 @@ const LocalRepository = function(directory, debug) {
     this.toString = function() {
         const catalog = bali.catalog({
             $module: '/bali/repositories/LocalRepository',
-            $directory: directory
+            $root: root
         });
         return catalog.toString();
     };
 
+    this.staticExists = async function(resource) {
+        const file = generatePath('statics', resource);
+        try {
+            await pfs.stat(file);  // attempt to access the static resource
+            return true; // no exception, the static resource exists
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return false; // the static resource does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalRepository',
+                $procedure: '$staticExists',
+                $exception: '$unexpected',
+                $file: file,
+                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.readStatic = async function(resource) {
+        const file = generatePath('statics', resource);
+        try {
+            return await pfs.readFile(file, 'utf8');
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return undefined; // the static resource does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalRepository',
+                $procedure: '$readStatic',
+                $exception: '$unexpected',
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.citationExists = async function(name) {
-        const file = generateFilename(directory, 'citations', name);
+        const file = generateFilename('citations', name);
         try {
             await pfs.stat(file);  // attempt to access the citation
             return true; // no exception, the citation exists
@@ -92,7 +131,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.readCitation = async function(name) {
-        const file = generateFilename(directory, 'citations', name);
+        const file = generateFilename('citations', name);
         try {
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
@@ -112,7 +151,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.writeCitation = async function(name, citation) {
-        const file = generateFilename(directory, 'citations', name);
+        const file = generateFilename('citations', name);
         try {
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
@@ -133,7 +172,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.documentExists = async function(type, tag, version) {
-        const file = generateFilename(directory, type, tag, version);
+        const file = generateFilename(type, tag, version);
         try {
             await pfs.stat(file);  // attempt to access the document
             return true; // no exception, the document exists
@@ -153,7 +192,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.readDocument = async function(type, tag, version) {
-        const file = generateFilename(directory, type, tag, version);
+        const file = generateFilename(type, tag, version);
         try {
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
@@ -173,7 +212,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.writeDocument = async function(type, tag, version, document) {
-        const file = generateFilename(directory, type, tag, version);
+        const file = generateFilename(type, tag, version);
         try {
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
@@ -195,7 +234,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.deleteDocument = async function(type, tag, version) {
-        const file = generateFilename(directory, type, tag, version);
+        const file = generateFilename(type, tag, version);
         try {
             const source = await pfs.readFile(file, 'utf8');
             await pfs.unlink(file);  // delete the document
@@ -217,7 +256,7 @@ const LocalRepository = function(directory, debug) {
 
     this.addMessage = async function(queue, message) {
         const identifier = bali.tag().getValue();  // strip off the leading '#'
-        const file = generateFilename(directory, 'queues', queue, identifier);
+        const file = generateFilename('queues', queue, identifier);
         try {
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
@@ -238,7 +277,7 @@ const LocalRepository = function(directory, debug) {
     };
 
     this.removeMessage = async function(queue) {
-        const path = generatePath(directory, 'queues', queue);
+        const path = generatePath('queues', queue);
         try {
             const files = await pfs.readdir(path, 'utf8');
             if (files.length) {
@@ -267,21 +306,21 @@ const LocalRepository = function(directory, debug) {
         }
     };
 
+    const generatePath = function(type, directory) {
+        // the directory is either a name beginning with '/' or a tag beginning with '#'
+        const path = root + '/' + type + '/' + directory.toString().slice(1);  // remove the leading '/' or '#'
+        return path;
+    };
+
+    const generateFilename = function(type, directory, file) {
+        // the directory is either a name beginning with '/' or a tag beginning with '#'
+        var filename = generatePath(type, directory);
+        if (file) filename += '/' + file;
+        filename += '.bali';
+        return filename;
+    };
+
     return this;
 };
 LocalRepository.prototype.constructor = LocalRepository;
 exports.LocalRepository = LocalRepository;
-
-const generatePath = function(directory, type, identifier) {
-    // the identifier is either a name beginning with '/' or a tag beginning with '#'
-    const path = directory + '/' + type + '/' + identifier.toString().slice(1);  // remove the leading '#' or '/'
-    return path;
-};
-
-const generateFilename = function(directory, type, identifier, version) {
-    // the identifier is either a name beginning with '/' or a tag beginning with '#'
-    var filename = generatePath(directory, type, identifier);
-    if (version) filename += '/' + version;
-    filename += '.bali';
-    return filename;
-};

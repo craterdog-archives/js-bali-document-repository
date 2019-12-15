@@ -57,9 +57,43 @@ const RemoteRepository = function(notary, uri, debug) {
         return catalog.toString();
     };
 
+    this.staticExists = async function(resource) {
+        try {
+            return await sendRequest('HEAD', 'statics', resource, undefined, undefined);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteRepository',
+                $procedure: '$staticExists',
+                $exception: '$unexpected',
+                $uri: uri,
+                $resource: resource,
+                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.readStatic = async function(resource) {
+        try {
+            return await sendRequest('GET', 'statics', resource, undefined, undefined);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteRepository',
+                $procedure: '$readStatic',
+                $exception: '$unexpected',
+                $uri: uri,
+                $resource: resource,
+                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.citationExists = async function(name) {
         try {
-            return await sendRequest(notary, uri, 'HEAD', 'citations', name, undefined, undefined, debug);
+            return await sendRequest('HEAD', 'citations', name, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -76,7 +110,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.readCitation = async function(name) {
         try {
-            return await sendRequest(notary, uri, 'GET', 'citations', name, undefined, undefined, debug);
+            return await sendRequest('GET', 'citations', name, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -93,7 +127,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.writeCitation = async function(name, citation) {
         try {
-            await sendRequest(notary, uri, 'POST', 'citations', name, undefined, citation, debug);
+            await sendRequest('POST', 'citations', name, undefined, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -111,7 +145,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.documentExists = async function(type, tag, version) {
         try {
-            return await sendRequest(notary, uri, 'HEAD', type, tag, version, undefined, debug);
+            return await sendRequest('HEAD', type, tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -130,7 +164,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.readDocument = async function(type, tag, version) {
         try {
-            return await sendRequest(notary, uri, 'GET', type, tag, version, undefined, debug);
+            return await sendRequest('GET', type, tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -150,7 +184,7 @@ const RemoteRepository = function(notary, uri, debug) {
     this.writeDocument = async function(type, tag, version, document) {
         try {
             const method = (type === 'drafts') ? 'PUT' : 'POST';
-            await sendRequest(notary, uri, method, type, tag, version, document, debug);
+            await sendRequest(method, type, tag, version, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -170,7 +204,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.deleteDocument = async function(type, tag, version) {
         try {
-            return await sendRequest(notary, uri, 'DELETE', type, tag, version, undefined, debug);
+            return await sendRequest('DELETE', type, tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -189,7 +223,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.addMessage = async function(queue, message) {
         try {
-            await sendRequest(notary, uri, 'PUT', 'queues', queue, undefined, message, debug);
+            await sendRequest('PUT', 'queues', queue, undefined, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -207,7 +241,7 @@ const RemoteRepository = function(notary, uri, debug) {
 
     this.removeMessage = async function(queue) {
         try {
-            return await sendRequest(notary, uri, 'DELETE', 'queues', queue, undefined, undefined, debug);
+            return await sendRequest('DELETE', 'queues', queue, undefined, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteRepository',
@@ -222,130 +256,126 @@ const RemoteRepository = function(notary, uri, debug) {
         }
     };
 
+    
+    // PRIVATE FUNCTIONS
+    
+    /**
+     * This function sends a RESTful web request to the remote repository with the specified, method,
+     * type, resource identifier and version. If a document is included it is sent as the body of the
+     * request. The result that is returned by the web service is returned from this function.
+     *
+     * @param {String} method The HTTP method type of the request.
+     * @param {String} type The type of resource being acted upon.
+     * @param {Name|Tag} identifier The identifier of the specific resource being acted upon.
+     * @param {Version} version The version of the specific resource being acted upon.
+     * @param {Catalog} document An optional signed document to be passed to the web service.
+     * @returns {Boolean|Catalog} The result of the request.
+     */
+    const sendRequest = async function(method, type, identifier, version, document) {
+    
+        // the POSIX end of line character
+        const EOL = '\n';
+    
+        // generate the credentials
+        var citation = await notary.getCitation();
+        citation = citation.duplicate();
+        citation.setParameter('$type', '/bali/notary/Citation/v1');
+        citation.setParameter('$tag', bali.tag());
+        citation.setParameter('$version', bali.version());
+        citation.setParameter('$permissions', '/bali/permissions/private/v1');
+        citation.setParameter('$previous', bali.pattern.NONE);
+        const credentials = await notary.notarizeDocument(citation);
+    
+        // setup the request URI and options
+        const fullURI = uri + '/' + type + '/' + identifier.toString().slice(1) + (version ? '/' + version : '');
+        const options = {
+            url: fullURI,
+            method: method,
+            //timeout: 1000,
+            responseType: 'text',
+            validateStatus: function (status) {
+                return status < 400;  // only flag unexpected server errors
+            },
+            headers: {
+                //'User-Agent': 'Bali Nebula™ API 1.0',
+                'Nebula-Credentials': encodeURI('"' + EOL + credentials + EOL + '"')
+            }
+        };
+    
+        // add headers for the data (if applicable)
+        const data = document ? document.toString() : undefined;
+        if (data) {
+            options.data = data;
+            options.headers['Content-Type'] = 'application/bali';
+            options.headers['Content-Length'] = data.length;
+        }
+    
+        // send the request
+        try {
+            const response = await axios(options);
+            var result;
+            switch (method) {
+                case 'HEAD':
+                    return true;  // the document did exist
+                default:
+                    if (response.data && response.data.length) {
+                        result = bali.component(response.data);
+                    }
+                }
+            return result;
+        } catch (cause) {
+            if (cause.response) {
+                // the server responded with an error status
+                switch (method) {
+                    case 'HEAD':
+                        if (cause.response.status === 404) return false;  // the document didn't exist
+                    default:
+                        // continue with the exception processing
+                }
+                const exception = bali.exception({
+                    $module: '/bali/repositories/RemoteRepository',
+                    $procedure: '$sendRequest',
+                    $exception: '$invalidRequest',
+                    $uri: bali.reference(fullURI),
+                    $method: bali.text(method),
+                    $status: cause.response.status,
+                    $details: bali.text(cause.response.statusText),
+                    $text: bali.text('The request was rejected by the Bali Nebula™.')
+                }, cause);
+                if (debug) console.error(exception.toString());
+                throw exception;
+            }
+            if (cause.request) {
+                // the request was sent but no response was received
+                const exception = bali.exception({
+                    $module: '/bali/repositories/RemoteRepository',
+                    $procedure: '$sendRequest',
+                    $exception: '$serverDown',
+                    $uri: bali.reference(fullURI),
+                    $method: bali.text(method),
+                    $status: cause.request.status,
+                    $details: bali.text(cause.request.statusText),
+                    $text: bali.text('The request received no response.')
+                }, cause);
+                if (debug) console.error(exception.toString());
+                throw exception;
+            }
+            // the request could not be sent
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteRepository',
+                $procedure: '$sendRequest',
+                $exception: '$malformedRequest',
+                $uri: bali.reference(fullURI),
+                $method: bali.text(method),
+                $document: document,
+                $text: bali.text('The request was not formed correctly.')
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+    
     return this;
 };
 RemoteRepository.prototype.constructor = RemoteRepository;
 exports.RemoteRepository = RemoteRepository;
-
-
-// PRIVATE FUNCTIONS
-
-// the POSIX end of line character
-const EOL = '\n';
-
-/**
- * This function sends a RESTful web request to the web service specified by the URI, method,
- * type, resource identifier and version. If a document is included it is sent as the body of the
- * request. The result that is returned by the web service is returned from this function.
- *
- * @param {Object} notary An object that implements the API for the digital notary.
- * @param {String} uri A string containing the URI of the web service.
- * @param {String} method The HTTP method type of the request.
- * @param {String} type The type of resource being acted upon.
- * @param {Name|Tag} identifier The identifier of the specific resource being acted upon.
- * @param {Version} version The version of the specific resource being acted upon.
- * @param {Catalog} document An optional signed document to be passed to the web service.
- * @param {Boolean} debug An optional flag that determines whether or not exceptions
- * will be logged to the error console.
- * @returns {Boolean|Catalog} The result of the request.
- */
-const sendRequest = async function(notary, uri, method, type, identifier, version, document, debug) {
-
-    // generate the credentials
-    var citation = await notary.getCitation();
-    citation = citation.duplicate();
-    citation.setParameter('$type', '/bali/notary/Citation/v1');
-    citation.setParameter('$tag', bali.tag());
-    citation.setParameter('$version', bali.version());
-    citation.setParameter('$permissions', '/bali/permissions/private/v1');
-    citation.setParameter('$previous', bali.pattern.NONE);
-    const credentials = await notary.notarizeDocument(citation);
-
-    // setup the request URI and options
-    const fullURI = uri + '/' + type + '/' + identifier.toString().slice(1) + (version ? '/' + version : '');
-    const options = {
-        url: fullURI,
-        method: method,
-        //timeout: 1000,
-        responseType: 'text',
-        validateStatus: function (status) {
-            return status < 400;  // only flag unexpected server errors
-        },
-        headers: {
-            //'User-Agent': 'Bali Nebula™ API 1.0',
-            'Nebula-Credentials': encodeURI('"' + EOL + credentials + EOL + '"')
-        }
-    };
-
-    // add headers for the data (if applicable)
-    const data = document ? document.toString() : undefined;
-    if (data) {
-        options.data = data;
-        options.headers['Content-Type'] = 'application/bali';
-        options.headers['Content-Length'] = data.length;
-    }
-
-    // send the request
-    try {
-        const response = await axios(options);
-        var result;
-        switch (method) {
-            case 'HEAD':
-                return true;  // the document did exist
-            default:
-                if (response.data && response.data.length) {
-                    result = bali.component(response.data);
-                }
-            }
-        return result;
-    } catch (cause) {
-        if (cause.response) {
-            // the server responded with an error status
-            switch (method) {
-                case 'HEAD':
-                    if (cause.response.status === 404) return false;  // the document didn't exist
-                default:
-                    // continue with the exception processing
-            }
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$sendRequest',
-                $exception: '$invalidRequest',
-                $uri: bali.reference(fullURI),
-                $method: bali.text(method),
-                $status: cause.response.status,
-                $details: bali.text(cause.response.statusText),
-                $text: bali.text('The request was rejected by the Bali Nebula™.')
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-        if (cause.request) {
-            // the request was sent but no response was received
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteRepository',
-                $procedure: '$sendRequest',
-                $exception: '$serverDown',
-                $uri: bali.reference(fullURI),
-                $method: bali.text(method),
-                $status: cause.request.status,
-                $details: bali.text(cause.request.statusText),
-                $text: bali.text('The request received no response.')
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-        // the request could not be sent
-        const exception = bali.exception({
-            $module: '/bali/repositories/RemoteRepository',
-            $procedure: '$sendRequest',
-            $exception: '$malformedRequest',
-            $uri: bali.reference(fullURI),
-            $method: bali.text(method),
-            $document: document,
-            $text: bali.text('The request was not formed correctly.')
-        }, cause);
-        if (debug) console.error(exception.toString());
-        throw exception;
-    }
-};

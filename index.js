@@ -45,6 +45,7 @@ exports.cached = cached;
  * modified intentionally or otherwise during transit. The validation is done using a digital notary
  * which validates the notary seal on each document using the referenced notary certificate.
  * 
+ * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} storage The storage mechanism used to maintain the documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -56,8 +57,8 @@ exports.cached = cached;
  * </pre>
  * @returns {Object} The new validating document repository wrapper.
  */
-const validated = function(storage, debug) {
-    return new ValidatedRepository(storage, debug);
+const validated = function(notary, storage, debug) {
+    return new ValidatedRepository(notary, storage, debug);
 };
 exports.validated = validated;
 
@@ -145,6 +146,7 @@ exports.repository = repository;
  * This function initializes a document repository configured with a local, memory-based cache that
  * maintains the files in the local filesystem.  It should ONLY be used for testing purposes.
  * 
+ * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {String} directory The top level directory to be used as a local storage mechanism.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -156,8 +158,8 @@ exports.repository = repository;
  * </pre>
  * @returns {Object} The new document repository instance.
  */
-const test = function(directory, debug) {
-    return repository(cached(validated(local(directory, debug), debug), debug), debug);
+const test = function(notary, directory, debug) {
+    return repository(cached(validated(notary, local(directory, debug), debug), debug), debug);
 };
 exports.test = test;
 
@@ -179,7 +181,7 @@ exports.test = test;
  * @returns {Object} The new document repository instance.
  */
 const client = function(notary, uri, debug) {
-    return repository(cached(validated(remote(notary, uri, debug), debug), debug), debug);
+    return repository(cached(validated(notary, remote(notary, uri, debug), debug), debug), debug);
 };
 exports.client = client;
 
@@ -188,6 +190,7 @@ exports.client = client;
  * It performs validation on each document before storing it and after retrieving it from the S3-based
  * storage mechanism.
  * 
+ * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} configuration An object containing the configuration for the S3-based storage
  * mechanism.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
@@ -200,8 +203,8 @@ exports.client = client;
  * </pre>
  * @returns {Object} The new document repository instance.
  */
-const service = function(configuration, debug) {
-    return repository(validated(s3(configuration, debug), debug), debug);
+const service = function(notary, configuration, debug) {
+    return repository(validated(notary, s3(configuration, debug), debug), debug);
 };
 exports.service = service;
 

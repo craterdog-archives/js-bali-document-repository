@@ -52,10 +52,59 @@ const CachedRepository = function(repository, debug) {
         return catalog.toString();
     };
 
+    this.staticExists = async function(resource) {
+        try {
+            // check the cache first
+            const key = generateKey(resource);
+            if (cache['statics'] && cache['statics'].read(key)) return true;
+            // not found so we must check the backend repository
+            return await repository.staticExists(resource);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/CachedRepository',
+                $procedure: '$staticExists',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $resource: resource,
+                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.readStatic = async function(resource) {
+        try {
+            var object;
+            // check the cache first
+            const key = generateKey(resource);
+            if (cache['statics']) object = cache['statics'].read(key);
+            if (!object) {
+                // not found so we must read from the backend repository
+                object = await repository.readStatic(resource);
+                // add the static resource to the cache if it is immutable
+                if (object && cache['statics']) cache['statics'].write(resource, object);
+            }
+            return object;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/CachedRepository',
+                $procedure: '$readStatic',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $resource: resource,
+                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.citationExists = async function(name) {
         try {
             // check the cache first
-            if (cache['citations'] && cache['citations'].read(name)) return true;
+            const key = generateKey(name);
+            if (cache['citations'] && cache['citations'].read(key)) return true;
             // not found so we must check the backend repository
             return await repository.citationExists(name);
         } catch (cause) {
@@ -76,12 +125,13 @@ const CachedRepository = function(repository, debug) {
         try {
             var citation;
             // check the cache first
-            if (cache['citations']) citation = cache['citations'].read(name);
+            const key = generateKey(name);
+            if (cache['citations']) citation = cache['citations'].read(key);
             if (!citation) {
                 // not found so we must read from the backend repository
                 citation = await repository.readCitation(name);
                 // add the citation to the cache if it is immutable
-                if (cache['citations']) cache['citations'].write(name, citation);
+                if (citation && cache['citations']) cache['citations'].write(name, citation);
             }
             return citation;
         } catch (cause) {
@@ -103,7 +153,8 @@ const CachedRepository = function(repository, debug) {
             // add the citation to the backend repository
             await repository.writeCitation(name, citation);
             // cache the citation
-            if (cache['citations']) cache['citations'].write(name, citation);
+            const key = generateKey(name);
+            if (cache['citations']) cache['citations'].write(key, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedRepository',
@@ -122,8 +173,8 @@ const CachedRepository = function(repository, debug) {
     this.documentExists = async function(type, tag, version) {
         try {
             // check the cache if the document is immutable
-            const name = generateKey(tag, version);
-            if (cache[type] && cache[type].read(name)) return true;
+            const key = generateKey(tag, version);
+            if (cache[type] && cache[type].read(key)) return true;
             // not found so we must check the backend repository
             return await repository.documentExists(type, tag, version);
         } catch (cause) {
@@ -146,13 +197,13 @@ const CachedRepository = function(repository, debug) {
         try {
             var document;
             // check the cache if the document is immutable
-            const name = generateKey(tag, version);
-            if (cache[type]) document = cache[type].read(name);
+            const key = generateKey(tag, version);
+            if (cache[type]) document = cache[type].read(key);
             if (!document) {
                 // not found so we must read from the backend repository
                 document = await repository.readDocument(type, tag, version);
                 // add the document to the cache if it is immutable
-                if (cache[type]) cache[type].write(tag, version, document);
+                if (document && cache[type]) cache[type].write(tag, version, document);
             }
             return document;
         } catch (cause) {
@@ -176,8 +227,8 @@ const CachedRepository = function(repository, debug) {
             // add the document to the backend repository
             await repository.writeDocument(type, tag, version, document);
             // cache the document if it is immutable
-            const name = generateKey(tag, version);
-            if (cache[type]) cache[type].write(name, document);
+            const key = generateKey(tag, version);
+            if (cache[type]) cache[type].write(key, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedRepository',
@@ -253,6 +304,12 @@ const CachedRepository = function(repository, debug) {
         }
     };
 
+    const generateKey = function(tag, version) {
+        var key = tag.toString().slice(1);
+        if (version) key += '/' + version;
+        return key;
+    };
+
     return this;
 };
 CachedRepository.prototype.constructor = CachedRepository;
@@ -260,10 +317,6 @@ exports.CachedRepository = CachedRepository;
 
 
 // DOCUMENT CACHE
-
-const generateKey = function(tag, version) {
-    return tag.toString().slice(1) + version;
-};
 
 const Cache = function(capacity) {
 
@@ -290,6 +343,7 @@ const CACHE_SIZE = 256;
 
 // the actual cache for immutable document types only
 const cache = {
+    statics: new Cache(CACHE_SIZE),
     citations: new Cache(CACHE_SIZE),
     documents: new Cache(CACHE_SIZE),
     types: new Cache(CACHE_SIZE)
