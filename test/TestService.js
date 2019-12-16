@@ -47,11 +47,178 @@ const invalidCredentials = async function(request) {
         return !isValid;
     } catch (e) {
         var message = 'Test Service: The credentials were badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
         return true;  // missing the credentials
+    }
+};
+
+
+const pingStatic = async function(request, response) {
+    var message;
+    try {
+        const name = getName(request.params.identifier);
+        message = 'Test Service: HEAD ' + request.originalUrl;
+        if (debug > 1) console.log(message);
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 1) console.log(message);
+            response.writeHead(401, message);
+            response.end();
+            return;
+        }
+        if (await repository.staticExists(name)) {
+            message = 'Test Service: The static resource exists.';
+            if (debug > 1) console.log(message);
+            response.writeHead(200, message);
+            response.end();
+        } else {
+            message = 'Test Service: The static resource does not exist.';
+            if (debug > 1) console.log(message);
+            response.writeHead(404, message);
+            response.end();
+        }
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 1) {
+            console.log(message);
+            console.log(e);
+        }
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const getStatic = async function(request, response) {
+    var message;
+    try {
+        const name = getName(request.params.identifier);
+        message = 'Test Service: GET ' + request.originalUrl;
+        if (debug > 1) console.log(message);
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 1) console.log(message);
+            response.writeHead(401, message);
+            response.end();
+            return;
+        }
+        var resource = await repository.fetchStatic(name);
+        if (resource) {
+            var type;
+            const string = name.toString();
+            switch (string.slice(string.lastIndexOf('.'))) {
+                case '.css':
+                    type = 'text/css';
+                    break;
+                case '.gif':
+                    type = 'image/gif';
+                    resource = Buffer.from(resource, 'utf8');
+                    break;
+                case '.jpg':
+                case '.jpeg':
+                    type = 'image/jpeg';
+                    resource = Buffer.from(resource, 'utf8');
+                    break;
+                case '.png':
+                    type = 'image/png';
+                    resource = Buffer.from(resource, 'utf8');
+                    break;
+                default:
+                    type = 'text/html';
+            }
+            const options = {
+                'Content-Length': resource.length,
+                'Content-Type': type,
+                'Cache-Control': 'immutable'
+            };
+            message = 'Test Service: The static resource was retrieved.';
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + JSON.stringify(options));
+                console.log('    result type: ' + resource.constructor.name);
+            }
+            response.writeHead(200, message, options);
+            response.end(resource);
+        } else {
+            message = 'Test Service: The static resource does not exist.';
+            if (debug > 1) console.log(message);
+            response.writeHead(404, message);
+            response.end();
+        }
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 1) {
+            console.log(message);
+            console.log(e);
+        }
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const postStatic = async function(request, response) {
+    var message;
+    try {
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
+        if (debug > 1) console.log(message);
+        message = 'Test Service: Static resources cannot be created.';
+        if (debug > 1) console.log(message);
+        response.writeHead(405, message);
+        response.end();
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 1) {
+            console.log(message);
+            console.log(e);
+        }
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const putStatic = async function(request, response) {
+    var message;
+    try {
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        if (debug > 1) console.log(message);
+        message = 'Test Service: Static resources cannot be updated.';
+        if (debug > 1) console.log(message);
+        response.writeHead(405, message);
+        response.end();
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 1) {
+            console.log(message);
+            console.log(e);
+        }
+        response.writeHead(400, message);
+        response.end();
+    }
+};
+
+
+const deleteStatic = async function(request, response) {
+    var message;
+    try {
+        message = 'Test Service: DELETE ' + request.originalUrl;
+        if (debug > 1) console.log(message);
+        message = 'Test Service: Static resources cannot be deleted.';
+        if (debug > 1) console.log(message);
+        response.writeHead(405, message);
+        response.end();
+    } catch (e) {
+        message = 'Test Service: The request was badly formed.';
+        if (debug > 1) {
+            console.log(message);
+            console.log(e);
+        }
+        response.writeHead(400, message);
+        response.end();
     }
 };
 
@@ -61,28 +228,28 @@ const pingCitation = async function(request, response) {
     try {
         const name = getName(request.params.identifier);
         message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.citationExists(name)) {
             message = 'Test Service: The named document citation exists.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(200, message);
             response.end();
         } else {
             message = 'Test Service: The named document citation does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -97,10 +264,10 @@ const getCitation = async function(request, response) {
     try {
         const name = getName(request.params.identifier);
         message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -108,25 +275,28 @@ const getCitation = async function(request, response) {
         const citation = await repository.fetchCitation(name);
         if (citation) {
             const data = citation.toString();
-            message = 'Test Service: The named document citation was retrieved.';
-            if (debug > 2) console.log(message);
-            response.writeHead(200, message, {
+            const options = {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
                 'Cache-Control': 'immutable'
-            });
-            message = '    result: ' + data;
-            if (debug > 2) console.log(message);
+            };
+            message = 'Test Service: The document citation was retrieved.';
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + JSON.stringify(options));
+                console.log('    result: ' + data);
+            }
+            response.writeHead(200, message, options);
             response.end(data);
         } else {
-            message = 'Test Service: The named document citation does not exist.';
-            if (debug > 2) console.log(message);
+            message = 'Test Service: The document citation does not exist.';
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -141,30 +311,30 @@ const postCitation = async function(request, response) {
     try {
         const name = getName(request.params.identifier);
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.citationExists(name)) {
-            message = 'Test Service: The named document citation already exists.';
-            if (debug > 2) console.log(message);
+            message = 'Test Service: The document citation already exists.';
+            if (debug > 1) console.log(message);
             response.writeHead(409, message);
             response.end();
         } else {
             const citation = bali.component(request.body);
             await repository.createCitation(name, citation);
-            message = 'Test Service: The named document citation was created.';
-            if (debug > 2) console.log(message);
+            message = 'Test Service: The document citation was created.';
+            if (debug > 1) console.log(message);
             response.writeHead(201, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -178,14 +348,14 @@ const putCitation = async function(request, response) {
     var message;
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
-        message = 'Test Service: Named document citations cannot be updated.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
+        message = 'Test Service: Document citations cannot be updated.';
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -199,14 +369,14 @@ const deleteCitation = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 2) console.log(message);
-        message = 'Test Service: Named document citations cannot be deleted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
+        message = 'Test Service: Document citations cannot be deleted.';
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -222,28 +392,28 @@ const pingDraft = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.draftExists(tag, version)) {
             message = 'Test Service: The draft document exists.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(200, message);
             response.end();
         } else {
             message = 'Test Service: The draft document does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -259,10 +429,10 @@ const getDraft = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -270,25 +440,28 @@ const getDraft = async function(request, response) {
         const draft = await repository.fetchDraft(tag, version);
         if (draft) {
             const data = draft.toString();
-            message = 'Test Service: The draft document was retrieved.';
-            if (debug > 2) console.log(message);
-            response.writeHead(200, message, {
+            const options = {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
                 'Cache-Control': 'no-store'
-            });
-            message = '    result: ' + data;
-            if (debug > 2) console.log(message);
+            };
+            message = 'Test Service: The draft document was retrieved.';
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + JSON.stringify(options));
+                console.log('    result: ' + data);
+            }
+            response.writeHead(200, message, options);
             response.end(data);
         } else {
             message = 'Test Service: The draft document does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -302,14 +475,14 @@ const postDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Draft documents cannot be posted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -325,10 +498,10 @@ const putDraft = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -338,18 +511,18 @@ const putDraft = async function(request, response) {
         await repository.saveDraft(tag, version, draft);
         if (updated) {
             message = 'Test Service: The draft document was updated.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(204, message);
             response.end();
         } else {
             message = 'Test Service: The draft document was created.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(201, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -365,22 +538,22 @@ const deleteDraft = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         await repository.deleteDraft(tag, version);
         message = 'Test Service: The draft document was deleted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(200, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -396,28 +569,28 @@ const pingDocument = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.documentExists(tag, version)) {
             message = 'Test Service: The notarized document exists.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(200, message);
             response.end();
         } else {
             message = 'Test Service: The notarized document does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -433,10 +606,10 @@ const getDocument = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -444,25 +617,29 @@ const getDocument = async function(request, response) {
         const document = await repository.fetchDocument(tag, version);
         if (document) {
             const data = document.toString();
-            message = 'Test Service: The notarized document was retrieved.';
-            if (debug > 2) console.log(message);
-            response.writeHead(200, message, {
+            if (debug > 1) console.log(message);
+            const options = {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
                 'Cache-Control': 'immutable'
-            });
-            message = '    result: ' + data;
-            if (debug > 2) console.log(message);
+            };
+            message = 'Test Service: The notarized document was retrieved.';
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + JSON.stringify(options));
+                console.log('    result: ' + data);
+            }
+            response.writeHead(200, message, options);
             response.end(data);
         } else {
             message = 'Test Service: The notarized document does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -479,29 +656,29 @@ const postDocument = async function(request, response) {
         const version = getVersion(request.params.identifier);
         const document = bali.component(request.body);
         message = 'Test Service: POST ' + request.originalUrl + ' ' + document;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.documentExists(tag, version)) {
             message = 'Test Service: A committed document with this version already exists.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(409, message);
             response.end();
         } else {
             await repository.createDocument(tag, version, document);
             message = 'Test Service: The notarized document was created.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(201, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -515,14 +692,14 @@ const putDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Notarized documents cannot be updated.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -536,14 +713,14 @@ const deleteDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Notarized documents cannot be deleted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -559,28 +736,28 @@ const pingType = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.typeExists(tag, version)) {
             message = 'Test Service: The notarized type exists.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(200, message);
             response.end();
         } else {
             message = 'Test Service: The notarized type does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -596,10 +773,10 @@ const getType = async function(request, response) {
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -607,25 +784,28 @@ const getType = async function(request, response) {
         const type = await repository.fetchType(tag, version);
         if (type) {
             const data = type.toString();
-            message = 'Test Service: The notarized type was retrieved.';
-            if (debug > 2) console.log(message);
-            response.writeHead(200, message, {
+            const options = {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
                 'Cache-Control': 'immutable'
-            });
-            message = '    result: ' + data;
-            if (debug > 2) console.log(message);
+            };
+            message = 'Test Service: The notarized type was retrieved.';
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + JSON.stringify(options));
+                console.log('    result: ' + data);
+            }
+            response.writeHead(200, message, options);
             response.end(data);
         } else {
             message = 'Test Service: The notarized type does not exist.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -642,29 +822,29 @@ const postType = async function(request, response) {
         const version = getVersion(request.params.identifier);
         const type = bali.component(request.body);
         message = 'Test Service: POST ' + request.originalUrl + ' ' + type;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
         }
         if (await repository.typeExists(tag, version)) {
             message = 'Test Service: A committed type with this version already exists.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(409, message);
             response.end();
         } else {
             await repository.createType(tag, version, type);
             message = 'Test Service: The notarized type was created.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(201, message);
             response.end();
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -678,14 +858,14 @@ const putType = async function(request, response) {
     var message;
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Notarized types cannot be updated.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -699,14 +879,14 @@ const deleteType = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Notarized types cannot be deleted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -720,14 +900,14 @@ const pingMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Messages cannot be pinged.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -741,14 +921,14 @@ const getMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Messages cannot be retrieved without being deleted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -762,14 +942,14 @@ const postMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         message = 'Test Service: Messages cannot be posted.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -784,10 +964,10 @@ const putMessage = async function(request, response) {
     try {
         const queue = bali.tag(request.params.identifier);
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -795,12 +975,12 @@ const putMessage = async function(request, response) {
         message = bali.component(request.body);
         await repository.queueMessage(queue, message);
         message = 'Test Service: A message was added to the queue.';
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         response.writeHead(201, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -815,10 +995,10 @@ const deleteMessage = async function(request, response) {
     try {
         const queue = bali.tag(request.params.identifier);
         message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 2) console.log(message);
+        if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(401, message);
             response.end();
             return;
@@ -826,18 +1006,22 @@ const deleteMessage = async function(request, response) {
         message = await repository.dequeueMessage(queue);
         if (message) {
             const data = message.toString();
-            message = 'Test Service: A message was removed from the queue.';
-            response.writeHead(200, message, {
+            const options = {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
                 'Cache-Control': 'no-store'
-            });
-            message = '    result: ' + data;
-            if (debug > 2) console.log(message);
+            };
+            message = 'Test Service: A message was removed from the queue.';
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + JSON.stringify(options));
+                console.log('    result: ' + data);
+            }
+            response.writeHead(200, message, options);
             response.end(data);
         } else {
             message = 'Test Service: The queue is empty.';
-            if (debug > 2) console.log(message);
+            if (debug > 1) console.log(message);
             response.writeHead(204, message, {
                 'Cache-Control': 'no-store'
             });
@@ -845,7 +1029,7 @@ const deleteMessage = async function(request, response) {
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
-        if (debug > 2) {
+        if (debug > 1) {
             console.log(message);
             console.log(e);
         }
@@ -856,6 +1040,13 @@ const deleteMessage = async function(request, response) {
 
 
 // SERVICE INITIALIZATION
+
+const staticRouter = express.Router();
+staticRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingStatic);
+staticRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getStatic);
+staticRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postStatic);
+staticRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putStatic);
+staticRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteStatic);
 
 const citationRouter = express.Router();
 // Note: the leading slash is part of the citation name identifier
@@ -896,6 +1087,7 @@ queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 const service = express();
 
 service.use(bodyParser.text({ type: 'application/bali' }));
+service.use('/statics', staticRouter);
 service.use('/citations', citationRouter);
 service.use('/drafts', draftRouter);
 service.use('/documents', documentRouter);
@@ -904,5 +1096,5 @@ service.use('/queues', queueRouter);
 
 service.listen(3000, function() {
     var message = 'Service: Server running on port 3000';
-    if (debug > 2) console.log(message);
+    if (debug > 1) console.log(message);
 });

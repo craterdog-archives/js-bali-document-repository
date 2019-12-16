@@ -60,7 +60,7 @@ const S3Storage = function(configuration, debug) {
 
     this.staticExists = async function(resource) {
         try {
-            const bucket = configuration['static'];
+            const bucket = configuration['statics'];
             const key = generateStaticKey(resource);
             return await doesExist(bucket, key);
         } catch (cause) {
@@ -79,7 +79,7 @@ const S3Storage = function(configuration, debug) {
 
     this.readStatic = async function(resource) {
         try {
-            const bucket = configuration['static'];
+            const bucket = configuration['statics'];
             const key = generateStaticKey(resource);
             return await getObject(bucket, key);
         } catch (cause) {
@@ -315,19 +315,8 @@ const S3Storage = function(configuration, debug) {
     };
 
     const generateStaticKey = function(resource) {
-        const suffix = resource.slice(resource.lastIndexOf('.'));
-        var path;
-        switch (suffix) {
-            case '.png':
-                path = 'images/';
-                break;
-            case '.css':
-                path = 'styles/';
-                break;
-            default:
-                path = 'pages/';
-        }
-        return path + resource;
+        const key = resource.toString().slice(1);  // remove leading '/'
+        return key;
     };
 
     const generateNameKey = function(name) {

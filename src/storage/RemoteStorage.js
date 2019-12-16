@@ -306,16 +306,25 @@ const RemoteStorage = function(notary, uri, debug) {
         // send the request
         try {
             const response = await axios(options);
-            var result;
             switch (method) {
                 case 'HEAD':
                     return true;  // the document did exist
                 default:
+                    var result;
                     if (response.data && response.data.length) {
-                        result = bali.component(response.data);
+                        switch (response.type) {
+                            case 'image/png':
+                                result = Buffer.from(response.data, 'utf8');
+                                break;
+                            case 'application/bali':
+                                result = bali.component(response.data);
+                                break;
+                            default:
+                                result = response.data;
+                        }
                     }
+                    return result;
                 }
-            return result;
         } catch (cause) {
             if (cause.response) {
                 // the server responded with an error status

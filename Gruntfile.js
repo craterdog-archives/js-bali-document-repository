@@ -32,6 +32,14 @@ module.exports = function(grunt) {
       }
     },
 
+    exec: {
+      clean: {
+        command: 'scripts/copy-statics',
+        stdout: false,
+        stderr: false
+      }
+    },
+
     // grunt-mocha-test plugin configuration (unit testing)
     mochaTest: {
       test: {
@@ -76,10 +84,11 @@ module.exports = function(grunt) {
 
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-eslint');
+  grunt.loadNpmTasks('grunt-exec');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-webpack');
 
-  grunt.registerTask('build', 'Build the module.', ['clean:build', 'eslint', 'mochaTest']);
+  grunt.registerTask('build', 'Build the module.', ['clean:build', 'exec:clean', 'eslint', 'mochaTest']);
   grunt.registerTask('package', 'Package the libraries.', ['clean:build', 'eslint', 'webpack']);
   grunt.registerTask('default', 'Default targets.', ['build']);
 
