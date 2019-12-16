@@ -277,14 +277,7 @@ const RemoteStorage = function(notary, uri, debug) {
         const EOL = '\n';
     
         // generate the credentials
-        var citation = await notary.getCitation();
-        citation = citation.duplicate();
-        citation.setParameter('$type', '/bali/notary/Citation/v1');
-        citation.setParameter('$tag', bali.tag());
-        citation.setParameter('$version', bali.version());
-        citation.setParameter('$permissions', '/bali/permissions/private/v1');
-        citation.setParameter('$previous', bali.pattern.NONE);
-        const credentials = await notary.notarizeDocument(citation);
+        const credentials = await notary.generateCredentials();
     
         // setup the request URI and options
         const fullURI = uri + '/' + type + '/' + identifier.toString().slice(1) + (version ? '/' + version : '');

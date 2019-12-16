@@ -364,9 +364,8 @@ const ValidatedStorage = function(notary, repository, debug) {
             var certificate;
             if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
                 certificate = await validateCitation(certificateCitation, debug);
-                certificate = certificate.getValue('$content');
             } else {
-                certificate = content;  // the document is a self-signed certificate
+                certificate = document;  // the document is a self-signed certificate
             }
     
             // validate the document using its certificate
@@ -426,7 +425,6 @@ const ValidatedStorage = function(notary, repository, debug) {
     
             // validate the certificate
             var certificate = await validateCitation(certificateCitation, debug);
-            certificate = certificate.getValue('$content');
     
             // validate the message using its certificate
             const valid = await notary.validDocument(message, certificate);

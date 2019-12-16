@@ -52,6 +52,7 @@ describe('Bali Nebula™ Document Repository', function() {
             $tax: '1.07($currency: $USD)',
             $total: '13.57($currency: $USD)'
         }, {
+            $type: '/bali/examples/Transaction/v1',
             $tag: bali.tag(),
             $version: bali.version(),
             $permissions: '/bali/permissions/public/v1',
@@ -72,6 +73,7 @@ describe('Bali Nebula™ Document Repository', function() {
             $constants: {},
             $procedures: {}
         }, {
+            $type: '/bali/examples/Code/v1',
             $tag: bali.tag(),
             $version: bali.version(),
             $permissions: '/bali/permissions/public/v1',
