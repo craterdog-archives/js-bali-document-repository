@@ -319,6 +319,7 @@ const DocumentRepository = function(storage, debug) {
      * 
      * @param {Tag} tag The unique tag for the draft document being deleted.
      * @param {Version} version The version string of the draft document.
+     * @returns {Boolean} Whether or not the draft document existed.
      */
     this.deleteDraft = async function(tag, version) {
         try {

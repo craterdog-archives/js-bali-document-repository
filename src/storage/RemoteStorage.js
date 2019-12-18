@@ -308,7 +308,8 @@ const RemoteStorage = function(notary, uri, debug) {
             const response = await axios(options);
             switch (method) {
                 case 'HEAD':
-                    return true;  // the document did exist
+                case 'DELETE':
+                    if (type !== 'queues') return true;  // the document did exist
                 default:
                     var result;
                     if (response.data && response.data.length) {
@@ -330,6 +331,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 // the server responded with an error status
                 switch (method) {
                     case 'HEAD':
+                    case 'DELETE':
                         if (cause.response.status === 404) return false;  // the document didn't exist
                     default:
                         // continue with the exception processing

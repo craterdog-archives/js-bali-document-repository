@@ -166,14 +166,16 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(exists).is.true;
 
                 // delete the draft from the repository
-                await repository.deleteDraft(tag, version);
+                exists = await repository.deleteDraft(tag, version);
+                expect(exists).is.true;
     
                 // make sure the draft no longer exists in the repository
                 exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
     
                 // delete a non-existent draft from the repository
-                await repository.deleteDraft(tag, version);
+                exists = await repository.deleteDraft(tag, version);
+                expect(exists).is.false;
     
             });
     

@@ -546,10 +546,15 @@ const deleteDraft = async function(request, response) {
             response.end();
             return;
         }
-        await repository.deleteDraft(tag, version);
-        message = 'Test Service: The draft document was deleted.';
+        const existed = await repository.deleteDraft(tag, version);
+        if (existed) {
+            message = 'Test Service: The draft document was deleted.';
+            response.writeHead(200, message);
+        } else {
+            message = 'Test Service: The draft document did not exist.';
+            response.writeHead(404, message);
+        }
         if (debug > 1) console.log(message);
-        response.writeHead(200, message);
         response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';

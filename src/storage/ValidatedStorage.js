@@ -211,9 +211,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.deleteDocument = async function(type, tag, version) {
         try {
-            const document = await repository.deleteDocument(type, tag, version);
-            if (document) await validateDocument(document, debug);
-            return document;
+            return await repository.deleteDocument(type, tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',

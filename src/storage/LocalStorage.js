@@ -238,9 +238,9 @@ const LocalStorage = function(root, debug) {
         try {
             const source = await pfs.readFile(file, 'utf8');
             await pfs.unlink(file);  // delete the document
-            return bali.component(source);
+            return true;  // the document was deleted
         } catch (cause) {
-            if (cause.code === 'ENOENT') return undefined; // the document does not exist
+            if (cause.code === 'ENOENT') return false; // the document does not exist
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',

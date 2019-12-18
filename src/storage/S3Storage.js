@@ -234,12 +234,11 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration[type];
             const key = generateDocumentKey(tag, version);
-            var document = await getObject(bucket, key);
-            if (document) {
-                document = bali.component(document);
+            if (await doesExist(bucket, key)) {
                 await deleteObject(bucket, key);
+                return true;
             }
-            return document;
+            return false;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
