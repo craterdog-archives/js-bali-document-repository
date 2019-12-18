@@ -119,11 +119,12 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration['citations'];
             const key = generateNameKey(name);
-            var citation = await getObject(bucket, key);
-            if (citation) {
+            const object = await getObject(bucket, key);
+            if (object) {
+                var citation = object.toString();
                 citation = bali.component(citation);
+                return citation;
             }
-            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -185,11 +186,12 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration[type];
             const key = generateDocumentKey(tag, version);
-            var document = await getObject(bucket, key);
-            if (document) {
+            const object = await getObject(bucket, key);
+            if (object) {
+                var document = object.toString();
                 document = bali.component(document);
+                return document;
             }
-            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -291,8 +293,9 @@ const S3Storage = function(configuration, debug) {
                 const generator = bali.generator();
                 const index = generator.generateIndex(count);
                 key = messages.getItem(index).getValue();
-                var message = await getObject(bucket, key);
-                if (message) {
+                const object = await getObject(bucket, key);
+                if (object) {
+                    var message = object.toString();
                     message = bali.component(message);
                     await deleteObject(bucket, key);
                     return message;  // we got there first
@@ -395,7 +398,7 @@ const getObject = function(bucket, key) {
                 if (error || data.DeleteMarker || !data.ContentLength) {
                     resolve(undefined);
                 } else {
-                    resolve(data.Body.toString());
+                    resolve(data.Body);
                 }
             });
         } catch (cause) {
@@ -408,7 +411,7 @@ const getObject = function(bucket, key) {
 const putObject = function(bucket, key, object) {
     return new Promise(function(resolve, reject) {
         try {
-            s3.putObject({Bucket: bucket, Key: key, Body: object.toString()}, function(error, data) {
+            s3.putObject({Bucket: bucket, Key: key, Body: object}, function(error, data) {
                 if (error) {
                     reject(error);
                 } else {
