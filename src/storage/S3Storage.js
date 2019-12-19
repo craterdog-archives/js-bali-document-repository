@@ -356,6 +356,7 @@ exports.S3Storage = S3Storage;
 const listObjects = function(bucket, prefix) {
     return new Promise(function(resolve, reject) {
         try {
+            // the resulting list contains objects with metadata, we only want the keys
             s3.listObjectsV2({Bucket: bucket, Prefix: prefix, MaxKeys: 64}, function(error, data) {
                 if (error) {
                     reject(error);
@@ -377,7 +378,10 @@ const listObjects = function(bucket, prefix) {
 const doesExist = function(bucket, key) {
     return new Promise(function(resolve, reject) {
         try {
+            // the result is an object containing metadata about the object or an error
+            // if it never existed
             s3.headObject({Bucket: bucket, Key: key}, function(error, data) {
+                // must check for the delete marker for versioned buckets
                 if (error || data.DeleteMarker || !data.ContentLength) {
                     resolve(false);
                 } else {
@@ -394,7 +398,9 @@ const doesExist = function(bucket, key) {
 const getObject = function(bucket, key) {
     return new Promise(function(resolve, reject) {
         try {
+            // the resulting object is always a Buffer (may contain utf8 encoded string)
             s3.getObject({Bucket: bucket, Key: key}, function(error, data) {
+                // must check for the delete marker for versioned buckets
                 if (error || data.DeleteMarker || !data.ContentLength) {
                     resolve(undefined);
                 } else {
@@ -411,7 +417,9 @@ const getObject = function(bucket, key) {
 const putObject = function(bucket, key, object) {
     return new Promise(function(resolve, reject) {
         try {
-            s3.putObject({Bucket: bucket, Key: key, Body: object}, function(error, data) {
+            // the object may be of type String or Buffer (strings are converted to utf8
+            // Buffer automatically)
+            s3.putObject({Bucket: bucket, Key: key, Body: object}, function(error) {
                 if (error) {
                     reject(error);
                 } else {
@@ -428,7 +436,9 @@ const putObject = function(bucket, key, object) {
 const deleteObject = function(bucket, key) {
     return new Promise(function(resolve, reject) {
         try {
-            s3.deleteObject({Bucket: bucket, Key: key}, function(error, data) {
+            // NOTE: for non-versioned buckets, deleteObject returns an empty object so
+            // there is no way to know whether or not the object even existed.
+            s3.deleteObject({Bucket: bucket, Key: key}, function(error) {
                 if (error) {
                     reject(error);
                 } else {
