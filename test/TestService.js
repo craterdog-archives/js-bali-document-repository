@@ -37,14 +37,17 @@ const getVersion = function(path) {
 
 const invalidCredentials = async function(request) {
     try {
-        const encoded = request.headers['nebula-credentials'];
-        const credentials = bali.component(decodeURI(encoded).slice(2, -2));  // strip off double quote delimiters
-        const citation = credentials.getValue('$certificate');
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
-        const certificate = (await repository.fetchDocument(tag, version)) || bali.component(request.body);  // may be self-signed
-        const isValid = await notary.validDocument(credentials, certificate);
-        return !isValid;
+        var credentials = request.headers['nebula-credentials'];
+        if (credentials) {
+            credentials = bali.component(decodeURI(credentials).slice(2, -2));  // strip off double quote delimiters
+            const citation = credentials.getValue('$certificate');
+            const tag = citation.getValue('$tag');
+            const version = citation.getValue('$version');
+            const certificate = (await repository.fetchDocument(tag, version)) || bali.component(request.body);  // may be self-signed
+            const isValid = await notary.validDocument(credentials, certificate);
+            return !isValid;
+        }
+        return false;  // for brower testing only
     } catch (e) {
         var message = 'Test Service: The credentials were badly formed.';
         if (debug > 1) {
@@ -115,16 +118,13 @@ const getStatic = async function(request, response) {
                     break;
                 case '.gif':
                     type = 'image/gif';
-                    resource = Buffer.from(resource, 'utf8');
                     break;
                 case '.jpg':
                 case '.jpeg':
                     type = 'image/jpeg';
-                    resource = Buffer.from(resource, 'utf8');
                     break;
                 case '.png':
                     type = 'image/png';
-                    resource = Buffer.from(resource, 'utf8');
                     break;
                 default:
                     type = 'text/html';

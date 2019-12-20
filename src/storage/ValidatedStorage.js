@@ -78,7 +78,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.readStatic = async function(resource) {
         try {
-            return await repository.readStatic(resource);
+            return await repository.readStatic(resource);  // returns a Buffer (may contain utf8 encoded string)
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',

@@ -94,7 +94,7 @@ const LocalStorage = function(root, debug) {
     this.readStatic = async function(resource) {
         const file = generatePath('statics', resource);
         try {
-            return await pfs.readFile(file, 'utf8');
+            return await pfs.readFile(file);  // returns a Buffer (may contain utf8 encoded string)
         } catch (cause) {
             if (cause.code === 'ENOENT') return undefined; // the static resource does not exist
             // something else went wrong

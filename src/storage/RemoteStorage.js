@@ -14,6 +14,7 @@
  * documents as UTF-8 encoded strings.
  */
 const axios = require('axios');
+const fs = require('fs');
 const bali = require('bali-component-framework').api();
 
 
@@ -76,7 +77,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.readStatic = async function(resource) {
         try {
-            return await sendRequest('GET', 'statics', resource, undefined, undefined);
+            return await sendRequest('GET', 'statics', resource, undefined, undefined);  // returns a Buffer (may contain utf8 encoded string)
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
@@ -285,7 +286,7 @@ const RemoteStorage = function(notary, uri, debug) {
             url: fullURI,
             method: method,
             //timeout: 1000,
-            responseType: 'text',
+            responseType: 'arraybuffer',
             validateStatus: function (status) {
                 return status < 400;  // only flag unexpected server errors
             },
@@ -313,15 +314,10 @@ const RemoteStorage = function(notary, uri, debug) {
                 default:
                     var result;
                     if (response.data && response.data.length) {
-                        switch (response.type) {
-                            case 'image/png':
-                                result = Buffer.from(response.data, 'utf8');
-                                break;
-                            case 'application/bali':
-                                result = bali.component(response.data);
-                                break;
-                            default:
-                                result = response.data;
+                        if (response.headers['content-type'] === 'application/bali') {
+                            result = bali.component(response.data.toString('utf8'));  // Component
+                        } else {
+                            result = response.data;  // Buffer (may contain utf8 encoded string)
                         }
                     }
                     return result;

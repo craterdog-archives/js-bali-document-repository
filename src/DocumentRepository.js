@@ -55,8 +55,8 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not a static resource exists in the document
-     * repository is associated with the specified name.
+     * This method checks to see whether or not a static resource associated with the specified
+     * name exists in the document repository.
      * 
      * @param {Name} name The unique name (including suffix) for the static resource being checked.
      * @returns {Boolean} Whether or not the static resource exists.
@@ -87,7 +87,8 @@ const DocumentRepository = function(storage, debug) {
      * This method attempts to retrieve the specified static resource from the document repository.
      * 
      * @param {Name} name The unique name (including suffix) for the static resource being fetched.
-     * @returns {Catalog} A catalog containing the static resource or nothing if it doesn't exist.
+     * @returns {Buffer} A buffer containing the bytes for the static resource. The bytes may
+     * represent a utf8 encoded string.
      */
     this.fetchStatic = async function(name) {
         try {
@@ -97,7 +98,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/elements/Name'
                 ]);
             }
-            return await storage.readStatic(name);
+            return await storage.readStatic(name);  // returns a Buffer (may contain utf8 encoded string)
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -112,8 +113,8 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method checks to see whether or not a document citation exists in the document
-     * repository is associated with the specified name.
+     * This method checks to see whether or not a document citation associated with the specified
+     * name exists in the document repository.
      * 
      * @param {Name} name The unique name for the document citation being checked.
      * @returns {Boolean} Whether or not the document citation exists.
@@ -204,8 +205,8 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method checks to see whether or not a draft document in the document repository
-     * is associated with the specified tag and version.
+     * This method checks to see whether or not a draft document associated with the specified
+     * tag and version exists in the document repository.
      * 
      * @param {Tag} tag The unique tag for the draft document being checked.
      * @param {Version} version The version string of the draft document.
@@ -348,8 +349,8 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method checks to see whether or not a document in the document repository
-     * is associated with the specified tag and version.
+     * This method checks to see whether or not a document associated with the specified
+     * tag and version exists in the document repository.
      * 
      * @param {Tag} tag The unique tag for the document being checked.
      * @param {Version} version The version string of the document.
@@ -455,8 +456,8 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method checks to see whether or not a compiled type in the document repository
-     * is associated with the specified tag and version.
+     * This method checks to see whether or not a compiled type associated with the specified
+     * tag and version exists in the document repository.
      * 
      * @param {Tag} tag The unique tag for the compiled type being checked.
      * @param {Version} version The version string of the compiled type.

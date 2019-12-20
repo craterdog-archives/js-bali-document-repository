@@ -77,11 +77,12 @@ const S3Storage = function(configuration, debug) {
         }
     };
 
+    // Note: this function always returns a Buffer but it may contain a utf8 encoded string
     this.readStatic = async function(resource) {
         try {
             const bucket = configuration['statics'];
             const key = generateStaticKey(resource);
-            return await getObject(bucket, key);
+            return await getObject(bucket, key);  // returns a Buffer (may contain utf8 encoded string)
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',

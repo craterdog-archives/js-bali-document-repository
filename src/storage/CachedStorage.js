@@ -81,7 +81,7 @@ const CachedStorage = function(repository, debug) {
             if (cache['statics']) object = cache['statics'].read(key);
             if (!object) {
                 // not found so we must read from the backend repository
-                object = await repository.readStatic(resource);
+                object = await repository.readStatic(resource);  // returns a Buffer (may contain utf8 encoded string)
                 // add the static resource to the cache if it is immutable
                 if (object && cache['statics']) cache['statics'].write(resource, object);
             }
