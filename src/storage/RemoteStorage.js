@@ -14,7 +14,6 @@
  * documents as UTF-8 encoded strings.
  */
 const axios = require('axios');
-const fs = require('fs');
 const bali = require('bali-component-framework').api();
 
 
