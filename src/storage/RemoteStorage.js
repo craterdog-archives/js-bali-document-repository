@@ -256,8 +256,9 @@ const RemoteStorage = function(notary, uri, debug) {
                 return status < 400;  // only flag unexpected server errors
             },
             headers: {
-                //'User-Agent': 'Bali Nebula™ API 1.0',
-                'Nebula-Credentials': encodeURI('"' + EOL + credentials + EOL + '"')
+                'User-Agent': 'Bali Document Repository API/v2 (NodeJS/v12) Bali Nebula/v2',
+                'Nebula-Credentials': encodeURI('"' + EOL + credentials + EOL + '"'),
+                'Accept': 'application/bali'
             }
         };
     
