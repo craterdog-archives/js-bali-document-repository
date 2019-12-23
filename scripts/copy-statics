@@ -1,5 +1,0 @@
-#!/bin/bash
-
-mkdir -p test/config
-cp -r test/statics test/config/statics/
-
