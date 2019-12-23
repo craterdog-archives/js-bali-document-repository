@@ -59,40 +59,6 @@ const ValidatedStorage = function(notary, repository, debug) {
         return catalog.toString();
     };
 
-    this.staticExists = async function(resource) {
-        try {
-            return await repository.staticExists(resource);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$staticExists',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $resource: resource,
-                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.readStatic = async function(resource) {
-        try {
-            return await repository.readStatic(resource);  // returns a Buffer (may contain utf8 encoded string)
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$readStatic',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $resource: resource,
-                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.citationExists = async function(name) {
         try {
             return await repository.citationExists(name);

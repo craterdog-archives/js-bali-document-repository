@@ -55,64 +55,6 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not a static resource associated with the specified
-     * name exists in the document repository.
-     * 
-     * @param {Name} name The unique name (including suffix) for the static resource being checked.
-     * @returns {Boolean} Whether or not the static resource exists.
-     */
-    this.staticExists = async function(name) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$staticExists', '$name', name, [
-                    '/bali/elements/Name'
-                ]);
-            }
-            return await storage.staticExists(name);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$staticExists',
-                $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a static resource.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-    
-    /**
-     * This method attempts to retrieve the specified static resource from the document repository.
-     * 
-     * @param {Name} name The unique name (including suffix) for the static resource being fetched.
-     * @returns {Buffer} A buffer containing the bytes for the static resource. The bytes may
-     * represent a utf8 encoded string.
-     */
-    this.fetchStatic = async function(name) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchStatic', '$name', name, [
-                    '/bali/elements/Name'
-                ]);
-            }
-            return await storage.readStatic(name);  // returns a Buffer (may contain utf8 encoded string)
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$fetchStatic',
-                $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to fetch a static resource.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-    
-    /**
      * This method checks to see whether or not a document citation associated with the specified
      * name exists in the document repository.
      * 

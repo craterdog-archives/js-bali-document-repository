@@ -59,170 +59,6 @@ const invalidCredentials = async function(request) {
 };
 
 
-const pingStatic = async function(request, response) {
-    var message;
-    try {
-        const name = getName(request.params.identifier);
-        message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (await repository.staticExists(name)) {
-            message = 'Test Service: The static resource exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message);
-            response.end();
-        } else {
-            message = 'Test Service: The static resource does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-        }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const getStatic = async function(request, response) {
-    var message;
-    try {
-        const name = getName(request.params.identifier);
-        message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        var resource = await repository.fetchStatic(name);
-        if (resource) {
-            var type;
-            const string = name.toString();
-            switch (string.slice(string.lastIndexOf('.'))) {
-                case '.css':
-                    type = 'text/css';
-                    break;
-                case '.gif':
-                    type = 'image/gif';
-                    break;
-                case '.jpg':
-                case '.jpeg':
-                    type = 'image/jpeg';
-                    break;
-                case '.png':
-                    type = 'image/png';
-                    break;
-                default:
-                    type = 'text/html';
-            }
-            const options = {
-                'Content-Length': resource.length,
-                'Content-Type': type,
-                'Cache-Control': 'immutable'
-            };
-            message = 'Test Service: The static resource was retrieved.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + JSON.stringify(options));
-                console.log('    result type: ' + resource.constructor.name);
-            }
-            response.writeHead(200, message, options);
-            response.end(resource);
-        } else {
-            message = 'Test Service: The static resource does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-        }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const postStatic = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Static resources cannot be created.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const putStatic = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Static resources cannot be updated.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const deleteStatic = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Static resources cannot be deleted.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
 const pingCitation = async function(request, response) {
     var message;
     try {
@@ -1046,13 +882,6 @@ const deleteMessage = async function(request, response) {
 
 // SERVICE INITIALIZATION
 
-const staticRouter = express.Router();
-staticRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingStatic);
-staticRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getStatic);
-staticRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postStatic);
-staticRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putStatic);
-staticRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteStatic);
-
 const citationRouter = express.Router();
 // Note: the leading slash is part of the citation name identifier
 citationRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingCitation);
@@ -1092,7 +921,6 @@ queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 const service = express();
 
 service.use(bodyParser.text({ type: 'application/bali' }));
-service.use('/statics', staticRouter);
 service.use('/citations', citationRouter);
 service.use('/drafts', draftRouter);
 service.use('/documents', documentRouter);

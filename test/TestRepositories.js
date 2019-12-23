@@ -26,8 +26,7 @@ const configuration = {
     drafts: 'craterdog-bali-drafts-us-west-2',
     documents: 'craterdog-bali-documents-us-west-2',
     types: 'craterdog-bali-types-us-west-2',
-    queues: 'craterdog-bali-queues-us-west-2',
-    statics: 'craterdog-bali-statics-us-west-2'
+    queues: 'craterdog-bali-queues-us-west-2'
 };
 
 const repositories = {
@@ -93,30 +92,6 @@ describe('Bali Nebula™ Document Repository', function() {
                 certificate = await notary.notarizeDocument(certificate);
                 citation = await notary.activateKey(certificate);
                 await repository.createDocument(tag, version, certificate);
-            });
-    
-            it('should retrieve a static style sheet', async function() {
-                const resource = bali.component('/styles/BDN.css');
-
-                // make sure the static style sheet exists in the repository
-                const exists = await repository.staticExists(resource);
-                expect(exists).is.true;
-    
-                // fetch the static style sheet from the repository
-                const result = await repository.fetchStatic(resource);
-                expect(result).to.exist;
-            });
-    
-            it('should retrieve a static image', async function() {
-                const resource = bali.component('/images/PoweredByLogo.png');
-
-                // make sure the static style sheet exists in the repository
-                const exists = await repository.staticExists(resource);
-                expect(exists).is.true;
-    
-                // fetch the static image from the repository
-                const result = await repository.fetchStatic(resource);
-                expect(result).to.exist;
             });
     
             it('should perform a citation name lifecycle', async function() {

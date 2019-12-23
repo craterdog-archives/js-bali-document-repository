@@ -58,45 +58,6 @@ const S3Storage = function(configuration, debug) {
         return catalog.toString();
     };
 
-    this.staticExists = async function(resource) {
-        try {
-            const bucket = configuration['statics'];
-            const key = generateStaticKey(resource);
-            return await doesExist(bucket, key);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$staticExists',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $resource: resource,
-                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    // Note: this function always returns a Buffer but it may contain a utf8 encoded string
-    this.readStatic = async function(resource) {
-        try {
-            const bucket = configuration['statics'];
-            const key = generateStaticKey(resource);
-            return await getObject(bucket, key);  // returns a Buffer (may contain utf8 encoded string)
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$readStatic',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $resource: resource,
-                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.citationExists = async function(name) {
         try {
             const bucket = configuration['citations'];
@@ -315,11 +276,6 @@ const S3Storage = function(configuration, debug) {
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
-    };
-
-    const generateStaticKey = function(resource) {
-        const key = resource.toString().slice(1);  // remove leading '/'
-        return key;
     };
 
     const generateNameKey = function(name) {

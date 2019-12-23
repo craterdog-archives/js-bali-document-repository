@@ -71,45 +71,6 @@ const LocalStorage = function(root, debug) {
         return catalog.toString();
     };
 
-    this.staticExists = async function(resource) {
-        const file = generatePath('statics', resource);
-        try {
-            await pfs.stat(file);  // attempt to access the static resource
-            return true; // no exception, the static resource exists
-        } catch (cause) {
-            if (cause.code === 'ENOENT') return false; // the static resource does not exist
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
-                $procedure: '$staticExists',
-                $exception: '$unexpected',
-                $file: file,
-                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.readStatic = async function(resource) {
-        const file = generatePath('statics', resource);
-        try {
-            return await pfs.readFile(file);  // returns a Buffer (may contain utf8 encoded string)
-        } catch (cause) {
-            if (cause.code === 'ENOENT') return undefined; // the static resource does not exist
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
-                $procedure: '$readStatic',
-                $exception: '$unexpected',
-                $file: file,
-                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.citationExists = async function(name) {
         const file = generateFilename('citations', name);
         try {

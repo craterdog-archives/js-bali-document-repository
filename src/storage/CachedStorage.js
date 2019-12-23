@@ -52,54 +52,6 @@ const CachedStorage = function(repository, debug) {
         return catalog.toString();
     };
 
-    this.staticExists = async function(resource) {
-        try {
-            // check the cache first
-            const key = generateKey(resource);
-            if (cache['statics'] && cache['statics'].read(key)) return true;
-            // not found so we must check the backend repository
-            return await repository.staticExists(resource);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$staticExists',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $resource: resource,
-                $text: 'An unexpected error occurred while checking whether or not a static resource exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.readStatic = async function(resource) {
-        try {
-            var object;
-            // check the cache first
-            const key = generateKey(resource);
-            if (cache['statics']) object = cache['statics'].read(key);
-            if (!object) {
-                // not found so we must read from the backend repository
-                object = await repository.readStatic(resource);  // returns a Buffer (may contain utf8 encoded string)
-                // add the static resource to the cache if it is immutable
-                if (object && cache['statics']) cache['statics'].write(resource, object);
-            }
-            return object;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$readStatic',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $resource: resource,
-                $text: 'An unexpected error occurred while attempting to read a static resource from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.citationExists = async function(name) {
         try {
             // check the cache first
@@ -343,7 +295,6 @@ const CACHE_SIZE = 256;
 
 // the actual cache for immutable document types only
 const cache = {
-    statics: new Cache(CACHE_SIZE),
     citations: new Cache(CACHE_SIZE),
     documents: new Cache(CACHE_SIZE),
     types: new Cache(CACHE_SIZE)
