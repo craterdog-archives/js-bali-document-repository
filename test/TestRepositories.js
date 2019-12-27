@@ -91,7 +91,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 version = certificate.getParameter('$version');
                 certificate = await notary.notarizeDocument(certificate);
                 citation = await notary.activateKey(certificate);
-                await repository.createDocument(tag, version, certificate);
+                await repository.createDocument(certificate);
             });
     
             it('should perform a citation name lifecycle', async function() {
@@ -119,7 +119,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 const draft = await notary.notarizeDocument(transaction);
     
                 // create a new draft in the repository
-                await repository.saveDraft(tag, version, draft);
+                await repository.saveDraft(draft);
     
                 // make sure the new draft exists in the repository
                 var exists = await repository.draftExists(tag, version);
@@ -134,7 +134,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(draft.isEqualTo(result)).is.true;
     
                 // update the existing draft in the repository
-                await repository.saveDraft(tag, version, draft);
+                await repository.saveDraft(draft);
 
                 // make sure the updated draft exists in the repository
                 var exists = await repository.draftExists(tag, version);
@@ -160,7 +160,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 const document = await notary.notarizeDocument(transaction);
     
                 // create a new document in the repository
-                await repository.createDocument(tag, version, document);
+                await repository.createDocument(document);
     
                 // make sure the same draft does not exist in the repository
                 var exists = await repository.draftExists(tag, version);
@@ -180,7 +180,7 @@ describe('Bali Nebula™ Document Repository', function() {
     
                 // attempt to create the same document in the repository
                 await assert.rejects(async function() {
-                    await repository.createDocument(tag, version, document);
+                    await repository.createDocument(document);
                 });
     
             });
@@ -191,7 +191,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 const type = await notary.notarizeDocument(code);
     
                 // create a new type in the repository
-                await repository.createType(tag, version, type);
+                await repository.createType(type);
     
                 // make sure the same draft does not exist in the repository
                 var exists = await repository.draftExists(tag, version);
@@ -211,7 +211,7 @@ describe('Bali Nebula™ Document Repository', function() {
     
                 // attempt to create the same type in the repository
                 await assert.rejects(async function() {
-                    await repository.createType(tag, version, type);
+                    await repository.createType(type);
                 });
     
             });

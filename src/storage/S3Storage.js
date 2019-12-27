@@ -123,6 +123,29 @@ const S3Storage = function(configuration, debug) {
         }
     };
 
+    this.deleteCitation = async function(name) {
+        try {
+            const bucket = configuration['citations'];
+            const key = generateNameKey(name);
+            if (await doesExist(bucket, key)) {
+                await deleteObject(bucket, key);
+                return true;
+            }
+            return false;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Storage',
+                $procedure: '$deleteCitation',
+                $exception: '$unexpected',
+                $configuration: configuration,
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.documentExists = async function(type, tag, version) {
         try {
             const bucket = configuration[type];
@@ -170,9 +193,11 @@ const S3Storage = function(configuration, debug) {
         }
     };
 
-    this.writeDocument = async function(type, tag, version, document) {
+    this.writeDocument = async function(type, document) {
         try {
             const bucket = configuration[type];
+            const tag = document.getValue('$content').getParameter('$tag');
+            const version = document.getValue('$content').getParameter('$version');
             const key = generateDocumentKey(tag, version);
             if (type !== 'drafts' && await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
@@ -184,8 +209,6 @@ const S3Storage = function(configuration, debug) {
                 $exception: '$unexpected',
                 $configuration: configuration,
                 $type: type,
-                $tag: tag,
-                $version: version,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
             }, cause);

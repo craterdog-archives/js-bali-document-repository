@@ -217,36 +217,26 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method saves a draft document with the specified tag and version string in
-     * the document repository. If a draft document with the same tag and version string
-     * already exists in the document repository, it is overwritten with the new draft.
+     * This method saves a draft document in the document repository. If a draft document with
+     * the same tag and version string already exists in the document repository, it is
+     * overwritten with the new draft.
      * 
-     * @param {Tag} tag The unique tag for the draft document being saved.
-     * @param {Version} version The version string of the draft document.
      * @param {Catalog} draft A catalog containing the draft document.
      */
-    this.saveDraft = async function(tag, version, draft) {
+    this.saveDraft = async function(draft) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$tag', tag, [
-                    '/bali/elements/Tag'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$version', version, [
-                    '/bali/elements/Version'
-                ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$draft', draft, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeDocument('drafts', tag, version, draft);
+            await storage.writeDocument('drafts', draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$saveDraft',
                 $exception: '$unexpected',
-                $tag: tag,
-                $version: version,
                 $draft: draft,
                 $text: 'An unexpected error occurred while attempting to save a draft.'
             }, cause);
@@ -359,36 +349,26 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method creates a document with the specified tag and version string in
-     * the document repository. If a document with the same tag and version string
-     * already exists in the document repository, an exception is thrown.
+     * This method creates a new document in the document repository. If a document with the
+     * same tag and version string already exists in the document repository, an exception
+     * is thrown.
      * 
-     * @param {Tag} tag The unique tag for the document being created.
-     * @param {Version} version The version string of the document.
      * @param {Catalog} document A catalog containing the document.
      */
-    this.createDocument = async function(tag, version, document) {
+    this.createDocument = async function(document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$tag', tag, [
-                    '/bali/elements/Tag'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$version', version, [
-                    '/bali/elements/Version'
-                ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeDocument('documents', tag, version, document);
+            await storage.writeDocument('documents', document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$createDocument',
                 $exception: '$unexpected',
-                $tag: tag,
-                $version: version,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to create a document.'
             }, cause);
@@ -466,36 +446,26 @@ const DocumentRepository = function(storage, debug) {
     };
     
     /**
-     * This method creates a compiled type with the specified tag and version string in
-     * the document repository. If a compiled type with the same tag and version string
-     * already exists in the document repository, an exception is thrown.
+     * This method creates a compiled type in the document repository. If a compiled type with
+     * the same tag and version string already exists in the document repository, an exception
+     * is thrown.
      * 
-     * @param {Tag} tag The unique tag for the compiled type being created.
-     * @param {Version} version The version string of the compiled type.
      * @param {Catalog} type A catalog containing the compiled type.
      */
-    this.createType = async function(tag, version, type) {
+    this.createType = async function(type) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$tag', tag, [
-                    '/bali/elements/Tag'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$version', version, [
-                    '/bali/elements/Version'
-                ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$type', type, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeDocument('types', tag, version, type);
+            await storage.writeDocument('types', type);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$createType',
                 $exception: '$unexpected',
-                $tag: tag,
-                $version: version,
                 $type: type,
                 $text: 'An unexpected error occurred while attempting to create a type.'
             }, cause);

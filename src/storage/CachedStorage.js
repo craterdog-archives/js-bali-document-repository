@@ -122,6 +122,28 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
+    this.deleteCitation = async function(name) {
+        try {
+            // delete the citation from the cache
+            const key = generateKey(name);
+            if (cache['citations']) cache['citations'].delete(key);
+
+            // delete the citation from the backend repository
+            return await repository.deleteCitation(name);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/CachedStorage',
+                $procedure: '$deleteCitation',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.documentExists = async function(type, tag, version) {
         try {
             // check the cache if the document is immutable
@@ -155,7 +177,7 @@ const CachedStorage = function(repository, debug) {
                 // not found so we must read from the backend repository
                 document = await repository.readDocument(type, tag, version);
                 // add the document to the cache if it is immutable
-                if (document && cache[type]) cache[type].write(tag, version, document);
+                if (document && cache[type]) cache[type].write(key, document);
             }
             return document;
         } catch (cause) {
@@ -174,11 +196,14 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
-    this.writeDocument = async function(type, tag, version, document) {
+    this.writeDocument = async function(type, document) {
         try {
             // add the document to the backend repository
-            await repository.writeDocument(type, tag, version, document);
+            await repository.writeDocument(type, document);
+
             // cache the document if it is immutable
+            const tag = document.getValue('$content').getParameter('$tag');
+            const version = document.getValue('$content').getParameter('$version');
             const key = generateKey(tag, version);
             if (cache[type]) cache[type].write(key, document);
         } catch (cause) {
@@ -200,7 +225,11 @@ const CachedStorage = function(repository, debug) {
 
     this.deleteDocument = async function(type, tag, version) {
         try {
-            // pass through, no caching involved since only immutable documents are cached
+            // delete the document from the cache
+            const key = generateKey(tag, version);
+            if (cache[type]) cache[type].delete(key);
+
+            // delete the document from the backend repository
             return await repository.deleteDocument(type, tag, version);
         } catch (cause) {
             const exception = bali.exception({
@@ -284,6 +313,10 @@ const Cache = function(capacity) {
             documents.delete(oldest);
         }
         documents.set(name, document);
+    };
+
+    this.delete = function(name) {
+        documents.delete(name);
     };
 
     return this;

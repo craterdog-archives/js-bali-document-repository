@@ -39,11 +39,13 @@ const invalidCredentials = async function(request) {
     try {
         var credentials = request.headers['nebula-credentials'];
         if (credentials) {
-            credentials = bali.component(decodeURI(credentials).slice(2, -2));  // strip off double quote delimiters
+            credentials = decodeURI(credentials).slice(2, -2);  // strip off double quote delimiters
+            credentials = bali.component(credentials);
             const citation = credentials.getValue('$certificate');
             const tag = citation.getValue('$tag');
             const version = citation.getValue('$version');
-            const certificate = (await repository.fetchDocument(tag, version)) || bali.component(request.body);  // may be self-signed
+            var certificate = await repository.fetchDocument(tag, version);
+            certificate = certificate || bali.component(request.body);  // if self-signed certificate
             const isValid = await notary.validDocument(credentials, certificate);
             return !isValid;
         }
@@ -344,7 +346,7 @@ const putDraft = async function(request, response) {
         }
         const updated = await repository.documentExists(tag, version);
         const draft = bali.component(request.body);
-        await repository.saveDraft(tag, version, draft);
+        await repository.saveDraft(draft);
         if (updated) {
             message = 'Test Service: The draft document was updated.';
             if (debug > 1) console.log(message);
@@ -511,7 +513,7 @@ const postDocument = async function(request, response) {
             response.writeHead(409, message);
             response.end();
         } else {
-            await repository.createDocument(tag, version, document);
+            await repository.createDocument(document);
             message = 'Test Service: The notarized document was created.';
             if (debug > 1) console.log(message);
             response.writeHead(201, message);
@@ -677,7 +679,7 @@ const postType = async function(request, response) {
             response.writeHead(409, message);
             response.end();
         } else {
-            await repository.createType(tag, version, type);
+            await repository.createType(type);
             message = 'Test Service: The notarized type was created.';
             if (debug > 1) console.log(message);
             response.writeHead(201, message);

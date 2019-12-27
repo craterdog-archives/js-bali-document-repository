@@ -114,6 +114,23 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
+    this.deleteCitation = async function(name) {
+        try {
+            return await repository.deleteCitation(name);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/ValidatedStorage',
+                $procedure: '$deleteCitation',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.documentExists = async function(type, tag, version) {
         try {
             return await repository.documentExists(type, tag, version);
@@ -154,10 +171,10 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.writeDocument = async function(type, tag, version, document) {
+    this.writeDocument = async function(type, document) {
         try {
             await validateDocument(document, debug);
-            await repository.writeDocument(type, tag, version, document);
+            await repository.writeDocument(type, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -165,8 +182,6 @@ const ValidatedStorage = function(notary, repository, debug) {
                 $exception: '$unexpected',
                 $repository: repository.toString(),
                 $type: type,
-                $tag: tag,
-                $version: version,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
             }, cause);

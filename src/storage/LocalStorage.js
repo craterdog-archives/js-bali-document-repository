@@ -132,6 +132,27 @@ const LocalStorage = function(root, debug) {
         }
     };
 
+    this.deleteCitation = async function(name) {
+        const file = generateFilename('citations', name);
+        try {
+            const source = await pfs.readFile(file, 'utf8');
+            await pfs.unlink(file);  // delete the citation
+            return true;  // the citation was deleted
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return false; // the citation does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$deleteCitation',
+                $exception: '$unexpected',
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.documentExists = async function(type, tag, version) {
         const file = generateFilename(type, tag, version);
         try {
@@ -172,9 +193,11 @@ const LocalStorage = function(root, debug) {
         }
     };
 
-    this.writeDocument = async function(type, tag, version, document) {
-        const file = generateFilename(type, tag, version);
+    this.writeDocument = async function(type, document) {
         try {
+            const tag = document.getValue('$content').getParameter('$tag');
+            const version = document.getValue('$content').getParameter('$version');
+            const file = generateFilename(type, tag, version);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const mode = (type === 'drafts') ? 0o600 : 0o400;
@@ -185,7 +208,7 @@ const LocalStorage = function(root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
-                $file: file,
+                $type: type,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
             }, cause);
