@@ -56,7 +56,7 @@ const CachedStorage = function(repository, debug) {
         try {
             // check the cache first
             const key = generateKey(name);
-            if (cache['citations'] && cache['citations'].read(key)) return true;
+            if (cache.citations && cache.citations.read(key)) return true;
             // not found so we must check the backend repository
             return await repository.citationExists(name);
         } catch (cause) {
@@ -78,12 +78,12 @@ const CachedStorage = function(repository, debug) {
             var citation;
             // check the cache first
             const key = generateKey(name);
-            if (cache['citations']) citation = cache['citations'].read(key);
+            if (cache.citations) citation = cache.citations.read(key);
             if (!citation) {
                 // not found so we must read from the backend repository
                 citation = await repository.readCitation(name);
                 // add the citation to the cache if it is immutable
-                if (citation && cache['citations']) cache['citations'].write(name, citation);
+                if (citation && cache.citations) cache.citations.write(name, citation);
             }
             return citation;
         } catch (cause) {
@@ -106,7 +106,7 @@ const CachedStorage = function(repository, debug) {
             await repository.writeCitation(name, citation);
             // cache the citation
             const key = generateKey(name);
-            if (cache['citations']) cache['citations'].write(key, citation);
+            if (cache.citations) cache.citations.write(key, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
@@ -122,42 +122,96 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
-    this.deleteCitation = async function(name) {
+    this.draftExists = async function(tag, version) {
         try {
-            // delete the citation from the cache
-            const key = generateKey(name);
-            if (cache['citations']) cache['citations'].delete(key);
-
-            // delete the citation from the backend repository
-            return await repository.deleteCitation(name);
+            // pass-through, drafts are not cached
+            return await repository.draftExists(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
-                $procedure: '$deleteCitation',
+                $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.documentExists = async function(type, tag, version) {
+    this.readDraft = async function(tag, version) {
         try {
-            // check the cache if the document is immutable
+            // pass-through, drafts are not cached
+            return await repository.readDraft(tag, version);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/CachedStorage',
+                $procedure: '$readDraft',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.writeDraft = async function(draft) {
+        try {
+            // pass-through, drafts are not cached
+            await repository.writeDraft(draft);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/CachedStorage',
+                $procedure: '$writeDraft',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $tag: tag,
+                $version: version,
+                $draft: draft,
+                $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.deleteDraft = async function(tag, version) {
+        try {
+            // pass-through, drafts are not cached
+            return await repository.deleteDraft(tag, version);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/CachedStorage',
+                $procedure: '$deleteDraft',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.documentExists = async function(tag, version) {
+        try {
+            // check the cache
             const key = generateKey(tag, version);
-            if (cache[type] && cache[type].read(key)) return true;
+            if (cache.documents.read(key)) return true;
             // not found so we must check the backend repository
-            return await repository.documentExists(type, tag, version);
+            return await repository.documentExists(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $text: 'An unexpected error occurred while checking whether or not a document exists.'
@@ -167,17 +221,17 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
-    this.readDocument = async function(type, tag, version) {
+    this.readDocument = async function(tag, version) {
         try {
             var document;
-            // check the cache if the document is immutable
+            // check the cache
             const key = generateKey(tag, version);
-            if (cache[type]) document = cache[type].read(key);
+            document = cache.documents.read(key);
             if (!document) {
                 // not found so we must read from the backend repository
-                document = await repository.readDocument(type, tag, version);
-                // add the document to the cache if it is immutable
-                if (document && cache[type]) cache[type].write(key, document);
+                document = await repository.readDocument(tag, version);
+                // add the document to the cache
+                if (document) cache.documents.write(key, document);
             }
             return document;
         } catch (cause) {
@@ -186,7 +240,6 @@ const CachedStorage = function(repository, debug) {
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $text: 'An unexpected error occurred while attempting to read a document from the repository.'
@@ -196,23 +249,21 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
-    this.writeDocument = async function(type, document) {
+    this.writeDocument = async function(document) {
         try {
             // add the document to the backend repository
-            await repository.writeDocument(type, document);
-
-            // cache the document if it is immutable
+            await repository.writeDocument(document);
+            // cache the document
             const tag = document.getValue('$content').getParameter('$tag');
             const version = document.getValue('$content').getParameter('$version');
             const key = generateKey(tag, version);
-            if (cache[type]) cache[type].write(key, document);
+            cache.documents.write(key, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $document: document,
@@ -223,33 +274,9 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
-    this.deleteDocument = async function(type, tag, version) {
-        try {
-            // delete the document from the cache
-            const key = generateKey(tag, version);
-            if (cache[type]) cache[type].delete(key);
-
-            // delete the document from the backend repository
-            return await repository.deleteDocument(type, tag, version);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$deleteDocument',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $type: type,
-                $tag: tag,
-                $version: version,
-                $text: 'An unexpected error occurred while attempting to delete a document from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.addMessage = async function(queue, document) {
         try {
-            // pass through, messages are not cached
+            // pass-through, messages are not cached
             await repository.addMessage(queue, document);
         } catch (cause) {
             const exception = bali.exception({
@@ -269,7 +296,7 @@ const CachedStorage = function(repository, debug) {
 
     this.removeMessage = async function(queue) {
         try {
-            // pass through, messages are not cached
+            // pass-through, messages are not cached
             return await repository.removeMessage(queue);
         } catch (cause) {
             const exception = bali.exception({
@@ -285,8 +312,8 @@ const CachedStorage = function(repository, debug) {
         }
     };
 
-    const generateKey = function(tag, version) {
-        var key = tag.toString().slice(1);
+    const generateKey = function(identifier, version) {
+        var key = identifier.toString().slice(1);
         if (version) key += '/' + version;
         return key;
     };
@@ -329,6 +356,5 @@ const CACHE_SIZE = 256;
 // the actual cache for immutable document types only
 const cache = {
     citations: new Cache(CACHE_SIZE),
-    documents: new Cache(CACHE_SIZE),
-    types: new Cache(CACHE_SIZE)
+    documents: new Cache(CACHE_SIZE)
 };

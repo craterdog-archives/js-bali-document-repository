@@ -25,7 +25,6 @@ const configuration = {
     citations: 'craterdog-bali-citations-us-west-2',
     drafts: 'craterdog-bali-drafts-us-west-2',
     documents: 'craterdog-bali-documents-us-west-2',
-    types: 'craterdog-bali-types-us-west-2',
     queues: 'craterdog-bali-queues-us-west-2'
 };
 
@@ -52,27 +51,6 @@ describe('Bali Nebula™ Document Repository', function() {
             $total: '13.57($currency: $USD)'
         }, {
             $type: '/bali/examples/Transaction/v1',
-            $tag: bali.tag(),
-            $version: bali.version(),
-            $permissions: '/bali/permissions/public/v1',
-            $previous: bali.pattern.NONE
-        });
-
-        const code = bali.catalog({
-            $source: bali.catalog({
-                $protocol: notary.getProtocols()[0],
-                $timestamp: bali.moment(),
-                $tag: bali.tag(),
-                $version: bali.version(),
-                $digest: bali.component("'Z41S87YHGGV3BW2WHW72NMN3XQ1G146B1J4QGZF3NBTY1AGVDXHF6KK7YBNB89BZL4GDY2F457LBC7P0BR0T9TNJW4MKYYLC0VV6FC8'")
-            }, {
-                $type: bali.component('/bali/notary/Citation/v1')
-            }),
-            $literals: [],
-            $constants: {},
-            $procedures: {}
-        }, {
-            $type: '/bali/examples/Code/v1',
             $tag: bali.tag(),
             $version: bali.version(),
             $permissions: '/bali/permissions/public/v1',
@@ -181,37 +159,6 @@ describe('Bali Nebula™ Document Repository', function() {
                 // attempt to create the same document in the repository
                 await assert.rejects(async function() {
                     await repository.createDocument(document);
-                });
-    
-            });
-    
-            it('should perform a committed type lifecycle', async function() {
-                tag = code.getParameter('$tag');
-                version = code.getParameter('$version');
-                const type = await notary.notarizeDocument(code);
-    
-                // create a new type in the repository
-                await repository.createType(type);
-    
-                // make sure the same draft does not exist in the repository
-                var exists = await repository.draftExists(tag, version);
-                expect(exists).is.false;
-    
-                // make sure the new type exists in the repository
-                exists = await repository.typeExists(tag, version);
-                expect(exists).is.true;
-    
-                // fetch the new type from the repository
-                const result = await repository.fetchType(tag, version);
-                expect(type.isEqualTo(result)).is.true;
-    
-                // make sure the new type still exists in the repository
-                exists = await repository.typeExists(tag, version);
-                expect(exists).is.true;
-    
-                // attempt to create the same type in the repository
-                await assert.rejects(async function() {
-                    await repository.createType(type);
                 });
     
             });

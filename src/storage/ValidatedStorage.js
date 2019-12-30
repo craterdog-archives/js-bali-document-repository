@@ -79,7 +79,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.readCitation = async function(name) {
         try {
             const citation = await repository.readCitation(name);
-            await validateCitation(citation, debug);
+            await validateCitation(citation);
             return citation;
         } catch (cause) {
             const exception = bali.exception({
@@ -97,7 +97,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.writeCitation = async function(name, citation) {
         try {
-            await validateCitation(citation, debug);
+            await validateCitation(citation);
             await repository.writeCitation(name, citation);
         } catch (cause) {
             const exception = bali.exception({
@@ -114,33 +114,89 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.deleteCitation = async function(name) {
+    this.draftExists = async function(tag, version) {
         try {
-            return await repository.deleteCitation(name);
+            return await repository.draftExists(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$deleteCitation',
+                $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.documentExists = async function(type, tag, version) {
+    this.readDraft = async function(tag, version) {
         try {
-            return await repository.documentExists(type, tag, version);
+            const draft = await repository.readDraft(tag, version);
+            if (draft) await validateDocument(draft);
+            return draft;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/ValidatedStorage',
+                $procedure: '$readDraft',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.writeDraft = async function(draft) {
+        try {
+            await validateDocument(draft);
+            await repository.writeDraft(draft);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/ValidatedStorage',
+                $procedure: '$writeDraft',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $draft: draft,
+                $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.deleteDraft = async function(tag, version) {
+        try {
+            return await repository.deleteDraft(tag, version);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/ValidatedStorage',
+                $procedure: '$deleteDraft',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.documentExists = async function(tag, version) {
+        try {
+            return await repository.documentExists(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $text: 'An unexpected error occurred while checking whether or not a document exists.'
@@ -150,10 +206,10 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.readDocument = async function(type, tag, version) {
+    this.readDocument = async function(tag, version) {
         try {
-            const document = await repository.readDocument(type, tag, version);
-            if (document) await validateDocument(document, debug);
+            const document = await repository.readDocument(tag, version);
+            if (document) await validateDocument(document);
             return document;
         } catch (cause) {
             const exception = bali.exception({
@@ -161,7 +217,6 @@ const ValidatedStorage = function(notary, repository, debug) {
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $text: 'An unexpected error occurred while attempting to read a document from the repository.'
@@ -171,17 +226,16 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.writeDocument = async function(type, document) {
+    this.writeDocument = async function(document) {
         try {
-            await validateDocument(document, debug);
-            await repository.writeDocument(type, document);
+            await validateDocument(document);
+            await repository.writeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $type: type,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
             }, cause);
@@ -190,28 +244,9 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.deleteDocument = async function(type, tag, version) {
-        try {
-            return await repository.deleteDocument(type, tag, version);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$deleteDocument',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $type: type,
-                $tag: tag,
-                $version: version,
-                $text: 'An unexpected error occurred while attempting to delete a document from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.addMessage = async function(queue, message) {
         try {
-            await validateMessage(message, debug);
+            await validateMessage(message);
             await repository.addMessage(queue, message);
         } catch (cause) {
             const exception = bali.exception({
@@ -231,7 +266,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.removeMessage = async function(queue) {
         try {
             const message = await repository.removeMessage(queue);
-            if (message) await validateMessage(message, debug);
+            if (message) await validateMessage(message);
             return message;
         } catch (cause) {
             const exception = bali.exception({
@@ -255,17 +290,15 @@ const ValidatedStorage = function(notary, repository, debug) {
      * thrown.
      * 
      * @param {Catalog} citation The document citation to be validated.
-     * @param {Boolean} debug An optional flag that determines whether or not exceptions
-     * will be logged to the error console.
      * @returns {Catalog} The validated document cited by the citation.
      * @throws {Exception} The digest generated for the document does not match the digest
      * contained within the document citation.
      */
-    const validateCitation = async function(citation, debug) {
+    const validateCitation = async function(citation) {
         try {
             const tag = citation.getValue('$tag');
             const version = citation.getValue('$version');
-            const document = await repository.readDocument('documents', tag, version);
+            const document = await repository.readDocument(tag, version);
             if (!document) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/ValidatedStorage',
@@ -277,7 +310,7 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-            await validateDocument(document, debug);
+            await validateDocument(document);
             const matches = await notary.citationMatches(citation, document);
             if (!matches) {
                 const exception = bali.exception({
@@ -311,11 +344,9 @@ const ValidatedStorage = function(notary, repository, debug) {
      * attached to the document are valid. If any seal is not valid an exception is thrown.
      * 
      * @param {Catalog} document The notarized document to be validated.
-     * @param {Boolean} debug An optional flag that determines whether or not exceptions
-     * will be logged to the error console.
      * @throws {Exception} The document is not valid.
      */
-    const validateDocument = async function(document, debug) {
+    const validateDocument = async function(document) {
         try {
             // make sure it really is a notarized document
             const content = document.getValue('$content');
@@ -336,13 +367,13 @@ const ValidatedStorage = function(notary, repository, debug) {
             // validate the previous version of the document if one exists
             const previousCitation = content.getParameter('$previous');
             if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
-                await validateCitation(previousCitation, debug);
+                await validateCitation(previousCitation);
             }
     
             // validate the certificate if one exists
             var certificate;
             if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
-                certificate = await validateCitation(certificateCitation, debug);
+                certificate = await validateCitation(certificateCitation);
             } else {
                 certificate = document;  // the document is a self-signed certificate
             }
@@ -380,11 +411,9 @@ const ValidatedStorage = function(notary, repository, debug) {
      * attached to the message are valid. If any seal is not valid an exception is thrown.
      * 
      * @param {Catalog} message The notarized message to be validated.
-     * @param {Boolean} debug An optional flag that determines whether or not exceptions
-     * will be logged to the error console.
      * @throws {Exception} The message is not valid.
      */
-    const validateMessage = async function(message, debug) {
+    const validateMessage = async function(message) {
         try {
             // make sure it really is a notarized message
             const content = message.getValue('$content');
@@ -403,7 +432,7 @@ const ValidatedStorage = function(notary, repository, debug) {
             }
     
             // validate the certificate
-            var certificate = await validateCitation(certificateCitation, debug);
+            var certificate = await validateCitation(certificateCitation);
     
             // validate the message using its certificate
             const valid = await notary.validDocument(message, certificate);

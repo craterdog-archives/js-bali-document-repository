@@ -165,7 +165,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/elements/Version'
                 ]);
             }
-            return await storage.documentExists('drafts', tag, version);
+            return await storage.draftExists(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -201,7 +201,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/elements/Version'
                 ]);
             }
-            return await storage.readDocument('drafts', tag, version);
+            return await storage.readDraft(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -231,7 +231,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeDocument('drafts', draft);
+            await storage.writeDraft(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -265,7 +265,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/elements/Version'
                 ]);
             }
-            return await storage.deleteDocument('drafts', tag, version);
+            return await storage.deleteDraft(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -299,7 +299,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/elements/Version'
                 ]);
             }
-            return await storage.documentExists('documents', tag, version);
+            return await storage.documentExists(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -333,7 +333,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/elements/Version'
                 ]);
             }
-            return await storage.readDocument('documents', tag, version);
+            return await storage.readDocument(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -363,7 +363,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeDocument('documents', document);
+            await storage.writeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -371,103 +371,6 @@ const DocumentRepository = function(storage, debug) {
                 $exception: '$unexpected',
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to create a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-    
-    /**
-     * This method checks to see whether or not a compiled type associated with the specified
-     * tag and version exists in the document repository.
-     * 
-     * @param {Tag} tag The unique tag for the compiled type being checked.
-     * @param {Version} version The version string of the compiled type.
-     * @returns {Boolean} Whether or not the compiled type exists.
-     */
-    this.typeExists = async function(tag, version) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$typeExists', '$tag', tag, [
-                    '/bali/elements/Tag'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$typeExists', '$version', version, [
-                    '/bali/elements/Version'
-                ]);
-            }
-            return await storage.documentExists('types', tag, version);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$typeExists',
-                $exception: '$unexpected',
-                $tag: tag,
-                $version: version,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a type.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-    
-    /**
-     * This method attempts to retrieve the specified version of a compiled type from
-     * the document repository.
-     * 
-     * @param {Tag} tag The unique tag for the compiled type being fetched.
-     * @param {Version} version The version string of the compiled type.
-     * @returns {Catalog} A catalog containing the compiled type or nothing if it doesn't exist.
-     */
-    this.fetchType = async function(tag, version) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchType', '$tag', tag, [
-                    '/bali/elements/Tag'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchType', '$version', version, [
-                    '/bali/elements/Version'
-                ]);
-            }
-            return await storage.readDocument('types', tag, version);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$fetchType',
-                $exception: '$unexpected',
-                $tag: tag,
-                $version: version,
-                $text: 'An unexpected error occurred while attempting to fetch a type.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-    
-    /**
-     * This method creates a compiled type in the document repository. If a compiled type with
-     * the same tag and version string already exists in the document repository, an exception
-     * is thrown.
-     * 
-     * @param {Catalog} type A catalog containing the compiled type.
-     */
-    this.createType = async function(type) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createType', '$type', type, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-            await storage.writeDocument('types', type);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$createType',
-                $exception: '$unexpected',
-                $type: type,
-                $text: 'An unexpected error occurred while attempting to create a type.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

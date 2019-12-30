@@ -132,29 +132,91 @@ const LocalStorage = function(root, debug) {
         }
     };
 
-    this.deleteCitation = async function(name) {
-        const file = generateFilename('citations', name);
+    this.draftExists = async function(tag, version) {
+        const file = generateFilename('drafts', tag, version);
         try {
-            const source = await pfs.readFile(file, 'utf8');
-            await pfs.unlink(file);  // delete the citation
-            return true;  // the citation was deleted
+            await pfs.stat(file);  // attempt to access the draft
+            return true; // no exception, the draft exists
         } catch (cause) {
-            if (cause.code === 'ENOENT') return false; // the citation does not exist
+            if (cause.code === 'ENOENT') return false; // the draft does not exist
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
-                $procedure: '$deleteCitation',
+                $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $file: file,
-                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.documentExists = async function(type, tag, version) {
-        const file = generateFilename(type, tag, version);
+    this.readDraft = async function(tag, version) {
+        const file = generateFilename('drafts', tag, version);
+        try {
+            const source = await pfs.readFile(file, 'utf8');
+            return bali.component(source);
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return undefined; // the draft does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$readDraft',
+                $exception: '$unexpected',
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.writeDraft = async function(draft) {
+        try {
+            const tag = draft.getValue('$content').getParameter('$tag');
+            const version = draft.getValue('$content').getParameter('$version');
+            const file = generateFilename('drafts', tag, version);
+            const path = file.slice(0, file.lastIndexOf('/'));
+            await pfs.mkdir(path, {recursive: true, mode: 0o700});
+            const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
+            await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$writeDraft',
+                $exception: '$unexpected',
+                $draft: draft,
+                $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.deleteDraft = async function(tag, version) {
+        const file = generateFilename('drafts', tag, version);
+        try {
+            const source = await pfs.readFile(file, 'utf8');
+            await pfs.unlink(file);  // delete the draft
+            return true;  // the draft was deleted
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return false; // the draft does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$deleteDraft',
+                $exception: '$unexpected',
+                $file: file,
+                $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.documentExists = async function(tag, version) {
+        const file = generateFilename('documents', tag, version);
         try {
             await pfs.stat(file);  // attempt to access the document
             return true; // no exception, the document exists
@@ -173,8 +235,8 @@ const LocalStorage = function(root, debug) {
         }
     };
 
-    this.readDocument = async function(type, tag, version) {
-        const file = generateFilename(type, tag, version);
+    this.readDocument = async function(tag, version) {
+        const file = generateFilename('documents', tag, version);
         try {
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
@@ -193,45 +255,22 @@ const LocalStorage = function(root, debug) {
         }
     };
 
-    this.writeDocument = async function(type, document) {
+    this.writeDocument = async function(document) {
         try {
             const tag = document.getValue('$content').getParameter('$tag');
             const version = document.getValue('$content').getParameter('$version');
-            const file = generateFilename(type, tag, version);
+            const file = generateFilename('documents', tag, version);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
-            const mode = (type === 'drafts') ? 0o600 : 0o400;
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
-            await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
+            await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
-                $type: type,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.deleteDocument = async function(type, tag, version) {
-        const file = generateFilename(type, tag, version);
-        try {
-            const source = await pfs.readFile(file, 'utf8');
-            await pfs.unlink(file);  // delete the document
-            return true;  // the document was deleted
-        } catch (cause) {
-            if (cause.code === 'ENOENT') return false; // the document does not exist
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
-                $procedure: '$deleteDocument',
-                $exception: '$unexpected',
-                $file: file,
-                $text: 'An unexpected error occurred while attempting to delete a document from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

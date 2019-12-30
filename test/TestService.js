@@ -573,172 +573,6 @@ const deleteDocument = async function(request, response) {
 };
 
 
-const pingType = async function(request, response) {
-    var message;
-    try {
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
-        message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (await repository.typeExists(tag, version)) {
-            message = 'Test Service: The notarized type exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message);
-            response.end();
-        } else {
-            message = 'Test Service: The notarized type does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-        }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const getType = async function(request, response) {
-    var message;
-    try {
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
-        message = 'Test Service: GET ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const type = await repository.fetchType(tag, version);
-        if (type) {
-            const data = type.toString();
-            const options = {
-                'Content-Length': data.length,
-                'Content-Type': 'application/bali',
-                'Cache-Control': 'immutable'
-            };
-            message = 'Test Service: The notarized type was retrieved.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + JSON.stringify(options));
-                console.log('    result: ' + data);
-            }
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
-            message = 'Test Service: The notarized type does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-        }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const postType = async function(request, response) {
-    var message;
-    try {
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
-        const type = bali.component(request.body);
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + type;
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (await repository.typeExists(tag, version)) {
-            message = 'Test Service: A committed type with this version already exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(409, message);
-            response.end();
-        } else {
-            await repository.createType(type);
-            message = 'Test Service: The notarized type was created.';
-            if (debug > 1) console.log(message);
-            response.writeHead(201, message);
-            response.end();
-        }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const putType = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Notarized types cannot be updated.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const deleteType = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Notarized types cannot be deleted.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e);
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
 const pingMessage = async function(request, response) {
     var message;
     try {
@@ -906,13 +740,6 @@ documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
 documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
 documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 
-const typeRouter = express.Router();
-typeRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingType);
-typeRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getType);
-typeRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postType);
-typeRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putType);
-typeRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteType);
-
 const queueRouter = express.Router();
 queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingMessage);
 queueRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getMessage);
@@ -926,7 +753,6 @@ service.use(bodyParser.text({ type: 'application/bali' }));
 service.use('/citations', citationRouter);
 service.use('/drafts', draftRouter);
 service.use('/documents', documentRouter);
-service.use('/types', typeRouter);
 service.use('/queues', queueRouter);
 
 service.listen(3000, function() {

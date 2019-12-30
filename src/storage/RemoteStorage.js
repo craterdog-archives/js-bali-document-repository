@@ -109,33 +109,88 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.deleteCitation = async function(name) {
+    this.draftExists = async function(tag, version) {
         try {
-            return await sendRequest('DELETE', 'citations', name, undefined, undefined);
+            return await sendRequest('HEAD', 'drafts', tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$deleteCitation',
+                $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $uri: uri,
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to delete a citation from the repository.'
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.documentExists = async function(type, tag, version) {
+    this.readDraft = async function(tag, version) {
         try {
-            return await sendRequest('HEAD', type, tag, version, undefined);
+            return await sendRequest('GET', 'drafts', tag, version, undefined);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$readDraft',
+                $exception: '$unexpected',
+                $uri: uri,
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.writeDraft = async function(draft) {
+        try {
+            const tag = draft.getValue('$content').getParameter('$tag');
+            const version = draft.getValue('$content').getParameter('$version');
+            await sendRequest('PUT', 'drafts', tag, version, draft);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$writeDraft',
+                $exception: '$unexpected',
+                $uri: uri,
+                $draft: draft,
+                $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.deleteDraft = async function(tag, version) {
+        try {
+            return await sendRequest('DELETE', 'drafts', tag, version, undefined);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$deleteDraft',
+                $exception: '$unexpected',
+                $uri: uri,
+                $tag: tag,
+                $version: version,
+                $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.documentExists = async function(tag, version) {
+        try {
+            return await sendRequest('HEAD', 'documents', tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $uri: uri,
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $text: 'An unexpected error occurred while checking whether or not a document exists.'
@@ -145,16 +200,15 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.readDocument = async function(type, tag, version) {
+    this.readDocument = async function(tag, version) {
         try {
-            return await sendRequest('GET', type, tag, version, undefined);
+            return await sendRequest('GET', 'documents', tag, version, undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $uri: uri,
-                $type: type,
                 $tag: tag,
                 $version: version,
                 $text: 'An unexpected error occurred while attempting to read a document from the repository.'
@@ -164,40 +218,19 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.writeDocument = async function(type, document) {
+    this.writeDocument = async function(document) {
         try {
             const tag = document.getValue('$content').getParameter('$tag');
             const version = document.getValue('$content').getParameter('$version');
-            const method = (type === 'drafts') ? 'PUT' : 'POST';
-            await sendRequest(method, type, tag, version, document);
+            await sendRequest('POST', 'documents', tag, version, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $uri: uri,
-                $type: type,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.deleteDocument = async function(type, tag, version) {
-        try {
-            return await sendRequest('DELETE', type, tag, version, undefined);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$deleteDocument',
-                $exception: '$unexpected',
-                $uri: uri,
-                $type: type,
-                $tag: tag,
-                $version: version,
-                $text: 'An unexpected error occurred while attempting to delete a document from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
