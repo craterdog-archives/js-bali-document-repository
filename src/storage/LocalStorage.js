@@ -173,10 +173,10 @@ const LocalStorage = function(root, debug) {
     };
 
     this.writeDraft = async function(draft) {
+        const tag = draft.getValue('$content').getParameter('$tag');
+        const version = draft.getValue('$content').getParameter('$version');
+        const file = generateFilename('drafts', tag, version);
         try {
-            const tag = draft.getValue('$content').getParameter('$tag');
-            const version = draft.getValue('$content').getParameter('$version');
-            const file = generateFilename('drafts', tag, version);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
@@ -186,6 +186,7 @@ const LocalStorage = function(root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDraft',
                 $exception: '$unexpected',
+                $file: file,
                 $draft: draft,
                 $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
             }, cause);
@@ -199,9 +200,9 @@ const LocalStorage = function(root, debug) {
         try {
             const source = await pfs.readFile(file, 'utf8');
             await pfs.unlink(file);  // delete the draft
-            return true;  // the draft was deleted
+            return bali.component(source);  // the draft was deleted
         } catch (cause) {
-            if (cause.code === 'ENOENT') return false; // the draft does not exist
+            if (cause.code === 'ENOENT') return undefined; // the draft did not exist
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
@@ -256,10 +257,10 @@ const LocalStorage = function(root, debug) {
     };
 
     this.writeDocument = async function(document) {
+        const tag = document.getValue('$content').getParameter('$tag');
+        const version = document.getValue('$content').getParameter('$version');
+        const file = generateFilename('documents', tag, version);
         try {
-            const tag = document.getValue('$content').getParameter('$tag');
-            const version = document.getValue('$content').getParameter('$version');
-            const file = generateFilename('documents', tag, version);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
@@ -269,8 +270,49 @@ const LocalStorage = function(root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
+                $file: file,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.queueExists = async function(queue) {
+        const path = generatePath('queues', queue);
+        try {
+            await pfs.stat(path);  // attempt to access the message queue
+            return true; // no exception, the message queue exists
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return false; // the message queue does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$queueExists',
+                $exception: '$unexpected',
+                $path: path,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.messageCount = async function(queue) {
+        const path = generatePath('queues', queue);
+        try {
+            const files = await pfs.readdir(path, 'utf8');
+            return files.length;
+        } catch (cause) {
+            if (cause.code === 'ENOENT') return 0; // the directory does not exist
+            // something else went wrong
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$messageCount',
+                $exception: '$unexpected',
+                $path: path,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -307,9 +349,10 @@ const LocalStorage = function(root, debug) {
                 const messages = bali.list(files);
                 const generator = bali.generator();
                 const index = generator.generateIndex(messages.getSize());
-                const filename = path + '/' + messages.getItem(index).getValue();
-                const source = await pfs.readFile(filename, 'utf8');
-                await pfs.unlink(filename);  // delete the file
+                const file = path + '/' + messages.getItem(index).getValue();
+                const source = await pfs.readFile(file, 'utf8');
+                await pfs.unlink(file);  // delete the file
+                if (files.length === 1) await pfs.rmdir(path);  // last message was removed
                 return bali.component(source);
             } else {
                 await pfs.rmdir(path);  // remove the empty directory
@@ -321,7 +364,7 @@ const LocalStorage = function(root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $path: path,
+                $file: file,
                 $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
             }, cause);
             if (debug > 0) console.error(exception.toString());

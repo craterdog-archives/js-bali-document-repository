@@ -64,8 +64,8 @@ const invalidCredentials = async function(request) {
 const pingCitation = async function(request, response) {
     var message;
     try {
-        const name = getName(request.params.identifier);
         message = 'Test Service: HEAD ' + request.originalUrl;
+        const name = getName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -100,8 +100,8 @@ const pingCitation = async function(request, response) {
 const getCitation = async function(request, response) {
     var message;
     try {
-        const name = getName(request.params.identifier);
         message = 'Test Service: GET ' + request.originalUrl;
+        const name = getName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -147,8 +147,8 @@ const getCitation = async function(request, response) {
 const postCitation = async function(request, response) {
     var message;
     try {
-        const name = getName(request.params.identifier);
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
+        const name = getName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -227,9 +227,9 @@ const deleteCitation = async function(request, response) {
 const pingDraft = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: HEAD ' + request.originalUrl;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        message = 'Test Service: HEAD ' + request.originalUrl;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -264,9 +264,9 @@ const pingDraft = async function(request, response) {
 const getDraft = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: GET ' + request.originalUrl;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        message = 'Test Service: GET ' + request.originalUrl;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -333,9 +333,9 @@ const postDraft = async function(request, response) {
 const putDraft = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -373,9 +373,9 @@ const putDraft = async function(request, response) {
 const deleteDraft = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: DELETE ' + request.originalUrl;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -384,16 +384,28 @@ const deleteDraft = async function(request, response) {
             response.end();
             return;
         }
-        const existed = await repository.deleteDraft(tag, version);
-        if (existed) {
+        const draft = await repository.deleteDraft(tag, version);
+        if (draft) {
+            const data = draft.toString();
+            const options = {
+                'Content-Length': data.length,
+                'Content-Type': 'application/bali',
+                'Cache-Control': 'no-store'
+            };
             message = 'Test Service: The draft document was deleted.';
-            response.writeHead(200, message);
+            if (debug > 1) console.log(message);
+            if (debug > 2) {
+                console.log('    options: ' + bali.catalog(options));
+                console.log('    result: ' + data);
+            }
+            response.writeHead(200, message, options);
+            response.end(data);
         } else {
             message = 'Test Service: The draft document did not exist.';
+            if (debug > 1) console.log(message);
             response.writeHead(404, message);
+            response.end();
         }
-        if (debug > 1) console.log(message);
-        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -409,9 +421,9 @@ const deleteDraft = async function(request, response) {
 const pingDocument = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: HEAD ' + request.originalUrl;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        message = 'Test Service: HEAD ' + request.originalUrl;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -446,9 +458,9 @@ const pingDocument = async function(request, response) {
 const getDocument = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: GET ' + request.originalUrl;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        message = 'Test Service: GET ' + request.originalUrl;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -495,10 +507,9 @@ const getDocument = async function(request, response) {
 const postDocument = async function(request, response) {
     var message;
     try {
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
-        const document = bali.component(request.body);
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + document;
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -513,6 +524,7 @@ const postDocument = async function(request, response) {
             response.writeHead(409, message);
             response.end();
         } else {
+            const document = bali.component(request.body);
             await repository.createDocument(document);
             message = 'Test Service: The notarized document was created.';
             if (debug > 1) console.log(message);
@@ -573,15 +585,30 @@ const deleteDocument = async function(request, response) {
 };
 
 
-const pingMessage = async function(request, response) {
+const pingQueue = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
+        const queue = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
-        message = 'Test Service: Messages cannot be pinged.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 1) console.log(message);
+            response.writeHead(401, message);
+            response.end();
+            return;
+        }
+        if (await repository.queueExists(queue)) {
+            message = 'Test Service: The message queue exists.';
+            if (debug > 1) console.log(message);
+            response.writeHead(200, message);
+            response.end();
+        } else {
+            message = 'Test Service: The message queue does not exist.';
+            if (debug > 1) console.log(message);
+            response.writeHead(404, message);
+            response.end();
+        }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -594,15 +621,24 @@ const pingMessage = async function(request, response) {
 };
 
 
-const getMessage = async function(request, response) {
+const getQueue = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
+        const queue = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
-        message = 'Test Service: Messages cannot be retrieved without being deleted.';
+        if (await invalidCredentials(request)) {
+            message = 'Test Service: The credentials are invalid.';
+            if (debug > 1) console.log(message);
+            response.writeHead(401, message);
+            response.end();
+            return;
+        }
+        const count = await repository.messageCount(queue);
+        message = 'Test Service: The message queue contains ' + count + ' messages.';
         if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
+        response.writeHead(200, message);
+        response.end(count);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -615,12 +651,12 @@ const getMessage = async function(request, response) {
 };
 
 
-const postMessage = async function(request, response) {
+const postQueue = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
-        message = 'Test Service: Messages cannot be posted.';
+        message = 'Test Service: Queues are created and deleted automatically.';
         if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
@@ -639,8 +675,8 @@ const postMessage = async function(request, response) {
 const putMessage = async function(request, response) {
     var message;
     try {
-        const queue = bali.tag(request.params.identifier);
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        const queue = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -670,8 +706,8 @@ const putMessage = async function(request, response) {
 const deleteMessage = async function(request, response) {
     var message;
     try {
-        const queue = bali.tag(request.params.identifier);
         message = 'Test Service: DELETE ' + request.originalUrl;
+        const queue = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -697,11 +733,9 @@ const deleteMessage = async function(request, response) {
             response.writeHead(200, message, options);
             response.end(data);
         } else {
-            message = 'Test Service: The queue is empty.';
+            message = 'Test Service: The queue does not exist.';
             if (debug > 1) console.log(message);
-            response.writeHead(204, message, {
-                'Cache-Control': 'no-store'
-            });
+            response.writeHead(404, message);
             response.end();
         }
     } catch (e) {
@@ -741,9 +775,9 @@ documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
 documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 
 const queueRouter = express.Router();
-queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingMessage);
-queueRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getMessage);
-queueRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postMessage);
+queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingQueue);
+queueRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getQueue);
+queueRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postQueue);
 queueRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
 queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 

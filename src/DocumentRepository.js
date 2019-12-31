@@ -252,7 +252,7 @@ const DocumentRepository = function(storage, debug) {
      * 
      * @param {Tag} tag The unique tag for the draft document being deleted.
      * @param {Version} version The version string of the draft document.
-     * @returns {Boolean} Whether or not the draft document existed.
+     * @returns {Component|Undefined} The deleted draft document if it existed.
      */
     this.deleteDraft = async function(tag, version) {
         try {
@@ -371,6 +371,64 @@ const DocumentRepository = function(storage, debug) {
                 $exception: '$unexpected',
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to create a document.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+    
+    /**
+     * This method checks to see whether or not the specified message queue exists in the
+     * document repository.
+     * 
+     * @param {Tag} queue The unique tag for the message queue.
+     * @returns {Boolean} Whether or not the message queue exists.
+     */
+    this.queueExists = async function(queue) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$dequeueMessage', '$queue', queue, [
+                    '/bali/elements/Tag'
+                ]);
+            }
+            return await storage.queueExists(queue);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$queueExists',
+                $exception: '$unexpected',
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+    
+    /**
+     * This method the current number of messages that are in the specified message queue in the
+     * document repository.
+     * 
+     * @param {Tag} queue The unique tag for the message queue.
+     * @returns {Number} The number of messages that are currently in the message queue.
+     */
+    this.messageCount = async function(queue) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$dequeueMessage', '$queue', queue, [
+                    '/bali/elements/Tag'
+                ]);
+            }
+            return await storage.messageCount(queue);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$messageCount',
+                $exception: '$unexpected',
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

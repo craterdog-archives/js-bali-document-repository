@@ -244,6 +244,40 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
+    this.queueExists = async function(queue) {
+        try {
+            return await repository.queueExists(queue);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/ValidatedStorage',
+                $procedure: '$queueExists',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.messageCount = async function(queue) {
+        try {
+            return await repository.messageCount(queue);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/ValidatedStorage',
+                $procedure: '$messageCount',
+                $exception: '$unexpected',
+                $repository: repository.toString(),
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.addMessage = async function(queue, message) {
         try {
             await validateMessage(message);

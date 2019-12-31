@@ -237,6 +237,40 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
+    this.queueExists = async function(queue) {
+        try {
+            return await sendRequest('HEAD', 'queues', queue, undefined, undefined);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$queueExists',
+                $exception: '$unexpected',
+                $uri: uri,
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.messageCount = async function(queue) {
+        try {
+            return await sendRequest('GET', 'queues', queue, undefined, undefined);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$messageCount',
+                $exception: '$unexpected',
+                $uri: uri,
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.addMessage = async function(queue, message) {
         try {
             await sendRequest('PUT', 'queues', queue, undefined, message);
@@ -325,8 +359,7 @@ const RemoteStorage = function(notary, uri, debug) {
             const response = await axios(options);
             switch (method) {
                 case 'HEAD':
-                case 'DELETE':
-                    if (type !== 'queues') return true;  // the document did exist
+                    return true;  // the document did exist
                 default:
                     var result;
                     if (response.data && response.data.length) {
@@ -343,8 +376,12 @@ const RemoteStorage = function(notary, uri, debug) {
                 // the server responded with an error status
                 switch (method) {
                     case 'HEAD':
-                    case 'DELETE':
                         if (cause.response.status === 404) return false;  // the document didn't exist
+                        break;
+                    case 'GET':
+                    case 'DELETE':
+                        if (cause.response.status === 404) return undefined;  // the document didn't exist
+                        break;
                     default:
                         // continue with the exception processing
                 }

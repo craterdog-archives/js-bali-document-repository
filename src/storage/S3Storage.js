@@ -60,7 +60,7 @@ const S3Storage = function(configuration, debug) {
 
     this.citationExists = async function(name) {
         try {
-            const bucket = configuration['citations'];
+            const bucket = configuration.citations;
             const key = generateNameKey(name);
             return await doesExist(bucket, key);
         } catch (cause) {
@@ -79,12 +79,12 @@ const S3Storage = function(configuration, debug) {
 
     this.readCitation = async function(name) {
         try {
-            const bucket = configuration['citations'];
+            const bucket = configuration.citations;
             const key = generateNameKey(name);
             const object = await getObject(bucket, key);
             if (object) {
-                var citation = object.toString();
-                citation = bali.component(citation);
+                const source = object.toString();
+                const citation = bali.component(source);
                 return citation;
             }
         } catch (cause) {
@@ -103,7 +103,7 @@ const S3Storage = function(configuration, debug) {
 
     this.writeCitation = async function(name, citation) {
         try {
-            const bucket = configuration['citations'];
+            const bucket = configuration.citations;
             const key = generateNameKey(name);
             if (await doesExist(bucket, key)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
@@ -149,8 +149,8 @@ const S3Storage = function(configuration, debug) {
             const key = generateDocumentKey(tag, version);
             const object = await getObject(bucket, key);
             if (object) {
-                var draft = object.toString();
-                draft = bali.component(draft);
+                const source = object.toString();
+                const draft = bali.component(source);
                 return draft;
             }
         } catch (cause) {
@@ -194,11 +194,13 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration.drafts;
             const key = generateDocumentKey(tag, version);
-            if (await doesExist(bucket, key)) {
+            const object = await getObject(bucket, key);
+            if (object) {
+                const source = object.toString();
+                const draft = bali.component(source);
                 await deleteObject(bucket, key);
-                return true;
+                return draft;
             }
-            return false;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -240,8 +242,8 @@ const S3Storage = function(configuration, debug) {
             const key = generateDocumentKey(tag, version);
             const object = await getObject(bucket, key);
             if (object) {
-                var document = object.toString();
-                document = bali.component(document);
+                const source = object.toString();
+                const document = bali.component(source);
                 return document;
             }
         } catch (cause) {
@@ -282,10 +284,49 @@ const S3Storage = function(configuration, debug) {
         }
     };
 
+    this.queueExists = async function(queue) {
+        try {
+            const bucket = configuration.queues;
+            const key = generateQueueKey(queue);
+            return await doesExist(bucket, key);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Storage',
+                $procedure: '$queueExists',
+                $exception: '$unexpected',
+                $configuration: configuration,
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    this.messageCount = async function(queue) {
+        try {
+            const bucket = configuration.queues;
+            const key = generateQueueKey(queue);
+            const list = await listObjects(bucket, key);
+            return list.length;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/S3Storage',
+                $procedure: '$messageCount',
+                $exception: '$unexpected',
+                $configuration: configuration,
+                $queue: queue,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+            }, cause);
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
     this.addMessage = async function(queue, message) {
         const identifier = bali.tag();
         try {
-            const bucket = configuration['queues'];
+            const bucket = configuration.queues;
             const key = generateMessageKey(queue, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
@@ -308,7 +349,7 @@ const S3Storage = function(configuration, debug) {
     this.removeMessage = async function(queue) {
         try {
             while (true) {
-                const bucket = configuration['queues'];
+                const bucket = configuration.queues;
                 var key = generateQueueKey(queue);
                 const list = await listObjects(bucket, key);
                 const count = list.length;

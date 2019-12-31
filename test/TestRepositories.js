@@ -78,6 +78,8 @@ describe('Bali Nebula™ Document Repository', function() {
                 // make sure the new name does not yet exist in the repository
                 var exists = await repository.citationExists(name);
                 expect(exists).is.false;
+                var none = await repository.fetchCitation(name);
+                expect(none).to.not.exist;
     
                 // create a new name in the repository
                 await repository.createCitation(name, citation);
@@ -119,16 +121,18 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(exists).is.true;
 
                 // delete the draft from the repository
-                exists = await repository.deleteDraft(tag, version);
-                expect(exists).is.true;
+                const deleted = await repository.deleteDraft(tag, version);
+                expect(draft.isEqualTo(deleted)).is.true;
     
                 // make sure the draft no longer exists in the repository
                 exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
+                var none = await repository.fetchDraft(tag, version);
+                expect(none).to.not.exist;
     
                 // delete a non-existent draft from the repository
-                exists = await repository.deleteDraft(tag, version);
-                expect(exists).is.false;
+                none = await repository.deleteDraft(tag, version);
+                expect(none).to.not.exist;
     
             });
     
@@ -137,12 +141,20 @@ describe('Bali Nebula™ Document Repository', function() {
                 version = transaction.getParameter('$version');
                 const document = await notary.notarizeDocument(transaction);
     
+                // make sure the new document does not already exists in the repository
+                exists = await repository.documentExists(tag, version);
+                expect(exists).is.false;
+                var none = await repository.fetchDocument(tag, version);
+                expect(none).to.not.exist;
+
                 // create a new document in the repository
                 await repository.createDocument(document);
     
                 // make sure the same draft does not exist in the repository
                 var exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
+                none = await repository.fetchDraft(tag, version);
+                expect(none).to.not.exist;
     
                 // make sure the new document exists in the repository
                 exists = await repository.documentExists(tag, version);
