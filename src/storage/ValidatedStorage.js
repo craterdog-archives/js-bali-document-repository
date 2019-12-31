@@ -79,7 +79,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.readCitation = async function(name) {
         try {
             const citation = await repository.readCitation(name);
-            await validateCitation(citation);
+            if (citation) await validateCitation(citation);
             return citation;
         } catch (cause) {
             const exception = bali.exception({
