@@ -62,7 +62,7 @@ describe('Bali Nebula™ Document Repository', function() {
             var version;
             var citation;
             var certificate;
-    
+
             it('should create a self-signed certificate', async function() {
                 certificate = await notary.generateKey();
                 tag = certificate.getParameter('$tag');
@@ -71,48 +71,48 @@ describe('Bali Nebula™ Document Repository', function() {
                 citation = await notary.activateKey(certificate);
                 await repository.createDocument(certificate);
             });
-    
+
             it('should perform a citation name lifecycle', async function() {
                 const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
-    
+
                 // make sure the new name does not yet exist in the repository
                 var exists = await repository.citationExists(name);
                 expect(exists).is.false;
                 var none = await repository.fetchCitation(name);
                 expect(none).to.not.exist;
-    
+
                 // create a new name in the repository
                 await repository.createCitation(name, citation);
-    
+
                 // make sure the new name exists in the repository
                 exists = await repository.citationExists(name);
                 expect(exists).is.true;
-    
+
                 // fetch the new citation from the repository
                 const result = await repository.fetchCitation(name);
                 expect(citation.isEqualTo(result)).is.true;
             });
-    
+
             it('should perform a draft document lifecycle', async function() {
                 tag = transaction.getParameter('$tag');
                 version = transaction.getParameter('$version');
                 const draft = await notary.notarizeDocument(transaction);
-    
+
                 // create a new draft in the repository
                 await repository.saveDraft(draft);
-    
+
                 // make sure the new draft exists in the repository
                 var exists = await repository.draftExists(tag, version);
                 expect(exists).is.true;
-    
+
                 // make sure the same document does not exist in the repository
                 exists = await repository.documentExists(tag, version);
                 expect(exists).is.false;
-    
+
                 // fetch the new draft from the repository
                 const result = await repository.fetchDraft(tag, version);
                 expect(draft.isEqualTo(result)).is.true;
-    
+
                 // update the existing draft in the repository
                 await repository.saveDraft(draft);
 
@@ -123,24 +123,24 @@ describe('Bali Nebula™ Document Repository', function() {
                 // delete the draft from the repository
                 const deleted = await repository.deleteDraft(tag, version);
                 expect(draft.isEqualTo(deleted)).is.true;
-    
+
                 // make sure the draft no longer exists in the repository
                 exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
                 var none = await repository.fetchDraft(tag, version);
                 expect(none).to.not.exist;
-    
+
                 // delete a non-existent draft from the repository
                 none = await repository.deleteDraft(tag, version);
                 expect(none).to.not.exist;
-    
+
             });
-    
+
             it('should perform a committed document lifecycle', async function() {
                 tag = transaction.getParameter('$tag');
                 version = transaction.getParameter('$version');
                 const document = await notary.notarizeDocument(transaction);
-    
+
                 // make sure the new document does not already exists in the repository
                 exists = await repository.documentExists(tag, version);
                 expect(exists).is.false;
@@ -149,45 +149,45 @@ describe('Bali Nebula™ Document Repository', function() {
 
                 // create a new document in the repository
                 await repository.createDocument(document);
-    
+
                 // make sure the same draft does not exist in the repository
                 var exists = await repository.draftExists(tag, version);
                 expect(exists).is.false;
                 none = await repository.fetchDraft(tag, version);
                 expect(none).to.not.exist;
-    
+
                 // make sure the new document exists in the repository
                 exists = await repository.documentExists(tag, version);
                 expect(exists).is.true;
-    
+
                 // fetch the new document from the repository
                 const result = await repository.fetchDocument(tag, version);
                 expect(document.isEqualTo(result)).is.true;
-    
+
                 // make sure the new document still exists in the repository
                 exists = await repository.documentExists(tag, version);
                 expect(exists).is.true;
-    
+
                 // attempt to create the same document in the repository
                 await assert.rejects(async function() {
                     await repository.createDocument(document);
                 });
-    
+
             });
-    
+
             it('should perform a message queue lifecycle', async function() {
                 const queue = bali.tag();
-    
+
                 // make sure the queue does not exist
                 var exists = await repository.queueExists(queue);
                 expect(exists).is.false;
-    
+
                 // make sure the message queue is empty
                 var count = await repository.messageCount(queue);
                 expect(count).to.equal(0);
                 var none = await repository.dequeueMessage(queue);
                 expect(none).to.not.exist;
-    
+
                 // queue up some messages
                 var message = await notary.notarizeDocument(transaction);
                 await repository.queueMessage(queue, message);
@@ -199,11 +199,11 @@ describe('Bali Nebula™ Document Repository', function() {
                 await repository.queueMessage(queue, message);
                 count = await repository.messageCount(queue);
                 expect(count).to.equal(3);
-    
+
                 // make sure the queue does exist
                 exists = await repository.queueExists(queue);
                 expect(exists).is.true;
-    
+
                 // dequeue the messages
                 var result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
@@ -220,21 +220,21 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(message.isEqualTo(result)).is.true;
                 count = await repository.messageCount(queue);
                 expect(count).to.equal(0);
-    
+
                 // make sure the message queue is empty
                 none = await repository.dequeueMessage(queue);
                 expect(none).to.not.exist;
-    
+
                 // make sure the queue does not exist
                 exists = await repository.queueExists(queue);
                 expect(exists).is.false;
-    
+
             });
-    
+
             it('should reset the notary', async function() {
                 await notary.forgetKey();
             });
-    
+
         });
 
     }
