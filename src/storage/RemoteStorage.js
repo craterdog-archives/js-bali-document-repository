@@ -256,7 +256,8 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.messageCount = async function(queue) {
         try {
-            return await sendRequest('GET', 'queues', queue, undefined, undefined);
+            const count = await sendRequest('GET', 'queues', queue, undefined, undefined);
+            return count.getMagnitude();
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
@@ -376,11 +377,11 @@ const RemoteStorage = function(notary, uri, debug) {
                 // the server responded with an error status
                 switch (method) {
                     case 'HEAD':
-                        if (cause.response.status === 404) return false;  // the document didn't exist
+                        if (cause.response.status === 404) return false;  // the document does not exist
                         break;
                     case 'GET':
                     case 'DELETE':
-                        if (cause.response.status === 404) return undefined;  // the document didn't exist
+                        if (cause.response.status === 404) return undefined;  // the document does not exist
                         break;
                     default:
                         // continue with the exception processing

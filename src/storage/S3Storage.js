@@ -288,7 +288,8 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration.queues;
             const key = generateQueueKey(queue);
-            return await doesExist(bucket, key);
+            const list = await listObjects(bucket, key);
+            return list.length > 0;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',

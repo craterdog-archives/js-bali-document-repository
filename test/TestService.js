@@ -121,7 +121,7 @@ const getCitation = async function(request, response) {
             message = 'Test Service: The document citation was retrieved.';
             if (debug > 1) console.log(message);
             if (debug > 2) {
-                console.log('    options: ' + JSON.stringify(options));
+                console.log('    options: ' + bali.catalog(options));
                 console.log('    result: ' + data);
             }
             response.writeHead(200, message, options);
@@ -286,7 +286,7 @@ const getDraft = async function(request, response) {
             message = 'Test Service: The draft document was retrieved.';
             if (debug > 1) console.log(message);
             if (debug > 2) {
-                console.log('    options: ' + JSON.stringify(options));
+                console.log('    options: ' + bali.catalog(options));
                 console.log('    result: ' + data);
             }
             response.writeHead(200, message, options);
@@ -472,7 +472,6 @@ const getDocument = async function(request, response) {
         const document = await repository.fetchDocument(tag, version);
         if (document) {
             const data = document.toString();
-            if (debug > 1) console.log(message);
             const options = {
                 'Content-Length': data.length,
                 'Content-Type': 'application/bali',
@@ -481,7 +480,7 @@ const getDocument = async function(request, response) {
             message = 'Test Service: The notarized document was retrieved.';
             if (debug > 1) console.log(message);
             if (debug > 2) {
-                console.log('    options: ' + JSON.stringify(options));
+                console.log('    options: ' + bali.catalog(options));
                 console.log('    result: ' + data);
             }
             response.writeHead(200, message, options);
@@ -635,10 +634,21 @@ const getQueue = async function(request, response) {
             return;
         }
         const count = await repository.messageCount(queue);
+        if (debug > 1) console.log(message);
+        const data = count.toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'no-store'
+        };
         message = 'Test Service: The message queue contains ' + count + ' messages.';
         if (debug > 1) console.log(message);
-        response.writeHead(200, message);
-        response.end(count);
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
+        response.writeHead(200, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -727,7 +737,7 @@ const deleteMessage = async function(request, response) {
             message = 'Test Service: A message was removed from the queue.';
             if (debug > 1) console.log(message);
             if (debug > 2) {
-                console.log('    options: ' + JSON.stringify(options));
+                console.log('    options: ' + bali.catalog(options));
                 console.log('    result: ' + data);
             }
             response.writeHead(200, message, options);

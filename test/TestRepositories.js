@@ -178,31 +178,56 @@ describe('Bali Nebula™ Document Repository', function() {
             it('should perform a message queue lifecycle', async function() {
                 const queue = bali.tag();
     
+                // make sure the queue does not exist
+                var exists = await repository.queueExists(queue);
+                expect(exists).is.false;
     
                 // make sure the message queue is empty
+                var count = await repository.messageCount(queue);
+                expect(count).to.equal(0);
                 var none = await repository.dequeueMessage(queue);
                 expect(none).to.not.exist;
     
                 // queue up some messages
                 var message = await notary.notarizeDocument(transaction);
                 await repository.queueMessage(queue, message);
+                count = await repository.messageCount(queue);
+                expect(count).to.equal(1);
                 await repository.queueMessage(queue, message);
+                count = await repository.messageCount(queue);
+                expect(count).to.equal(2);
                 await repository.queueMessage(queue, message);
+                count = await repository.messageCount(queue);
+                expect(count).to.equal(3);
+    
+                // make sure the queue does exist
+                exists = await repository.queueExists(queue);
+                expect(exists).is.true;
     
                 // dequeue the messages
                 var result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
                 expect(message.isEqualTo(result)).is.true;
+                count = await repository.messageCount(queue);
+                expect(count).to.equal(2);
                 result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
                 expect(message.isEqualTo(result)).is.true;
+                count = await repository.messageCount(queue);
+                expect(count).to.equal(1);
                 result = await repository.dequeueMessage(queue);
                 expect(result).to.exist;
                 expect(message.isEqualTo(result)).is.true;
+                count = await repository.messageCount(queue);
+                expect(count).to.equal(0);
     
                 // make sure the message queue is empty
                 none = await repository.dequeueMessage(queue);
                 expect(none).to.not.exist;
+    
+                // make sure the queue does not exist
+                exists = await repository.queueExists(queue);
+                expect(exists).is.false;
     
             });
     
