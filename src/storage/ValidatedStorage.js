@@ -23,7 +23,7 @@ const bali = require('bali-component-framework').api();
 /**
  * This function creates a new instance of a validated storage mechanism.  A backend repository
  * is passed in and is used as the repository for all documents.
- * 
+ *
  * @param {DigitalNotary} notary The digital notary to be used to validate the documents.
  * @param {Object} repository The backend repository that maintains documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
@@ -48,7 +48,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     /**
      * This function returns a string providing attributes about this repository.
-     * 
+     *
      * @returns {String} A string providing attributes about this repository.
      */
     this.toString = function() {
@@ -317,12 +317,12 @@ const ValidatedStorage = function(notary, repository, debug) {
     };
 
     // PRIVATE FUNCTIONS
-    
+
     /**
      * This function validates the specified document citation against a document to make sure
      * that the citation digest was generated from the same document.  If not, an exception is
      * thrown.
-     * 
+     *
      * @param {Catalog} citation The document citation to be validated.
      * @returns {Catalog} The validated document cited by the citation.
      * @throws {Exception} The digest generated for the document does not match the digest
@@ -371,12 +371,12 @@ const ValidatedStorage = function(notary, repository, debug) {
             throw exception;
         }
     };
-    
-    
+
+
     /**
      * This function validates a notarized document. It makes sure that all notary seals
      * attached to the document are valid. If any seal is not valid an exception is thrown.
-     * 
+     *
      * @param {Catalog} document The notarized document to be validated.
      * @throws {Exception} The document is not valid.
      */
@@ -397,13 +397,13 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-    
+
             // validate the previous version of the document if one exists
             const previousCitation = content.getParameter('$previous');
             if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
                 await validateCitation(previousCitation);
             }
-    
+
             // validate the certificate if one exists
             var certificate;
             if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
@@ -411,7 +411,7 @@ const ValidatedStorage = function(notary, repository, debug) {
             } else {
                 certificate = document;  // the document is a self-signed certificate
             }
-    
+
             // validate the document using its certificate
             const valid = await notary.validDocument(document, certificate);
             if (!valid) {
@@ -425,7 +425,7 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-    
+
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -438,12 +438,12 @@ const ValidatedStorage = function(notary, repository, debug) {
             throw exception;
         }
     };
-    
-    
+
+
     /**
      * This function validates a notarized message. It makes sure that all notary seals
      * attached to the message are valid. If any seal is not valid an exception is thrown.
-     * 
+     *
      * @param {Catalog} message The notarized message to be validated.
      * @throws {Exception} The message is not valid.
      */
@@ -464,10 +464,10 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-    
+
             // validate the certificate
             var certificate = await validateCitation(certificateCitation);
-    
+
             // validate the message using its certificate
             const valid = await notary.validDocument(message, certificate);
             if (!valid) {
@@ -481,7 +481,7 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-    
+
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -494,7 +494,7 @@ const ValidatedStorage = function(notary, repository, debug) {
             throw exception;
         }
     };
-    
+
     return this;
 };
 ValidatedStorage.prototype.constructor = ValidatedStorage;

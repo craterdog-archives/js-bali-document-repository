@@ -307,9 +307,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    
+
     // PRIVATE FUNCTIONS
-    
+
     /**
      * This function sends a RESTful web request to the remote repository with the specified, method,
      * type, resource identifier and version. If a document is included it is sent as the body of the
@@ -323,13 +323,13 @@ const RemoteStorage = function(notary, uri, debug) {
      * @returns {Boolean|Catalog} The result of the request.
      */
     const sendRequest = async function(method, type, identifier, version, document) {
-    
+
         // the POSIX end of line character
         const EOL = '\n';
-    
+
         // generate the credentials
         const credentials = await notary.generateCredentials();
-    
+
         // setup the request URI and options
         const fullURI = uri + '/' + type + '/' + identifier.toString().slice(1) + (version ? '/' + version : '');
         const options = {
@@ -346,7 +346,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 'Accept': 'application/bali'
             }
         };
-    
+
         // add headers for the data (if applicable)
         const data = document ? document.toString() : undefined;
         if (data) {
@@ -354,7 +354,7 @@ const RemoteStorage = function(notary, uri, debug) {
             options.headers['Content-Type'] = 'application/bali';
             options.headers['Content-Length'] = data.length;
         }
-    
+
         // send the request
         try {
             const response = await axios(options);
@@ -428,7 +428,7 @@ const RemoteStorage = function(notary, uri, debug) {
             throw exception;
         }
     };
-    
+
     return this;
 };
 RemoteStorage.prototype.constructor = RemoteStorage;
