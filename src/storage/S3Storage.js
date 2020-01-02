@@ -15,7 +15,6 @@
  */
 const aws = new require('aws-sdk/clients/s3');
 const s3 = new aws({apiVersion: '2006-03-01'});
-const bali = require('bali-component-framework').api();
 
 
 // PRIVATE CONSTANTS
@@ -28,8 +27,8 @@ const EOL = '\n';
 
 /**
  * This function creates a new instance of an S3 storage mechanism proxy.
- * 
- * @param {Object} configuration An object containing the S3 configuration information. 
+ *
+ * @param {Object} configuration An object containing the S3 configuration information.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -43,6 +42,7 @@ const EOL = '\n';
 const S3Storage = function(configuration, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
+    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/S3Storage', '$S3Storage', '$configuration', configuration, [
@@ -105,7 +105,6 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration.citations;
             const key = generateNameKey(name);
-            if (await doesExist(bucket, key)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
         } catch (cause) {
@@ -267,6 +266,7 @@ const S3Storage = function(configuration, debug) {
             const tag = document.getValue('$content').getParameter('$tag');
             const version = document.getValue('$content').getParameter('$version');
             const key = generateDocumentKey(tag, version);
+            // NOTE: have to do this check here since it can't be done in the DocumentRepository class.
             if (await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
@@ -411,6 +411,20 @@ const S3Storage = function(configuration, debug) {
 };
 S3Storage.prototype.constructor = S3Storage;
 exports.S3Storage = S3Storage;
+
+
+/**
+ * This function causes the current thread to sleep for the specified number of milliseconds.
+ * NOTE: it must be called using 'await' or it won't work.
+ *
+ * @param {Number} milliseconds The number of milliseconds to sleep.
+ * @returns {Promise} A promise to return after the specified time has gone by.
+ */
+const sleep = function(milliseconds) {
+    return new Promise(function(resolve) {
+        setTimeout(resolve, milliseconds);
+    });
+};
 
 
 // AWS S3 PROMISIFICATION

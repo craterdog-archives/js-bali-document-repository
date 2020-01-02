@@ -14,7 +14,6 @@
  * documents as UTF-8 encoded strings.
  */
 const axios = require('axios');
-const bali = require('bali-component-framework').api();
 
 
 // DOCUMENT REPOSITORY
@@ -36,6 +35,8 @@ const bali = require('bali-component-framework').api();
  * @returns {Object} The new remote storage mechanism.
  */
 const RemoteStorage = function(notary, uri, debug) {
+    if (debug === null || debug === undefined) debug = 0;  // default is off
+    const bali = require('bali-component-framework').api(debug);
     if (debug > 2) console.log('Initializing the proxy to the remote repository: ' + uri);
 
     // validate the arguments

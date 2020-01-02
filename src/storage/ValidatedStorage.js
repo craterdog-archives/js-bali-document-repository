@@ -15,7 +15,6 @@
  * storage mechanism.  The documents are validated using the public certificate of the
  * notary key used to notarize them.
  */
-const bali = require('bali-component-framework').api();
 
 
 // PUBLIC FUNCTIONS
@@ -39,6 +38,7 @@ const bali = require('bali-component-framework').api();
 const ValidatedStorage = function(notary, repository, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
+    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$repository', repository, [

@@ -54,7 +54,7 @@ const invalidCredentials = async function(request) {
         var message = 'Test Service: The credentials were badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         return true;  // missing the credentials
     }
@@ -89,7 +89,7 @@ const pingCitation = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -136,7 +136,7 @@ const getCitation = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -174,7 +174,7 @@ const postCitation = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -195,7 +195,7 @@ const putCitation = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -216,7 +216,7 @@ const deleteCitation = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -253,7 +253,7 @@ const pingDraft = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -301,7 +301,7 @@ const getDraft = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -322,7 +322,7 @@ const postDraft = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -362,7 +362,7 @@ const putDraft = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -410,7 +410,7 @@ const deleteDraft = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -447,7 +447,7 @@ const pingDocument = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -495,7 +495,7 @@ const getDocument = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -534,7 +534,7 @@ const postDocument = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -555,7 +555,7 @@ const putDocument = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -576,7 +576,7 @@ const deleteDocument = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -612,7 +612,7 @@ const pingQueue = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -653,7 +653,7 @@ const getQueue = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -674,7 +674,7 @@ const postQueue = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -705,7 +705,7 @@ const putMessage = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();
@@ -752,7 +752,7 @@ const deleteMessage = async function(request, response) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
             console.log(message);
-            console.log(e);
+            console.log(e.toString());
         }
         response.writeHead(400, message);
         response.end();

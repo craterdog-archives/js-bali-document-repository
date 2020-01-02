@@ -13,7 +13,6 @@
  * This class defines a document repository that is backed by any of a set of possible storage
  * mechanisms.  It treats documents as UTF-8 encoded strings.
  */
-const bali = require('bali-component-framework').api();
 
 
 // REPOSITORY API
@@ -34,6 +33,7 @@ const bali = require('bali-component-framework').api();
  */
 const DocumentRepository = function(storage, debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
+    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/DocumentRepository', '$DocumentRepository', '$storage', storage, [
@@ -131,7 +131,14 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeCitation(name, citation);
+            if (await storage.citationExists(name)) throw Error('The citation already exists.');
+            const tag = citation.getValue('$tag');
+            const version = citation.getValue('$version');
+            if (await storage.documentExists(tag, version)) {
+                await storage.writeCitation(name, citation);
+            } else {
+                throw Error('The citation does not reference an existing document.');
+            }
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -363,7 +370,13 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
+            const content = document.getValue('$content');
+            const tag = content.getParameter('$tag');
+            const version = content.getParameter('$version');
+            // NOTE: can't do this check here or creating a self-signed certificate fails
+            //if (await storage.documentExists(tag, version)) throw Error('The document already exists.');
             await storage.writeDocument(document);
+            await storage.deleteDraft(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',

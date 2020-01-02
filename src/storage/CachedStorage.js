@@ -14,7 +14,6 @@
  * that have been retrieved from the wrapped storage mechanism.  The documents are assumed
  * to be immutable so no cache consistency issues exist.
  */
-const bali = require('bali-component-framework').api();
 
 
 // DOCUMENT REPOSITORY
@@ -22,7 +21,7 @@ const bali = require('bali-component-framework').api();
 /**
  * This function creates a new instance of a cached storage mechanism.  A remote repository
  * is passed in and is used as the persistent store for all documents.
- * 
+ *
  * @param {Object} repository The actual repository that maintains documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -37,6 +36,7 @@ const bali = require('bali-component-framework').api();
 const CachedStorage = function(repository, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
+    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/CachedStorage', '$CachedStorage', '$repository', repository, [
