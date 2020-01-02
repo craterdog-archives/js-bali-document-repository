@@ -105,6 +105,7 @@ const S3Storage = function(configuration, debug) {
         try {
             const bucket = configuration.citations;
             const key = generateNameKey(name);
+            if (await doesExist(bucket, key)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
         } catch (cause) {
@@ -266,7 +267,6 @@ const S3Storage = function(configuration, debug) {
             const tag = document.getValue('$content').getParameter('$tag');
             const version = document.getValue('$content').getParameter('$version');
             const key = generateDocumentKey(tag, version);
-            // NOTE: have to do this check here since it can't be done in the DocumentRepository class.
             if (await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);

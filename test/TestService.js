@@ -74,17 +74,17 @@ const pingCitation = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.citationExists(name)) {
-            message = 'Test Service: The named document citation exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message);
-            response.end();
-        } else {
+        if (!(await repository.citationExists(name))) {
             message = 'Test Service: The named document citation does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        message = 'Test Service: The named document citation exists.';
+        if (debug > 1) console.log(message);
+        response.writeHead(200, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -111,27 +111,27 @@ const getCitation = async function(request, response) {
             return;
         }
         const citation = await repository.fetchCitation(name);
-        if (citation) {
-            const data = citation.toString();
-            const options = {
-                'Content-Length': data.length,
-                'Content-Type': 'application/bali',
-                'Cache-Control': 'immutable'
-            };
-            message = 'Test Service: The document citation was retrieved.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + bali.catalog(options));
-                console.log('    result: ' + data);
-            }
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
+        if (!citation) {
             message = 'Test Service: The document citation does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        const data = citation.toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'immutable'
+        };
+        message = 'Test Service: The document citation was retrieved.';
+        if (debug > 1) console.log(message);
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
+        response.writeHead(200, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -162,14 +162,23 @@ const postCitation = async function(request, response) {
             if (debug > 1) console.log(message);
             response.writeHead(409, message);
             response.end();
-        } else {
-            const citation = bali.component(request.body);
-            await repository.createCitation(name, citation);
-            message = 'Test Service: The document citation was created.';
-            if (debug > 1) console.log(message);
-            response.writeHead(201, message);
-            response.end();
+            return;
         }
+        const citation = bali.component(request.body);
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
+        if (!(await repository.documentExists(tag, version))) {
+            message = 'Test Service: The cited document must exist.';
+            if (debug > 1) console.log(message);
+            response.writeHead(409, message);
+            response.end();
+            return;
+        }
+        await repository.createCitation(name, citation);
+        message = 'Test Service: The document citation was created.';
+        if (debug > 1) console.log(message);
+        response.writeHead(201, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -238,17 +247,17 @@ const pingDraft = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.draftExists(tag, version)) {
-            message = 'Test Service: The draft document exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message);
-            response.end();
-        } else {
+        if (!(await repository.draftExists(tag, version))) {
             message = 'Test Service: The draft document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        message = 'Test Service: The draft document exists.';
+        if (debug > 1) console.log(message);
+        response.writeHead(200, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -276,27 +285,27 @@ const getDraft = async function(request, response) {
             return;
         }
         const draft = await repository.fetchDraft(tag, version);
-        if (draft) {
-            const data = draft.toString();
-            const options = {
-                'Content-Length': data.length,
-                'Content-Type': 'application/bali',
-                'Cache-Control': 'no-store'
-            };
-            message = 'Test Service: The draft document was retrieved.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + bali.catalog(options));
-                console.log('    result: ' + data);
-            }
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
+        if (!draft) {
             message = 'Test Service: The draft document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        const data = draft.toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'no-store'
+        };
+        message = 'Test Service: The draft document was retrieved.';
+        if (debug > 1) console.log(message);
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
+        response.writeHead(200, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -333,7 +342,8 @@ const postDraft = async function(request, response) {
 const putDraft = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        const draft = bali.component(request.body);
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + draft;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         if (debug > 1) console.log(message);
@@ -345,7 +355,14 @@ const putDraft = async function(request, response) {
             return;
         }
         const updated = await repository.documentExists(tag, version);
-        const draft = bali.component(request.body);
+        const content = draft.getValue('$content');
+        if (!tag.isEqualTo(content.getParameter('$tag')) || !version.isEqualTo(content.getParameter('$version'))) {
+            message = 'Test Service: The tag and version of the draft document are incorrect.';
+            if (debug > 1) console.log(message);
+            response.writeHead(409, message);
+            response.end();
+            return;
+        }
         await repository.saveDraft(draft);
         if (updated) {
             message = 'Test Service: The draft document was updated.';
@@ -385,27 +402,27 @@ const deleteDraft = async function(request, response) {
             return;
         }
         const draft = await repository.deleteDraft(tag, version);
-        if (draft) {
-            const data = draft.toString();
-            const options = {
-                'Content-Length': data.length,
-                'Content-Type': 'application/bali',
-                'Cache-Control': 'no-store'
-            };
-            message = 'Test Service: The draft document was deleted.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + bali.catalog(options));
-                console.log('    result: ' + data);
-            }
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
+        if (!draft) {
             message = 'Test Service: The draft document did not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        const data = draft.toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'no-store'
+        };
+        message = 'Test Service: The draft document was deleted.';
+        if (debug > 1) console.log(message);
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
+        response.writeHead(200, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -432,17 +449,17 @@ const pingDocument = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.documentExists(tag, version)) {
-            message = 'Test Service: The notarized document exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message);
-            response.end();
-        } else {
+        if (!(await repository.documentExists(tag, version))) {
             message = 'Test Service: The notarized document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        message = 'Test Service: The notarized document exists.';
+        if (debug > 1) console.log(message);
+        response.writeHead(200, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -470,27 +487,27 @@ const getDocument = async function(request, response) {
             return;
         }
         const document = await repository.fetchDocument(tag, version);
-        if (document) {
-            const data = document.toString();
-            const options = {
-                'Content-Length': data.length,
-                'Content-Type': 'application/bali',
-                'Cache-Control': 'immutable'
-            };
-            message = 'Test Service: The notarized document was retrieved.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + bali.catalog(options));
-                console.log('    result: ' + data);
-            }
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
+        if (!document) {
             message = 'Test Service: The notarized document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
+            return;
         }
+        const data = document.toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'immutable'
+        };
+        message = 'Test Service: The notarized document was retrieved.';
+        if (debug > 1) console.log(message);
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
+        response.writeHead(200, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -506,7 +523,8 @@ const getDocument = async function(request, response) {
 const postDocument = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
+        const document = bali.component(request.body);
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + document;
         const tag = getTag(request.params.identifier);
         const version = getVersion(request.params.identifier);
         if (debug > 1) console.log(message);
@@ -522,14 +540,22 @@ const postDocument = async function(request, response) {
             if (debug > 1) console.log(message);
             response.writeHead(409, message);
             response.end();
-        } else {
-            const document = bali.component(request.body);
-            await repository.createDocument(document);
-            message = 'Test Service: The notarized document was created.';
-            if (debug > 1) console.log(message);
-            response.writeHead(201, message);
-            response.end();
+            return;
         }
+        const content = document.getValue('$content');
+        if (!tag.isEqualTo(content.getParameter('$tag')) || !version.isEqualTo(content.getParameter('$version'))) {
+            message = 'Test Service: The tag and version of the document are incorrect.';
+            if (debug > 1) console.log(message);
+            response.writeHead(409, message);
+            response.end();
+            return;
+        }
+        await repository.createDocument(document);
+        await repository.deleteDraft(tag, version);
+        message = 'Test Service: The committed document was created.';
+        if (debug > 1) console.log(message);
+        response.writeHead(201, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {

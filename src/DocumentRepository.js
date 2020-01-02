@@ -131,14 +131,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            if (await storage.citationExists(name)) throw Error('The citation already exists.');
-            const tag = citation.getValue('$tag');
-            const version = citation.getValue('$version');
-            if (await storage.documentExists(tag, version)) {
-                await storage.writeCitation(name, citation);
-            } else {
-                throw Error('The citation does not reference an existing document.');
-            }
+            await storage.writeCitation(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -370,13 +363,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            const content = document.getValue('$content');
-            const tag = content.getParameter('$tag');
-            const version = content.getParameter('$version');
-            // NOTE: can't do this check here or creating a self-signed certificate fails
-            //if (await storage.documentExists(tag, version)) throw Error('The document already exists.');
             await storage.writeDocument(document);
-            await storage.deleteDraft(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
