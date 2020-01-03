@@ -365,11 +365,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 default:
                     var result;
                     if (response.data && response.data.length) {
-                        if (response.headers['content-type'] === 'application/bali') {
-                            result = bali.component(response.data.toString('utf8'));  // Component
-                        } else {
-                            result = response.data;  // Buffer (may contain utf8 encoded string)
-                        }
+                        result = bali.component(response.data.toString('utf8'));  // Component
                     }
                     return result;
                 }
