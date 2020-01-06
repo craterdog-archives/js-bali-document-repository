@@ -41,6 +41,9 @@ const ValidatedStorage = function(notary, repository, debug) {
     const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
+        validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$notary', notary, [
+            '/javascript/Object'
+        ]);
         validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$repository', repository, [
             '/javascript/Object'
         ]);
