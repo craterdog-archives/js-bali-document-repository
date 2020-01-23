@@ -58,14 +58,14 @@ const RemoteStorage = function(notary, uri, debug) {
         return catalog.toString();
     };
 
-    this.citationExists = async function(name) {
+    this.nameExists = async function(name) {
         try {
-            const response = await sendRequest('HEAD', 'citations', name, undefined, undefined);
+            const response = await sendRequest('HEAD', 'names', name, undefined, undefined);
             return response.status === 200;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$citationExists',
+                $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $uri: uri,
                 $name: name,
@@ -76,9 +76,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.readCitation = async function(name) {
+    this.readName = async function(name) {
         try {
-            const response = await sendRequest('GET', 'citations', name, undefined, undefined);
+            const response = await sendRequest('GET', 'names', name, undefined, undefined);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -86,7 +86,7 @@ const RemoteStorage = function(notary, uri, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$readCitation',
+                $procedure: '$readName',
                 $exception: '$unexpected',
                 $uri: uri,
                 $name: name,
@@ -97,14 +97,14 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.writeCitation = async function(name, citation) {
+    this.writeName = async function(name, citation) {
         try {
-            const response = await sendRequest('POST', 'citations', name, undefined, citation);
+            const response = await sendRequest('POST', 'names', name, undefined, citation);
             if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$writeCitation',
+                $procedure: '$writeName',
                 $exception: '$unexpected',
                 $uri: uri,
                 $name: name,
@@ -293,7 +293,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $exception: '$unexpected',
                 $uri: uri,
                 $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

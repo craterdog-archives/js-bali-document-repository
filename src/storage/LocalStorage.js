@@ -72,8 +72,8 @@ const LocalStorage = function(notary, root, debug) {
         return catalog.toString();
     };
 
-    this.citationExists = async function(name) {
-        const file = generateFilename('citations', name);
+    this.nameExists = async function(name) {
+        const file = generateFilename('names', name);
         try {
             await pfs.stat(file);  // attempt to access the citation
             return true; // no exception, the citation exists
@@ -82,7 +82,7 @@ const LocalStorage = function(notary, root, debug) {
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
-                $procedure: '$citationExists',
+                $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $file: file,
                 $text: 'An unexpected error occurred while checking whether or not a citation exists.'
@@ -92,8 +92,8 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    this.readCitation = async function(name) {
-        const file = generateFilename('citations', name);
+    this.readName = async function(name) {
+        const file = generateFilename('names', name);
         try {
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
@@ -102,7 +102,7 @@ const LocalStorage = function(notary, root, debug) {
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
-                $procedure: '$readCitation',
+                $procedure: '$readName',
                 $exception: '$unexpected',
                 $file: file,
                 $text: 'An unexpected error occurred while attempting to read a citation from the local storage.'
@@ -112,8 +112,8 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    this.writeCitation = async function(name, citation) {
-        const file = generateFilename('citations', name);
+    this.writeName = async function(name, citation) {
+        const file = generateFilename('names', name);
         try {
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
@@ -122,7 +122,7 @@ const LocalStorage = function(notary, root, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
-                $procedure: '$writeCitation',
+                $procedure: '$writeName',
                 $exception: '$unexpected',
                 $file: file,
                 $citation: citation,
@@ -315,7 +315,7 @@ const LocalStorage = function(notary, root, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $path: path,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

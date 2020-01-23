@@ -59,15 +59,15 @@ const S3Storage = function(notary, configuration, debug) {
         return catalog.toString();
     };
 
-    this.citationExists = async function(name) {
+    this.nameExists = async function(name) {
         try {
-            const bucket = configuration.citations;
+            const bucket = configuration.names;
             const key = generateNameKey(name);
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
-                $procedure: '$citationExists',
+                $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
                 $name: name,
@@ -78,9 +78,9 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.readCitation = async function(name) {
+    this.readName = async function(name) {
         try {
-            const bucket = configuration.citations;
+            const bucket = configuration.names;
             const key = generateNameKey(name);
             const object = await getObject(bucket, key);
             if (object) {
@@ -91,7 +91,7 @@ const S3Storage = function(notary, configuration, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
-                $procedure: '$readCitation',
+                $procedure: '$readName',
                 $exception: '$unexpected',
                 $configuration: configuration,
                 $name: name,
@@ -102,9 +102,9 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.writeCitation = async function(name, citation) {
+    this.writeName = async function(name, citation) {
         try {
-            const bucket = configuration.citations;
+            const bucket = configuration.names;
             const key = generateNameKey(name);
             if (await doesExist(bucket, key)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
@@ -112,7 +112,7 @@ const S3Storage = function(notary, configuration, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
-                $procedure: '$writeCitation',
+                $procedure: '$writeName',
                 $exception: '$unexpected',
                 $configuration: configuration,
                 $name: name,
@@ -320,7 +320,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $exception: '$unexpected',
                 $configuration: configuration,
                 $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

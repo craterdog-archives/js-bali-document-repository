@@ -61,19 +61,19 @@ const DocumentRepository = function(storage, debug) {
      * @param {Name} name The unique name for the document citation being checked.
      * @returns {Boolean} Whether or not the document citation exists.
      */
-    this.citationExists = async function(name) {
+    this.nameExists = async function(name) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$citationExists', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$nameExists', '$name', name, [
                     '/bali/elements/Name'
                 ]);
             }
-            return await storage.citationExists(name);
+            return await storage.nameExists(name);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$citationExists',
+                $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to verify the existence of a citation.'
@@ -91,19 +91,19 @@ const DocumentRepository = function(storage, debug) {
      * @returns {Catalog} A catalog containing the document citation or nothing if it doesn't
      * exist.
      */
-    this.readCitation = async function(name) {
+    this.readName = async function(name) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$readCitation', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$readName', '$name', name, [
                     '/bali/elements/Name'
                 ]);
             }
-            return await storage.readCitation(name);
+            return await storage.readName(name);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$readCitation',
+                $procedure: '$readName',
                 $exception: '$unexpected',
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to fetch a citation.'
@@ -120,22 +120,22 @@ const DocumentRepository = function(storage, debug) {
      * @param {Name} name The unique name for the specified document citation.
      * @param {Catalog} citation A catalog containing the document citation.
      */
-    this.writeCitation = async function(name, citation) {
+    this.writeName = async function(name, citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$writeCitation', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$writeName', '$name', name, [
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$writeCitation', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$writeName', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeCitation(name, citation);
+            await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$writeCitation',
+                $procedure: '$writeName',
                 $exception: '$unexpected',
                 $name: name,
                 $citation: citation,
@@ -428,7 +428,7 @@ const DocumentRepository = function(storage, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -436,9 +436,9 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method adds a new message onto the specified bag in the document repository.
+     * This method adds a new message into the specified bag in the document repository.
      * If the bag does not exist it will be created. If it is called multiple times with
-     * the same message, multiple copies of the message are placed on the bag.
+     * the same message, multiple copies of the message are placed in the bag.
      *
      * @param {Tag} bag The unique tag for the message bag.
      * @param {Catalog} message A catalog containing the message to be added.

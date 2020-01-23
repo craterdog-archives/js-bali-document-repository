@@ -22,7 +22,7 @@ const uri = 'http://localhost:3000';
 const Repositories = require('../');
 
 const configuration = {
-    citations: 'craterdog-bali-citations-us-west-2',
+    names: 'craterdog-bali-names-us-west-2',
     drafts: 'craterdog-bali-drafts-us-west-2',
     documents: 'craterdog-bali-documents-us-west-2',
     bags: 'craterdog-bali-bags-us-west-2'
@@ -72,21 +72,21 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(citation.isEqualTo(await repository.writeDocument(certificate))).is.true;
             });
 
-            it('should perform a citation name lifecycle', async function() {
+            it('should perform a named document lifecycle', async function() {
                 const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
 
                 // make sure the new name does not yet exist in the repository
-                expect(await repository.citationExists(name)).is.false;
-                expect(await repository.readCitation(name)).to.not.exist;
+                expect(await repository.nameExists(name)).is.false;
+                expect(await repository.readName(name)).to.not.exist;
 
                 // create a new name in the repository
-                await repository.writeCitation(name, citation);
+                await repository.writeName(name, citation);
 
                 // make sure the new name exists in the repository
-                expect(await repository.citationExists(name)).is.true;
+                expect(await repository.nameExists(name)).is.true;
 
                 // fetch the new citation from the repository
-                expect(citation.isEqualTo(await repository.readCitation(name))).is.true;
+                expect(citation.isEqualTo(await repository.readName(name))).is.true;
             });
 
             it('should perform a draft document lifecycle', async function() {

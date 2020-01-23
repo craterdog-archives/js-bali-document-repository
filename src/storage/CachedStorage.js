@@ -52,17 +52,17 @@ const CachedStorage = function(storage, debug) {
         return catalog.toString();
     };
 
-    this.citationExists = async function(name) {
+    this.nameExists = async function(name) {
         try {
             // check the cache first
             const key = generateKey(name);
-            if (cache.citations && cache.citations.read(key)) return true;
+            if (cache.names && cache.names.read(key)) return true;
             // not found so we must check the backend storage
-            return await storage.citationExists(name);
+            return await storage.nameExists(name);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
-                $procedure: '$citationExists',
+                $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
                 $name: name,
@@ -73,23 +73,23 @@ const CachedStorage = function(storage, debug) {
         }
     };
 
-    this.readCitation = async function(name) {
+    this.readName = async function(name) {
         try {
             var citation;
             // check the cache first
             const key = generateKey(name);
-            if (cache.citations) citation = cache.citations.read(key);
+            if (cache.names) citation = cache.names.read(key);
             if (!citation) {
                 // not found so we must read from the backend storage
-                citation = await storage.readCitation(name);
+                citation = await storage.readName(name);
                 // add the citation to the cache if it is immutable
-                if (citation && cache.citations) cache.citations.write(name, citation);
+                if (citation && cache.names) cache.names.write(name, citation);
             }
             return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
-                $procedure: '$readCitation',
+                $procedure: '$readName',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
                 $name: name,
@@ -100,17 +100,17 @@ const CachedStorage = function(storage, debug) {
         }
     };
 
-    this.writeCitation = async function(name, citation) {
+    this.writeName = async function(name, citation) {
         try {
             // add the citation to the backend storage
-            await storage.writeCitation(name, citation);
+            await storage.writeName(name, citation);
             // cache the citation
             const key = generateKey(name);
-            if (cache.citations) cache.citations.write(key, citation);
+            if (cache.names) cache.names.write(key, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
-                $procedure: '$writeCitation',
+                $procedure: '$writeName',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
                 $name: name,
@@ -304,7 +304,7 @@ const CachedStorage = function(storage, debug) {
                 $exception: '$unexpected',
                 $storage: storage.toString(),
                 $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -392,6 +392,6 @@ const CACHE_SIZE = 256;
 
 // the actual cache for immutable document types only
 const cache = {
-    citations: new Cache(CACHE_SIZE),
+    names: new Cache(CACHE_SIZE),
     documents: new Cache(CACHE_SIZE)
 };

@@ -62,13 +62,13 @@ const ValidatedStorage = function(notary, repository, debug) {
         return catalog.toString();
     };
 
-    this.citationExists = async function(name) {
+    this.nameExists = async function(name) {
         try {
-            return await repository.citationExists(name);
+            return await repository.nameExists(name);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$citationExists',
+                $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
                 $name: name,
@@ -79,15 +79,15 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.readCitation = async function(name) {
+    this.readName = async function(name) {
         try {
-            const citation = await repository.readCitation(name);
+            const citation = await repository.readName(name);
             if (citation) await validateCitation(citation);
             return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$readCitation',
+                $procedure: '$readName',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
                 $name: name,
@@ -98,14 +98,14 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.writeCitation = async function(name, citation) {
+    this.writeName = async function(name, citation) {
         try {
             await validateCitation(citation);
-            await repository.writeCitation(name, citation);
+            await repository.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$writeCitation',
+                $procedure: '$writeName',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
                 $name: name,
@@ -274,7 +274,7 @@ const ValidatedStorage = function(notary, repository, debug) {
                 $exception: '$unexpected',
                 $repository: repository.toString(),
                 $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

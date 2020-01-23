@@ -20,17 +20,17 @@ const EOL = '\n';
 
 // PRIVATE FUNCTIONS
 
-const getName = function(path) {
+const extractName = function(path) {
     return bali.component(path);
 };
 
 
-const getTag = function(path) {
+const extractTag = function(path) {
     return bali.component('#' + path.slice(0, path.lastIndexOf('/')));
 };
 
 
-const getVersion = function(path) {
+const extractVersion = function(path) {
     return bali.component(path.slice(path.lastIndexOf('/') + 1));
 };
 
@@ -61,11 +61,11 @@ const invalidCredentials = async function(request) {
 };
 
 
-const pingCitation = async function(request, response) {
+const pingName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const name = getName(request.params.identifier);
+        const name = extractName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -74,7 +74,7 @@ const pingCitation = async function(request, response) {
             response.end();
             return;
         }
-        if (!(await repository.citationExists(name))) {
+        if (!(await repository.nameExists(name))) {
             message = 'Test Service: The named document citation does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
@@ -97,11 +97,11 @@ const pingCitation = async function(request, response) {
 };
 
 
-const getCitation = async function(request, response) {
+const getName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const name = getName(request.params.identifier);
+        const name = extractName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -110,7 +110,7 @@ const getCitation = async function(request, response) {
             response.end();
             return;
         }
-        const citation = await repository.readCitation(name);
+        const citation = await repository.readName(name);
         if (!citation) {
             message = 'Test Service: The document citation does not exist.';
             if (debug > 1) console.log(message);
@@ -144,11 +144,11 @@ const getCitation = async function(request, response) {
 };
 
 
-const postCitation = async function(request, response) {
+const postName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        const name = getName(request.params.identifier);
+        const name = extractName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -157,7 +157,7 @@ const postCitation = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.citationExists(name)) {
+        if (await repository.nameExists(name)) {
             message = 'Test Service: The document citation already exists.';
             if (debug > 1) console.log(message);
             response.writeHead(409, message);
@@ -174,7 +174,7 @@ const postCitation = async function(request, response) {
             response.end();
             return;
         }
-        await repository.writeCitation(name, citation);
+        await repository.writeName(name, citation);
         message = 'Test Service: The document citation was created.';
         if (debug > 1) console.log(message);
         response.writeHead(201, message);
@@ -191,12 +191,12 @@ const postCitation = async function(request, response) {
 };
 
 
-const putCitation = async function(request, response) {
+const putName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
-        message = 'Test Service: Document citations cannot be updated.';
+        message = 'Test Service: Document names cannot be updated.';
         if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
@@ -212,12 +212,12 @@ const putCitation = async function(request, response) {
 };
 
 
-const deleteCitation = async function(request, response) {
+const deleteName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
         if (debug > 1) console.log(message);
-        message = 'Test Service: Document citations cannot be deleted.';
+        message = 'Test Service: Document names cannot be deleted.';
         if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
@@ -237,8 +237,8 @@ const pingDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -274,8 +274,8 @@ const getDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -344,8 +344,8 @@ const putDraft = async function(request, response) {
     try {
         const draft = bali.component(request.body);
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + draft;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -402,8 +402,8 @@ const deleteDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -450,8 +450,8 @@ const pingDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -487,8 +487,8 @@ const getDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -536,8 +536,8 @@ const postDocument = async function(request, response) {
     try {
         const document = bali.component(request.body);
         message = 'Test Service: POST ' + request.originalUrl + ' ' + document;
-        const tag = getTag(request.params.identifier);
-        const version = getVersion(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -809,13 +809,13 @@ const deleteMessage = async function(request, response) {
 
 // SERVICE INITIALIZATION
 
-const citationRouter = express.Router();
-// Note: the leading slash is part of the citation name identifier
-citationRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingCitation);
-citationRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getCitation);
-citationRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postCitation);
-citationRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putCitation);
-citationRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteCitation);
+const nameRouter = express.Router();
+// Note: the leading slash is part of the named document identifier
+nameRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingName);
+nameRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getName);
+nameRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postName);
+nameRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putName);
+nameRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteName);
 
 const draftRouter = express.Router();
 draftRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDraft);
@@ -841,7 +841,7 @@ bagRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 const service = express();
 
 service.use(bodyParser.text({ type: 'application/bali' }));
-service.use('/citations', citationRouter);
+service.use('/names', nameRouter);
 service.use('/drafts', draftRouter);
 service.use('/documents', documentRouter);
 service.use('/bags', bagRouter);
