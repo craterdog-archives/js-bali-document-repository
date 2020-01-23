@@ -282,28 +282,28 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    this.queueExists = async function(queue) {
-        const path = generatePath('queues', queue);
+    this.bagExists = async function(bag) {
+        const path = generatePath('bags', bag);
         try {
-            await pfs.stat(path);  // attempt to access the message queue
-            return true; // no exception, the message queue exists
+            await pfs.stat(path);  // attempt to access the message bag
+            return true; // no exception, the message bag exists
         } catch (cause) {
-            if (cause.code === 'ENOENT') return false; // the message queue does not exist
+            if (cause.code === 'ENOENT') return false; // the message bag does not exist
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
-                $procedure: '$queueExists',
+                $procedure: '$bagExists',
                 $exception: '$unexpected',
                 $path: path,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.messageCount = async function(queue) {
-        const path = generatePath('queues', queue);
+    this.messageCount = async function(bag) {
+        const path = generatePath('bags', bag);
         try {
             const files = await pfs.readdir(path, 'utf8');
             return files.length;
@@ -315,16 +315,16 @@ const LocalStorage = function(notary, root, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $path: path,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.addMessage = async function(queue, message) {
+    this.addMessage = async function(bag, message) {
         const identifier = bali.tag().getValue();  // strip off the leading '#'
-        const file = generateFilename('queues', queue, identifier);
+        const file = generateFilename('bags', bag, identifier);
         try {
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
@@ -338,15 +338,15 @@ const LocalStorage = function(notary, root, debug) {
                 $exception: '$unexpected',
                 $file: file,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
+                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.removeMessage = async function(queue) {
-        const path = generatePath('queues', queue);
+    this.removeMessage = async function(bag) {
+        const path = generatePath('bags', bag);
         try {
             const files = await pfs.readdir(path, 'utf8');
             if (files.length) {
@@ -369,7 +369,7 @@ const LocalStorage = function(notary, root, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $file: file,
-                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
+                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

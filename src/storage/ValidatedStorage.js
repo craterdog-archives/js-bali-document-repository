@@ -247,62 +247,62 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.queueExists = async function(queue) {
+    this.bagExists = async function(bag) {
         try {
-            return await repository.queueExists(queue);
+            return await repository.bagExists(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$queueExists',
+                $procedure: '$bagExists',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.messageCount = async function(queue) {
+    this.messageCount = async function(bag) {
         try {
-            return await repository.messageCount(queue);
+            return await repository.messageCount(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.addMessage = async function(queue, message) {
+    this.addMessage = async function(bag, message) {
         try {
             await validateMessage(message);
-            return await repository.addMessage(queue, message);
+            return await repository.addMessage(bag, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $queue: queue,
+                $bag: bag,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
+                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.removeMessage = async function(queue) {
+    this.removeMessage = async function(bag) {
         try {
-            const message = await repository.removeMessage(queue);
+            const message = await repository.removeMessage(bag);
             if (message) await validateMessage(message);
             return message;
         } catch (cause) {
@@ -311,8 +311,8 @@ const ValidatedStorage = function(notary, repository, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

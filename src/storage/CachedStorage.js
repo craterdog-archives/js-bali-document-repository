@@ -275,74 +275,74 @@ const CachedStorage = function(storage, debug) {
         }
     };
 
-    this.queueExists = async function(queue) {
+    this.bagExists = async function(bag) {
         try {
             // pass-through, messages are not cached
-            return await storage.queueExists(queue);
+            return await storage.bagExists(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
-                $procedure: '$queueExists',
+                $procedure: '$bagExists',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.messageCount = async function(queue) {
+    this.messageCount = async function(bag) {
         try {
             // pass-through, messages are not cached
-            return await storage.messageCount(queue);
+            return await storage.messageCount(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.addMessage = async function(queue, document) {
+    this.addMessage = async function(bag, document) {
         try {
             // pass-through, messages are not cached
-            return await storage.addMessage(queue, document);
+            return await storage.addMessage(bag, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $queue: queue,
+                $bag: bag,
                 $identifier: identifier,
                 $document: document,
-                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
+                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.removeMessage = async function(queue) {
+    this.removeMessage = async function(bag) {
         try {
             // pass-through, messages are not cached
-            return await storage.removeMessage(queue);
+            return await storage.removeMessage(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

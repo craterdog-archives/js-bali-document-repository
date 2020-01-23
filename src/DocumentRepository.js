@@ -91,11 +91,11 @@ const DocumentRepository = function(storage, debug) {
      * @returns {Catalog} A catalog containing the document citation or nothing if it doesn't
      * exist.
      */
-    this.fetchCitation = async function(name) {
+    this.readCitation = async function(name) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchCitation', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$readCitation', '$name', name, [
                     '/bali/elements/Name'
                 ]);
             }
@@ -103,7 +103,7 @@ const DocumentRepository = function(storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$fetchCitation',
+                $procedure: '$readCitation',
                 $exception: '$unexpected',
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to fetch a citation.'
@@ -120,14 +120,14 @@ const DocumentRepository = function(storage, debug) {
      * @param {Name} name The unique name for the specified document citation.
      * @param {Catalog} citation A catalog containing the document citation.
      */
-    this.createCitation = async function(name, citation) {
+    this.writeCitation = async function(name, citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createCitation', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$writeCitation', '$name', name, [
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createCitation', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$writeCitation', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -135,7 +135,7 @@ const DocumentRepository = function(storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$createCitation',
+                $procedure: '$writeCitation',
                 $exception: '$unexpected',
                 $name: name,
                 $citation: citation,
@@ -190,14 +190,14 @@ const DocumentRepository = function(storage, debug) {
      * @returns {Catalog} A catalog containing the draft document or nothing if it doesn't
      * exist.
      */
-    this.fetchDraft = async function(tag, version) {
+    this.readDraft = async function(tag, version) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDraft', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$readDraft', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDraft', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$readDraft', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
@@ -205,7 +205,7 @@ const DocumentRepository = function(storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$fetchDraft',
+                $procedure: '$readDraft',
                 $exception: '$unexpected',
                 $tag: tag,
                 $version: version,
@@ -223,11 +223,11 @@ const DocumentRepository = function(storage, debug) {
      *
      * @param {Catalog} draft A catalog containing the draft document.
      */
-    this.saveDraft = async function(draft) {
+    this.writeDraft = async function(draft) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$draft', draft, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$writeDraft', '$draft', draft, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -235,7 +235,7 @@ const DocumentRepository = function(storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$saveDraft',
+                $procedure: '$writeDraft',
                 $exception: '$unexpected',
                 $draft: draft,
                 $text: 'An unexpected error occurred while attempting to save a draft.'
@@ -322,14 +322,14 @@ const DocumentRepository = function(storage, debug) {
      * @param {Version} version The version string of the document.
      * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
      */
-    this.fetchDocument = async function(tag, version) {
+    this.readDocument = async function(tag, version) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDocument', '$tag', tag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$readDocument', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$fetchDocument', '$version', version, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$readDocument', '$version', version, [
                     '/bali/elements/Version'
                 ]);
             }
@@ -337,7 +337,7 @@ const DocumentRepository = function(storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$fetchDocument',
+                $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $tag: tag,
                 $version: version,
@@ -355,11 +355,11 @@ const DocumentRepository = function(storage, debug) {
      *
      * @param {Catalog} document A catalog containing the document.
      */
-    this.createDocument = async function(document) {
+    this.writeDocument = async function(document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$document', document, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$writeDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -367,7 +367,7 @@ const DocumentRepository = function(storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$createDocument',
+                $procedure: '$writeDocument',
                 $exception: '$unexpected',
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to create a document.'
@@ -378,28 +378,28 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not the specified message queue exists in the
+     * This method checks to see whether or not the specified message bag exists in the
      * document repository.
      *
-     * @param {Tag} queue The unique tag for the message queue.
-     * @returns {Boolean} Whether or not the message queue exists.
+     * @param {Tag} bag The unique tag for the message bag.
+     * @returns {Boolean} Whether or not the message bag exists.
      */
-    this.queueExists = async function(queue) {
+    this.bagExists = async function(bag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$dequeueMessage', '$queue', queue, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
                     '/bali/elements/Tag'
                 ]);
             }
-            return await storage.queueExists(queue);
+            return await storage.bagExists(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$queueExists',
+                $procedure: '$bagExists',
                 $exception: '$unexpected',
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -407,28 +407,28 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method the current number of messages that are in the specified message queue in the
+     * This method the current number of messages that are in the specified message bag in the
      * document repository.
      *
-     * @param {Tag} queue The unique tag for the message queue.
-     * @returns {Number} The number of messages that are currently in the message queue.
+     * @param {Tag} bag The unique tag for the message bag.
+     * @returns {Number} The number of messages that are currently in the message bag.
      */
-    this.messageCount = async function(queue) {
+    this.messageCount = async function(bag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$dequeueMessage', '$queue', queue, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
                     '/bali/elements/Tag'
                 ]);
             }
-            return await storage.messageCount(queue);
+            return await storage.messageCount(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -436,33 +436,33 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method adds a new message onto the specified queue in the document repository.
-     * If the queue does not exist it will be created. If it is called multiple times with
-     * the same message, multiple copies of the message are placed on the queue.
+     * This method adds a new message onto the specified bag in the document repository.
+     * If the bag does not exist it will be created. If it is called multiple times with
+     * the same message, multiple copies of the message are placed on the bag.
      *
-     * @param {Tag} queue The unique tag for the message queue.
-     * @param {Catalog} message A catalog containing the message to be queued.
+     * @param {Tag} bag The unique tag for the message bag.
+     * @param {Catalog} message A catalog containing the message to be added.
      */
-    this.queueMessage = async function(queue, message) {
+    this.addMessage = async function(bag, message) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$queueMessage', '$queue', queue, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$bag', bag, [
                     '/bali/elements/Tag'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$queueMessage', '$message', message, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.addMessage(queue, message);
+            return await storage.addMessage(bag, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$queueMessage',
+                $procedure: '$addMessage',
                 $exception: '$unexpected',
-                $queue: queue,
+                $bag: bag,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to queue a message.'
+                $text: 'An unexpected error occurred while attempting to bag a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -470,28 +470,28 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method removes a randomly chosen message from the specified queue in the
-     * document repository. If the queue is empty, nothing is returned.
+     * This method removes a randomly chosen message from the specified bag in the
+     * document repository. If the bag is empty, nothing is returned.
      *
-     * @param {Tag} queue The unique tag for the message queue.
-     * @returns {Catalog} A catalog containing the message or nothing if the queue is empty.
+     * @param {Tag} bag The unique tag for the message bag.
+     * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
      */
-    this.dequeueMessage = async function(queue) {
+    this.removeMessage = async function(bag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$dequeueMessage', '$queue', queue, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
                     '/bali/elements/Tag'
                 ]);
             }
-            return await storage.removeMessage(queue);
+            return await storage.removeMessage(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$dequeueMessage',
+                $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to dequeue a message.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to remove a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

@@ -287,30 +287,30 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.queueExists = async function(queue) {
+    this.bagExists = async function(bag) {
         try {
-            const bucket = configuration.queues;
-            const key = generateQueueKey(queue);
+            const bucket = configuration.bags;
+            const key = generateBagKey(bag);
             const list = await listObjects(bucket, key);
             return list.length > 0;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
-                $procedure: '$queueExists',
+                $procedure: '$bagExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.messageCount = async function(queue) {
+    this.messageCount = async function(bag) {
         try {
-            const bucket = configuration.queues;
-            const key = generateQueueKey(queue);
+            const bucket = configuration.bags;
+            const key = generateBagKey(bag);
             const list = await listObjects(bucket, key);
             return list.length;
         } catch (cause) {
@@ -319,19 +319,19 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.addMessage = async function(queue, message) {
+    this.addMessage = async function(bag, message) {
         const identifier = bali.tag();
         try {
-            const bucket = configuration.queues;
-            const key = generateMessageKey(queue, identifier);
+            const bucket = configuration.bags;
+            const key = generateMessageKey(bag, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
             return notary.citeDocument(message);
@@ -341,26 +341,26 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $queue: queue,
+                $bag: bag,
                 $identifier: identifier,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
+                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.removeMessage = async function(queue) {
+    this.removeMessage = async function(bag) {
         try {
             while (true) {
-                const bucket = configuration.queues;
-                var key = generateQueueKey(queue);
+                const bucket = configuration.bags;
+                var key = generateBagKey(bag);
                 const list = await listObjects(bucket, key);
                 const count = list.length;
                 if (count === 0) break;  // no more messages
                 const messages = bali.list(list);
-                // select a message at random since a distributed queue cannot guarantee FIFO
+                // select a message at random since a distributed bag cannot guarantee FIFO
                 const generator = bali.generator();
                 const index = generator.generateIndex(count);
                 key = messages.getItem(index).getValue();
@@ -379,8 +379,8 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -400,12 +400,12 @@ const S3Storage = function(notary, configuration, debug) {
         return key;
     };
 
-    const generateQueueKey = function(queue) {
-        return queue.toString().slice(1);  // remove the leading '#'
+    const generateBagKey = function(bag) {
+        return bag.toString().slice(1);  // remove the leading '#'
     };
 
-    const generateMessageKey = function(queue, identifier) {
-        var key = queue.toString().slice(1);  // remove the leading '#'
+    const generateMessageKey = function(bag, identifier) {
+        var key = bag.toString().slice(1);  // remove the leading '#'
         key += '/' + identifier.toString().slice(1);  // remove the leading '#'
         key += '.bali';
         return key;

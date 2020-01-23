@@ -44,7 +44,7 @@ const invalidCredentials = async function(request) {
             const citation = credentials.getValue('$certificate');
             const tag = citation.getValue('$tag');
             const version = citation.getValue('$version');
-            var certificate = await repository.fetchDocument(tag, version);
+            var certificate = await repository.readDocument(tag, version);
             certificate = certificate || bali.component(request.body);  // if self-signed certificate
             const isValid = await notary.validDocument(credentials, certificate);
             return !isValid;
@@ -110,7 +110,7 @@ const getCitation = async function(request, response) {
             response.end();
             return;
         }
-        const citation = await repository.fetchCitation(name);
+        const citation = await repository.readCitation(name);
         if (!citation) {
             message = 'Test Service: The document citation does not exist.';
             if (debug > 1) console.log(message);
@@ -174,7 +174,7 @@ const postCitation = async function(request, response) {
             response.end();
             return;
         }
-        await repository.createCitation(name, citation);
+        await repository.writeCitation(name, citation);
         message = 'Test Service: The document citation was created.';
         if (debug > 1) console.log(message);
         response.writeHead(201, message);
@@ -284,7 +284,7 @@ const getDraft = async function(request, response) {
             response.end();
             return;
         }
-        const draft = await repository.fetchDraft(tag, version);
+        const draft = await repository.readDraft(tag, version);
         if (!draft) {
             message = 'Test Service: The draft document does not exist.';
             if (debug > 1) console.log(message);
@@ -363,7 +363,7 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        const data = (await repository.saveDraft(draft)).toString();
+        const data = (await repository.writeDraft(draft)).toString();
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',
@@ -497,7 +497,7 @@ const getDocument = async function(request, response) {
             response.end();
             return;
         }
-        const document = await repository.fetchDocument(tag, version);
+        const document = await repository.readDocument(tag, version);
         if (!document) {
             message = 'Test Service: The notarized document does not exist.';
             if (debug > 1) console.log(message);
@@ -561,7 +561,7 @@ const postDocument = async function(request, response) {
             response.end();
             return;
         }
-        const data = (await repository.createDocument(document)).toString();
+        const data = (await repository.writeDocument(document)).toString();
         await repository.deleteDraft(tag, version);
         const options = {
             'Content-Length': data.length,
@@ -626,11 +626,11 @@ const deleteDocument = async function(request, response) {
 };
 
 
-const pingQueue = async function(request, response) {
+const pingBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const queue = bali.tag(request.params.identifier);
+        const bag = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -639,13 +639,13 @@ const pingQueue = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.queueExists(queue)) {
-            message = 'Test Service: The message queue exists.';
+        if (await repository.bagExists(bag)) {
+            message = 'Test Service: The message bag exists.';
             if (debug > 1) console.log(message);
             response.writeHead(200, message);
             response.end();
         } else {
-            message = 'Test Service: The message queue does not exist.';
+            message = 'Test Service: The message bag does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
@@ -662,11 +662,11 @@ const pingQueue = async function(request, response) {
 };
 
 
-const getQueue = async function(request, response) {
+const getBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const queue = bali.tag(request.params.identifier);
+        const bag = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -675,7 +675,7 @@ const getQueue = async function(request, response) {
             response.end();
             return;
         }
-        const count = await repository.messageCount(queue);
+        const count = await repository.messageCount(bag);
         if (debug > 1) console.log(message);
         const data = count.toString();
         const options = {
@@ -683,7 +683,7 @@ const getQueue = async function(request, response) {
             'Content-Type': 'application/bali',
             'Cache-Control': 'no-store'
         };
-        message = 'Test Service: The message queue contains ' + count + ' messages.';
+        message = 'Test Service: The message bag contains ' + count + ' messages.';
         if (debug > 1) console.log(message);
         if (debug > 2) {
             console.log('    options: ' + bali.catalog(options));
@@ -703,12 +703,12 @@ const getQueue = async function(request, response) {
 };
 
 
-const postQueue = async function(request, response) {
+const postBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
-        message = 'Test Service: Queues are created and deleted automatically.';
+        message = 'Test Service: Bags are created and deleted automatically.';
         if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
@@ -728,7 +728,7 @@ const putMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        const queue = bali.tag(request.params.identifier);
+        const bag = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -738,13 +738,13 @@ const putMessage = async function(request, response) {
             return;
         }
         message = bali.component(request.body);
-        const data = (await repository.queueMessage(queue, message)).toString();
+        const data = (await repository.addMessage(bag, message)).toString();
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',
             'Cache-Control': 'no-store'
         };
-        message = 'Test Service: A message was added to the queue.';
+        message = 'Test Service: A message was added to the bag.';
         if (debug > 1) console.log(message);
         response.writeHead(201, message, options);
         response.end(data);
@@ -764,7 +764,7 @@ const deleteMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        const queue = bali.tag(request.params.identifier);
+        const bag = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -773,7 +773,7 @@ const deleteMessage = async function(request, response) {
             response.end();
             return;
         }
-        message = await repository.dequeueMessage(queue);
+        message = await repository.removeMessage(bag);
         if (message) {
             const data = message.toString();
             const options = {
@@ -781,7 +781,7 @@ const deleteMessage = async function(request, response) {
                 'Content-Type': 'application/bali',
                 'Cache-Control': 'no-store'
             };
-            message = 'Test Service: A message was removed from the queue.';
+            message = 'Test Service: A message was removed from the bag.';
             if (debug > 1) console.log(message);
             if (debug > 2) {
                 console.log('    options: ' + bali.catalog(options));
@@ -790,7 +790,7 @@ const deleteMessage = async function(request, response) {
             response.writeHead(200, message, options);
             response.end(data);
         } else {
-            message = 'Test Service: The queue does not exist.';
+            message = 'Test Service: The bag does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
@@ -831,12 +831,12 @@ documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
 documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
 documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 
-const queueRouter = express.Router();
-queueRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingQueue);
-queueRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getQueue);
-queueRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postQueue);
-queueRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
-queueRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
+const bagRouter = express.Router();
+bagRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingBag);
+bagRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getBag);
+bagRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postBag);
+bagRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
+bagRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 
 const service = express();
 
@@ -844,7 +844,7 @@ service.use(bodyParser.text({ type: 'application/bali' }));
 service.use('/citations', citationRouter);
 service.use('/drafts', draftRouter);
 service.use('/documents', documentRouter);
-service.use('/queues', queueRouter);
+service.use('/bags', bagRouter);
 
 service.listen(3000, function() {
     var message = 'Service: Server running on port 3000';

@@ -264,27 +264,27 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.queueExists = async function(queue) {
+    this.bagExists = async function(bag) {
         try {
-            const response = await sendRequest('HEAD', 'queues', queue, undefined, undefined);
+            const response = await sendRequest('HEAD', 'bags', bag, undefined, undefined);
             return response.status === 200;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$queueExists',
+                $procedure: '$bagExists',
                 $exception: '$unexpected',
                 $uri: uri,
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message queue exists.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.messageCount = async function(queue) {
+    this.messageCount = async function(bag) {
         try {
-            const response = await sendRequest('GET', 'queues', queue, undefined, undefined);
+            const response = await sendRequest('GET', 'bags', bag, undefined, undefined);
             return Number(response.data.toString('utf8'));
         } catch (cause) {
             const exception = bali.exception({
@@ -292,18 +292,18 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $uri: uri,
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are on a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.addMessage = async function(queue, message) {
+    this.addMessage = async function(bag, message) {
         try {
-            const response = await sendRequest('PUT', 'queues', queue, undefined, message);
-            if (response.status > 299) throw Error('Unable to queue the message: ' + response.status);
+            const response = await sendRequest('PUT', 'bags', bag, undefined, message);
+            if (response.status > 299) throw Error('Unable to bag the message: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new message
         } catch (cause) {
@@ -312,18 +312,18 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $uri: uri,
-                $queue: queue,
+                $bag: bag,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to add a message to a queue.'
+                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
 
-    this.removeMessage = async function(queue) {
+    this.removeMessage = async function(bag) {
         try {
-            const response = await sendRequest('DELETE', 'queues', queue, undefined, undefined);
+            const response = await sendRequest('DELETE', 'bags', bag, undefined, undefined);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -334,8 +334,8 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $uri: uri,
-                $queue: queue,
-                $text: 'An unexpected error occurred while attempting to remove a message from a queue.'
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
