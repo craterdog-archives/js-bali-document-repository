@@ -158,7 +158,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.writeDraft = async function(draft) {
         try {
             await validateDocument(draft);
-            await repository.writeDraft(draft);
+            return await repository.writeDraft(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -232,7 +232,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.writeDocument = async function(document) {
         try {
             await validateDocument(document);
-            await repository.writeDocument(document);
+            return await repository.writeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -284,7 +284,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.addMessage = async function(queue, message) {
         try {
             await validateMessage(message);
-            await repository.addMessage(queue, message);
+            return await repository.addMessage(queue, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',

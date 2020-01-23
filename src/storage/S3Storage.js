@@ -28,6 +28,7 @@ const EOL = '\n';
 /**
  * This function creates a new instance of an S3 storage mechanism proxy.
  *
+ * @param {DigitalNotary} notary The digital notary to be used to cite the documents.
  * @param {Object} configuration An object containing the S3 configuration information.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -39,7 +40,7 @@ const EOL = '\n';
  * </pre>
  * @returns {Object} The new S3 storage mechanism proxy.
  */
-const S3Storage = function(configuration, debug) {
+const S3Storage = function(notary, configuration, debug) {
     // validate the arguments
     if (debug === null || debug === undefined) debug = 0;  // default is off
     const bali = require('bali-component-framework').api(debug);
@@ -176,6 +177,7 @@ const S3Storage = function(configuration, debug) {
             const key = generateDocumentKey(tag, version);
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
+            return notary.citeDocument(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -270,6 +272,7 @@ const S3Storage = function(configuration, debug) {
             if (await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
+            return notary.citeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -331,6 +334,7 @@ const S3Storage = function(configuration, debug) {
             const key = generateMessageKey(queue, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
+            return notary.citeDocument(message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',

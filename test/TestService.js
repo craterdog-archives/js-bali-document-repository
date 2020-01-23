@@ -363,17 +363,28 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        await repository.saveDraft(draft);
+        const data = (await repository.saveDraft(draft)).toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'no-store'
+        };
+        message = 'Test Service: The draft document was retrieved.';
+        if (debug > 1) console.log(message);
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
         if (updated) {
             message = 'Test Service: The draft document was updated.';
             if (debug > 1) console.log(message);
-            response.writeHead(204, message);
-            response.end();
+            response.writeHead(204, message, options);
+            response.end(data);
         } else {
             message = 'Test Service: The draft document was created.';
             if (debug > 1) console.log(message);
-            response.writeHead(201, message);
-            response.end();
+            response.writeHead(201, message, options);
+            response.end(data);
         }
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
@@ -550,12 +561,17 @@ const postDocument = async function(request, response) {
             response.end();
             return;
         }
-        await repository.createDocument(document);
+        const data = (await repository.createDocument(document)).toString();
         await repository.deleteDraft(tag, version);
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'immutable'
+        };
         message = 'Test Service: The committed document was created.';
         if (debug > 1) console.log(message);
-        response.writeHead(201, message);
-        response.end();
+        response.writeHead(201, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -722,11 +738,16 @@ const putMessage = async function(request, response) {
             return;
         }
         message = bali.component(request.body);
-        await repository.queueMessage(queue, message);
+        const data = (await repository.queueMessage(queue, message)).toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'no-store'
+        };
         message = 'Test Service: A message was added to the queue.';
         if (debug > 1) console.log(message);
-        response.writeHead(201, message);
-        response.end();
+        response.writeHead(201, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {

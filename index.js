@@ -66,6 +66,7 @@ exports.validated = validated;
  * This function initializes a local filesystem based storage mechanism. It provides no security
  * around the filesystem and should ONLY be used for local testing.
  *
+ * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {String} directory The top level directory to be used as a local document repository.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -77,8 +78,8 @@ exports.validated = validated;
  * </pre>
  * @returns {Object} The new file-based storage mechanism instance.
  */
-const local = function(directory, debug) {
-    return new LocalStorage(directory, debug);
+const local = function(notary, directory, debug) {
+    return new LocalStorage(notary, directory, debug);
 };
 exports.local = local;
 
@@ -107,6 +108,7 @@ exports.remote = remote;
  * This function initializes an AWS S3 based document repository proxy implementation. It stores
  * the documents in S3 buckets by type.
  *
+ * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} configuration An object containing the configuration for the S3 buckets
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -118,8 +120,8 @@ exports.remote = remote;
  * </pre>
  * @returns {Object} The new AWS S3-based storage mechanism instance.
  */
-const s3 = function(configuration, debug) {
-    return new S3Storage(configuration, debug);
+const s3 = function(notary, configuration, debug) {
+    return new S3Storage(notary, configuration, debug);
 };
 exports.s3 = s3;
 
@@ -159,7 +161,7 @@ exports.repository = repository;
  * @returns {Object} The new document repository instance.
  */
 const test = function(notary, directory, debug) {
-    return repository(cached(validated(notary, local(directory, debug), debug), debug), debug);
+    return repository(cached(validated(notary, local(notary, directory, debug), debug), debug), debug);
 };
 exports.test = test;
 
@@ -204,7 +206,7 @@ exports.client = client;
  * @returns {Object} The new document repository instance.
  */
 const service = function(notary, configuration, debug) {
-    return repository(validated(notary, s3(configuration, debug), debug), debug);
+    return repository(validated(notary, s3(notary, configuration, debug), debug), debug);
 };
 exports.service = service;
 

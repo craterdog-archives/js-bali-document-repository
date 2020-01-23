@@ -163,6 +163,8 @@ const RemoteStorage = function(notary, uri, debug) {
             const version = draft.getValue('$content').getParameter('$version');
             const response = await sendRequest('PUT', 'drafts', tag, version, draft);
             if (response.status > 299) throw Error('Unable to save the draft: ' + response.status);
+            const source = response.data.toString('utf8');
+            return bali.component(source);  // return a citation to the new document
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
@@ -246,6 +248,8 @@ const RemoteStorage = function(notary, uri, debug) {
             const version = document.getValue('$content').getParameter('$version');
             const response = await sendRequest('POST', 'documents', tag, version, document);
             if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
+            const source = response.data.toString('utf8');
+            return bali.component(source);  // return a citation to the new document
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
@@ -300,6 +304,8 @@ const RemoteStorage = function(notary, uri, debug) {
         try {
             const response = await sendRequest('PUT', 'queues', queue, undefined, message);
             if (response.status > 299) throw Error('Unable to queue the message: ' + response.status);
+            const source = response.data.toString('utf8');
+            return bali.component(source);  // return a citation to the new message
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
