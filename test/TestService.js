@@ -378,7 +378,7 @@ const putDraft = async function(request, response) {
         if (updated) {
             message = 'Test Service: The draft document was updated.';
             if (debug > 1) console.log(message);
-            response.writeHead(204, message, options);
+            response.writeHead(200, message, options);
             response.end(data);
         } else {
             message = 'Test Service: The draft document was created.';
