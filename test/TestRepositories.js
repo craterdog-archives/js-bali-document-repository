@@ -25,7 +25,7 @@ const configuration = {
     citations: 'craterdog-bali-citations-us-west-2',
     drafts: 'craterdog-bali-drafts-us-west-2',
     documents: 'craterdog-bali-documents-us-west-2',
-    bags: 'craterdog-bali-queues-us-west-2'
+    bags: 'craterdog-bali-bags-us-west-2'
 };
 
 const repositories = {
