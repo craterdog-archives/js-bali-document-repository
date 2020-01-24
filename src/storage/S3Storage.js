@@ -94,6 +94,8 @@ const S3Storage = function(notary, configuration, debug) {
                 if (object) {
                     source = object.toString();
                     const document = bali.component(source);
+                    const matches = await notary.citationMatches(citation, document);
+                    if (!matches) throw Error('The cited document was modified after it was created.');
                     return document;
                 }
             }

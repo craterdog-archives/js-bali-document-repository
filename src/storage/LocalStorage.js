@@ -103,6 +103,8 @@ const LocalStorage = function(notary, root, debug) {
                 file = generateFilename('documents', tag, version);
                 var source = await pfs.readFile(file, 'utf8');
                 const document = bali.component(source);
+                const matches = await notary.citationMatches(citation, document);
+                if (!matches) throw Error('The cited document was modified after it was created.');
                 return document;
             }
         } catch (cause) {
