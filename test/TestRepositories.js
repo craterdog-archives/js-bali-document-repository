@@ -167,7 +167,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(await repository.messageCount(bag)).to.equal(0);
                 expect(await repository.removeMessage(bag)).to.not.exist;
 
-                // bag up some messages
+                // add some messages
                 expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
                 expect(await repository.messageCount(bag)).to.equal(1);
                 expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
@@ -175,7 +175,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
                 expect(await repository.messageCount(bag)).to.equal(3);
 
-                // debag the messages
+                // remove the messages
                 expect(message.isEqualTo(await repository.removeMessage(bag))).is.true;
                 expect(await repository.messageCount(bag)).to.equal(2);
                 expect(message.isEqualTo(await repository.removeMessage(bag))).is.true;
