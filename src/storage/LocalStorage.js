@@ -73,8 +73,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.nameExists = async function(name) {
-        const file = generateFilename('names', name);
         try {
+            const file = generateFilename('names', name);
             await pfs.stat(file);  // attempt to access the citation
             return true; // no exception, the citation exists
         } catch (cause) {
@@ -84,7 +84,7 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$nameExists',
                 $exception: '$unexpected',
-                $file: file,
+                $name: name,
                 $text: 'An unexpected error occurred while checking whether or not a citation exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -93,8 +93,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.readName = async function(name) {
-        const file = generateFilename('names', name);
         try {
+            const file = generateFilename('names', name);
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
         } catch (cause) {
@@ -104,7 +104,7 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readName',
                 $exception: '$unexpected',
-                $file: file,
+                $name: name,
                 $text: 'An unexpected error occurred while attempting to read a citation from the local storage.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -135,8 +135,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.draftExists = async function(tag, version) {
-        const file = generateFilename('drafts', tag, version);
         try {
+            const file = generateFilename('drafts', tag, version);
             await pfs.stat(file);  // attempt to access the draft
             return true; // no exception, the draft exists
         } catch (cause) {
@@ -146,7 +146,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -223,8 +224,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.documentExists = async function(tag, version) {
-        const file = generateFilename('documents', tag, version);
         try {
+            const file = generateFilename('documents', tag, version);
             await pfs.stat(file);  // attempt to access the document
             return true; // no exception, the document exists
         } catch (cause) {
@@ -234,7 +235,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while checking whether or not a document exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());

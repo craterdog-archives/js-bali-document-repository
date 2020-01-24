@@ -56,7 +56,7 @@ const CachedStorage = function(storage, debug) {
         try {
             // check the cache first
             const key = generateKey(name);
-            if (cache.names && cache.names.read(key)) return true;
+            if (cache.names.read(key)) return true;
             // not found so we must check the backend storage
             return await storage.nameExists(name);
         } catch (cause) {
@@ -75,10 +75,9 @@ const CachedStorage = function(storage, debug) {
 
     this.readName = async function(name) {
         try {
-            var citation;
             // check the cache first
             const key = generateKey(name);
-            if (cache.names) citation = cache.names.read(key);
+            var citation = cache.names.read(key);
             if (!citation) {
                 // not found so we must read from the backend storage
                 citation = await storage.readName(name);
@@ -220,10 +219,9 @@ const CachedStorage = function(storage, debug) {
 
     this.readDocument = async function(tag, version) {
         try {
-            var document;
             // check the cache
             const key = generateKey(tag, version);
-            document = cache.documents.read(key);
+            var document = cache.documents.read(key);
             if (!document) {
                 // not found so we must read from the backend storage
                 document = await storage.readDocument(tag, version);

@@ -61,7 +61,7 @@ const invalidCredentials = async function(request) {
 };
 
 
-const pingName = async function(request, response) {
+const headName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
@@ -244,7 +244,7 @@ const deleteName = async function(request, response) {
 };
 
 
-const pingDraft = async function(request, response) {
+const headDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
@@ -458,7 +458,7 @@ const deleteDraft = async function(request, response) {
 };
 
 
-const pingDocument = async function(request, response) {
+const headDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
@@ -639,12 +639,12 @@ const deleteDocument = async function(request, response) {
 };
 
 
-const pingBag = async function(request, response) {
+const headBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
         if (debug > 1) console.log(message);
-        message = 'Test Service: Bags cannot be pinged.';
+        message = 'Test Service: Bags cannot be headed.';
         if (debug > 1) console.log(message);
         response.writeHead(405, message);
         response.end();
@@ -810,28 +810,28 @@ const deleteMessage = async function(request, response) {
 
 const nameRouter = express.Router();
 // Note: the leading slash is part of the named document identifier
-nameRouter.head(':identifier([a-zA-Z0-9/\\.]+)', pingName);
+nameRouter.head(':identifier([a-zA-Z0-9/\\.]+)', headName);
 nameRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getName);
 nameRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postName);
 nameRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putName);
 nameRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteName);
 
 const draftRouter = express.Router();
-draftRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDraft);
+draftRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headDraft);
 draftRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDraft);
 draftRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDraft);
 draftRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDraft);
 draftRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDraft);
 
 const documentRouter = express.Router();
-documentRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingDocument);
+documentRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headDocument);
 documentRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDocument);
 documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
 documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
 documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 
 const bagRouter = express.Router();
-bagRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', pingBag);
+bagRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headBag);
 bagRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getBag);
 bagRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postBag);
 bagRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
