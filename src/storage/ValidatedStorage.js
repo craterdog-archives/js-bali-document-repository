@@ -101,7 +101,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.writeName = async function(name, citation) {
         try {
             await validateCitation(citation);
-            await repository.writeName(name, citation);
+            return await repository.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -247,23 +247,6 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.bagExists = async function(bag) {
-        try {
-            return await repository.bagExists(bag);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$bagExists',
-                $exception: '$unexpected',
-                $repository: repository.toString(),
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.messageCount = async function(bag) {
         try {
             return await repository.messageCount(bag);
@@ -347,7 +330,7 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-            await validateDocument(document);
+            if (debug > 1) await validateDocument(document);  // recursive call
             const matches = await notary.citationMatches(citation, document);
             if (!matches) {
                 const exception = bali.exception({

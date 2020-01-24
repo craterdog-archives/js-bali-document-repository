@@ -163,9 +163,6 @@ describe('Bali Nebula™ Document Repository', function() {
                 var message = await notary.notarizeDocument(transaction);
                 citation = await notary.citeDocument(message);
 
-                // make sure the bag does not exist
-                expect(await repository.bagExists(bag)).is.false;
-
                 // make sure the message bag is empty
                 expect(await repository.messageCount(bag)).to.equal(0);
                 expect(await repository.removeMessage(bag)).to.not.exist;
@@ -178,9 +175,6 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
                 expect(await repository.messageCount(bag)).to.equal(3);
 
-                // make sure the bag does exist
-                expect(await repository.bagExists(bag)).is.true;
-
                 // debag the messages
                 expect(message.isEqualTo(await repository.removeMessage(bag))).is.true;
                 expect(await repository.messageCount(bag)).to.equal(2);
@@ -191,9 +185,6 @@ describe('Bali Nebula™ Document Repository', function() {
 
                 // make sure the message bag is empty
                 expect(await repository.removeMessage(bag)).to.not.exist;
-
-                // make sure the bag does not exist
-                expect(await repository.bagExists(bag)).is.false;
 
             });
 

@@ -164,7 +164,7 @@ const postName = async function(request, response) {
             response.end();
             return;
         }
-        const citation = bali.component(request.body);
+        var citation = bali.component(request.body);
         const tag = citation.getValue('$tag');
         const version = citation.getValue('$version');
         if (!(await repository.documentExists(tag, version))) {
@@ -174,11 +174,22 @@ const postName = async function(request, response) {
             response.end();
             return;
         }
-        await repository.writeName(name, citation);
-        message = 'Test Service: The document citation was created.';
+        citation = await repository.writeName(name, citation);
+
+        const data = citation.toString();
+        const options = {
+            'Content-Length': data.length,
+            'Content-Type': 'application/bali',
+            'Cache-Control': 'no-store'
+        };
+        message = 'Test Service: The named document citation was created.';
         if (debug > 1) console.log(message);
-        response.writeHead(201, message);
-        response.end();
+        if (debug > 2) {
+            console.log('    options: ' + bali.catalog(options));
+            console.log('    result: ' + data);
+        }
+        response.writeHead(201, message, options);
+        response.end(data);
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -363,7 +374,8 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        const data = (await repository.writeDraft(draft)).toString();
+        const citation = await repository.writeDraft(draft);
+        const data = citation.toString();
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',
@@ -561,12 +573,13 @@ const postDocument = async function(request, response) {
             response.end();
             return;
         }
-        const data = (await repository.writeDocument(document)).toString();
+        const citation = await repository.writeDocument(document);
+        const data = citation.toString();
         await repository.deleteDraft(tag, version);
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',
-            'Cache-Control': 'immutable'
+            'Cache-Control': 'no-store'
         };
         message = 'Test Service: The committed document was created.';
         if (debug > 1) console.log(message);
@@ -630,26 +643,11 @@ const pingBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const bag = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (await repository.bagExists(bag)) {
-            message = 'Test Service: The message bag exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message);
-            response.end();
-        } else {
-            message = 'Test Service: The message bag does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-        }
+        message = 'Test Service: Bags cannot be pinged.';
+        if (debug > 1) console.log(message);
+        response.writeHead(405, message);
+        response.end();
     } catch (e) {
         message = 'Test Service: The request was badly formed.';
         if (debug > 1) {
@@ -738,7 +736,8 @@ const putMessage = async function(request, response) {
             return;
         }
         message = bali.component(request.body);
-        const data = (await repository.addMessage(bag, message)).toString();
+        const citation = await repository.addMessage(bag, message);
+        const data = citation.toString();
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',

@@ -109,6 +109,7 @@ const S3Storage = function(notary, configuration, debug) {
             if (await doesExist(bucket, key)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -177,7 +178,7 @@ const S3Storage = function(notary, configuration, debug) {
             const key = generateDocumentKey(tag, version);
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
-            return notary.citeDocument(draft);
+            return await notary.citeDocument(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -272,7 +273,7 @@ const S3Storage = function(notary, configuration, debug) {
             if (await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
-            return notary.citeDocument(document);
+            return await notary.citeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -281,26 +282,6 @@ const S3Storage = function(notary, configuration, debug) {
                 $configuration: configuration,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.bagExists = async function(bag) {
-        try {
-            const bucket = configuration.bags;
-            const key = generateBagKey(bag);
-            const list = await listObjects(bucket, key);
-            return list.length > 0;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$bagExists',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -334,7 +315,7 @@ const S3Storage = function(notary, configuration, debug) {
             const key = generateMessageKey(bag, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
-            return notary.citeDocument(message);
+            return await notary.citeDocument(message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',

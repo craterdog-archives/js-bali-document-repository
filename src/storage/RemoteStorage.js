@@ -78,7 +78,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.readName = async function(name) {
         try {
-            const response = await sendRequest('GET', 'names', name, undefined, undefined);
+            const response = await sendRequest('GET', 'names', name);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -90,7 +90,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $exception: '$unexpected',
                 $uri: uri,
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to read a citation from the repository.'
+                $text: 'An unexpected error occurred while attempting to read a document from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -101,6 +101,7 @@ const RemoteStorage = function(notary, uri, debug) {
         try {
             const response = await sendRequest('POST', 'names', name, undefined, citation);
             if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
@@ -137,7 +138,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.readDraft = async function(tag, version) {
         try {
-            const response = await sendRequest('GET', 'drafts', tag, version, undefined);
+            const response = await sendRequest('GET', 'drafts', tag, version);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -181,7 +182,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.deleteDraft = async function(tag, version) {
         try {
-            const response = await sendRequest('DELETE', 'drafts', tag, version, undefined);
+            const response = await sendRequest('DELETE', 'drafts', tag, version);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -222,7 +223,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.readDocument = async function(tag, version) {
         try {
-            const response = await sendRequest('GET', 'documents', tag, version, undefined);
+            const response = await sendRequest('GET', 'documents', tag, version);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -264,27 +265,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.bagExists = async function(bag) {
-        try {
-            const response = await sendRequest('HEAD', 'bags', bag, undefined, undefined);
-            return response.status === 200;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$bagExists',
-                $exception: '$unexpected',
-                $uri: uri,
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
     this.messageCount = async function(bag) {
         try {
-            const response = await sendRequest('GET', 'bags', bag, undefined, undefined);
+            const response = await sendRequest('GET', 'bags', bag);
             return Number(response.data.toString('utf8'));
         } catch (cause) {
             const exception = bali.exception({
@@ -323,7 +306,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.removeMessage = async function(bag) {
         try {
-            const response = await sendRequest('DELETE', 'bags', bag, undefined, undefined);
+            const response = await sendRequest('DELETE', 'bags', bag);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);

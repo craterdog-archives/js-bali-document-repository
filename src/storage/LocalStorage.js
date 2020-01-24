@@ -113,18 +113,19 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.writeName = async function(name, citation) {
-        const file = generateFilename('names', name);
         try {
+            const file = generateFilename('names', name);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeName',
                 $exception: '$unexpected',
-                $file: file,
+                $name: name,
                 $citation: citation,
                 $text: 'An unexpected error occurred while attempting to write a citation to the local storage.'
             }, cause);
@@ -154,8 +155,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.readDraft = async function(tag, version) {
-        const file = generateFilename('drafts', tag, version);
         try {
+            const file = generateFilename('drafts', tag, version);
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
         } catch (cause) {
@@ -165,7 +166,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readDraft',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to read a draft from the local storage.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -176,19 +178,20 @@ const LocalStorage = function(notary, root, debug) {
     this.writeDraft = async function(draft) {
         const tag = draft.getValue('$content').getParameter('$tag');
         const version = draft.getValue('$content').getParameter('$version');
-        const file = generateFilename('drafts', tag, version);
         try {
+            const file = generateFilename('drafts', tag, version);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
-            return notary.citeDocument(draft);
+            return await notary.citeDocument(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDraft',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $draft: draft,
                 $text: 'An unexpected error occurred while attempting to write a draft to the local storage.'
             }, cause);
@@ -198,8 +201,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.deleteDraft = async function(tag, version) {
-        const file = generateFilename('drafts', tag, version);
         try {
+            const file = generateFilename('drafts', tag, version);
             const source = await pfs.readFile(file, 'utf8');
             await pfs.unlink(file);  // delete the draft
             return bali.component(source);  // the draft was deleted
@@ -210,7 +213,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to delete a draft from the local storage.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -239,8 +243,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.readDocument = async function(tag, version) {
-        const file = generateFilename('documents', tag, version);
         try {
+            const file = generateFilename('documents', tag, version);
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
         } catch (cause) {
@@ -250,7 +254,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to read a document from the local storage.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -261,41 +266,22 @@ const LocalStorage = function(notary, root, debug) {
     this.writeDocument = async function(document) {
         const tag = document.getValue('$content').getParameter('$tag');
         const version = document.getValue('$content').getParameter('$version');
-        const file = generateFilename('documents', tag, version);
         try {
+            const file = generateFilename('documents', tag, version);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
-            return notary.citeDocument(document);
+            return await notary.citeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$writeDocument',
                 $exception: '$unexpected',
-                $file: file,
+                $tag: tag,
+                $version: version,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to write a document to the local storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    this.bagExists = async function(bag) {
-        const path = generatePath('bags', bag);
-        try {
-            await pfs.stat(path);  // attempt to access the message bag
-            return true; // no exception, the message bag exists
-        } catch (cause) {
-            if (cause.code === 'ENOENT') return false; // the message bag does not exist
-            // something else went wrong
-            const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
-                $procedure: '$bagExists',
-                $exception: '$unexpected',
-                $path: path,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;
@@ -324,19 +310,19 @@ const LocalStorage = function(notary, root, debug) {
 
     this.addMessage = async function(bag, message) {
         const identifier = bali.tag().getValue();  // strip off the leading '#'
-        const file = generateFilename('bags', bag, identifier);
         try {
+            const file = generateFilename('bags', bag, identifier);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
-            return notary.citeDocument(message);
+            return await notary.citeDocument(message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
-                $file: file,
+                $bag: bag,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -346,8 +332,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.removeMessage = async function(bag) {
-        const path = generatePath('bags', bag);
         try {
+            const path = generatePath('bags', bag);
             const files = await pfs.readdir(path, 'utf8');
             if (files.length) {
                 const messages = bali.list(files);
@@ -368,7 +354,7 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $file: file,
+                $bag: bag,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());

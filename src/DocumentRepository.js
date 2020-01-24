@@ -84,12 +84,11 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method attempts to retrieve the document citation associated with the specified
-     * name from the document repository.
+     * This method attempts to retrieve the document associated with the specified name from the
+     * document repository.
      *
-     * @param {Name} name The unique name for the document citation being fetched.
-     * @returns {Catalog} A catalog containing the document citation or nothing if it doesn't
-     * exist.
+     * @param {Name} name The unique name for the document being fetched.
+     * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
      */
     this.readName = async function(name) {
         try {
@@ -106,7 +105,7 @@ const DocumentRepository = function(storage, debug) {
                 $procedure: '$readName',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to fetch a citation.'
+                $text: 'An unexpected error occurred while attempting to fetch a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -131,7 +130,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeName(name, citation);
+            return await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -371,35 +370,6 @@ const DocumentRepository = function(storage, debug) {
                 $exception: '$unexpected',
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to create a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method checks to see whether or not the specified message bag exists in the
-     * document repository.
-     *
-     * @param {Tag} bag The unique tag for the message bag.
-     * @returns {Boolean} Whether or not the message bag exists.
-     */
-    this.bagExists = async function(bag) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
-                    '/bali/elements/Tag'
-                ]);
-            }
-            return await storage.bagExists(bag);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$bagExists',
-                $exception: '$unexpected',
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check whether or not a message bag exists.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
