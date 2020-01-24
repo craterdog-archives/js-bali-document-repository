@@ -80,13 +80,22 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.readName = async function(name) {
         try {
-            const bucket = configuration.names;
-            const key = generateNameKey(name);
-            const object = await getObject(bucket, key);
+            var bucket = configuration.names;
+            var key = generateNameKey(name);
+            var object = await getObject(bucket, key);
             if (object) {
-                const source = object.toString();
+                var source = object.toString();
                 const citation = bali.component(source);
-                return citation;
+                bucket = configuration.documents;
+                const tag = citation.getValue('$tag');
+                const version = citation.getValue('$version');
+                key = generateDocumentKey(tag, version);
+                object = await getObject(bucket, key);
+                if (object) {
+                    source = object.toString();
+                    const document = bali.component(source);
+                    return document;
+                }
             }
         } catch (cause) {
             const exception = bali.exception({

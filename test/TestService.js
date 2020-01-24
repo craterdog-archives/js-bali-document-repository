@@ -110,21 +110,21 @@ const getName = async function(request, response) {
             response.end();
             return;
         }
-        const citation = await repository.readName(name);
-        if (!citation) {
-            message = 'Test Service: The document citation does not exist.';
+        const document = await repository.readName(name);
+        if (!document) {
+            message = 'Test Service: The named document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
             response.end();
             return;
         }
-        const data = citation.toString();
+        const data = document.toString();
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',
             'Cache-Control': 'immutable'
         };
-        message = 'Test Service: The document citation was retrieved.';
+        message = 'Test Service: The named document was retrieved.';
         if (debug > 1) console.log(message);
         if (debug > 2) {
             console.log('    options: ' + bali.catalog(options));

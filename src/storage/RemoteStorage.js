@@ -81,7 +81,8 @@ const RemoteStorage = function(notary, uri, debug) {
             const response = await sendRequest('GET', 'names', name);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
-                return bali.component(source);
+                const document = bali.component(source);
+                return document;
             }
         } catch (cause) {
             const exception = bali.exception({

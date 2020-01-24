@@ -94,18 +94,26 @@ const LocalStorage = function(notary, root, debug) {
 
     this.readName = async function(name) {
         try {
-            const file = generateFilename('names', name);
-            const source = await pfs.readFile(file, 'utf8');
-            return bali.component(source);
+            var file = generateFilename('names', name);
+            var source = await pfs.readFile(file, 'utf8');
+            const citation = bali.component(source);
+            if (citation) {
+                const tag = citation.getValue('$tag');
+                const version = citation.getValue('$version');
+                file = generateFilename('documents', tag, version);
+                var source = await pfs.readFile(file, 'utf8');
+                const document = bali.component(source);
+                return document;
+            }
         } catch (cause) {
-            if (cause.code === 'ENOENT') return undefined; // the citation does not exist
+            if (cause.code === 'ENOENT') return undefined; // the document does not exist
             // something else went wrong
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$readName',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to read a citation from the local storage.'
+                $text: 'An unexpected error occurred while attempting to read a document from the local storage.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

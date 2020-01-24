@@ -77,14 +77,14 @@ const CachedStorage = function(storage, debug) {
         try {
             // check the cache first
             const key = generateKey(name);
-            var citation = cache.names.read(key);
-            if (!citation) {
+            var document = cache.names.read(key);
+            if (!document) {
                 // not found so we must read from the backend storage
-                citation = await storage.readName(name);
-                // add the citation to the cache if it is immutable
-                if (citation && cache.names) cache.names.write(name, citation);
+                document = await storage.readName(name);
+                // add the document to the cache
+                if (document) cache.names.write(name, document);
             }
-            return citation;
+            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
@@ -92,7 +92,7 @@ const CachedStorage = function(storage, debug) {
                 $exception: '$unexpected',
                 $storage: storage.toString(),
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to read a citation from the storage.'
+                $text: 'An unexpected error occurred while attempting to read a document from the storage.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
             throw exception;

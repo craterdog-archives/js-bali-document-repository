@@ -81,9 +81,9 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.readName = async function(name) {
         try {
-            const citation = await repository.readName(name);
-            if (citation) await validateCitation(citation);
-            return citation;
+            const document = await repository.readName(name);
+            if (document) await validateDocument(document);
+            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',

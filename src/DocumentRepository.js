@@ -55,8 +55,8 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not a document citation associated with the specified
-     * name exists in the document repository.
+     * This method checks to see whether or not a document in the document repository is
+     * associated with the specified name.
      *
      * @param {Name} name The unique name for the document citation being checked.
      * @returns {Boolean} Whether or not the document citation exists.
@@ -87,7 +87,7 @@ const DocumentRepository = function(storage, debug) {
      * This method attempts to retrieve the document associated with the specified name from the
      * document repository.
      *
-     * @param {Name} name The unique name for the document being fetched.
+     * @param {Name} name The unique name for the document being retrieved.
      * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
      */
     this.readName = async function(name) {
@@ -105,7 +105,7 @@ const DocumentRepository = function(storage, debug) {
                 $procedure: '$readName',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to fetch a document.'
+                $text: 'An unexpected error occurred while attempting to retrieved a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -113,10 +113,10 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method associates a new name with the specified document citation in
-     * the document repository.
+     * This method associates a new name with a document in the document repository that is
+     * cited by the specified document citation.
      *
-     * @param {Name} name The unique name for the specified document citation.
+     * @param {Name} name The unique name for the document.
      * @param {Catalog} citation A catalog containing the document citation.
      */
     this.writeName = async function(name, citation) {
