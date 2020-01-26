@@ -100,7 +100,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeName = async function(name, citation) {
         try {
-            const response = await sendRequest('POST', 'names', name, undefined, citation);
+            const response = await sendRequest('PUT', 'names', name, undefined, citation);
             if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
             return citation;
         } catch (cause) {
@@ -248,7 +248,7 @@ const RemoteStorage = function(notary, uri, debug) {
         try {
             const tag = document.getValue('$content').getParameter('$tag');
             const version = document.getValue('$content').getParameter('$version');
-            const response = await sendRequest('POST', 'documents', tag, version, document);
+            const response = await sendRequest('PUT', 'documents', tag, version, document);
             if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new document
@@ -286,7 +286,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.addMessage = async function(bag, message) {
         try {
-            const response = await sendRequest('PUT', 'messages', bag, undefined, message);
+            const response = await sendRequest('POST', 'messages', bag, undefined, message);
             if (response.status > 299) throw Error('Unable to bag the message: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new message

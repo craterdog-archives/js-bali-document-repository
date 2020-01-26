@@ -144,10 +144,10 @@ const getName = async function(request, response) {
 };
 
 
-const postName = async function(request, response) {
+const putName = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         const name = extractName(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
@@ -202,10 +202,10 @@ const postName = async function(request, response) {
 };
 
 
-const putName = async function(request, response) {
+const postName = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
         message = 'Test Service: Document names cannot be updated.';
         if (debug > 1) console.log(message);
@@ -543,11 +543,11 @@ const getDocument = async function(request, response) {
 };
 
 
-const postDocument = async function(request, response) {
+const putDocument = async function(request, response) {
     var message;
     try {
         const document = bali.component(request.body);
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + document;
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + document;
         const tag = extractTag(request.params.identifier);
         const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
@@ -597,10 +597,10 @@ const postDocument = async function(request, response) {
 };
 
 
-const putDocument = async function(request, response) {
+const postDocument = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
         message = 'Test Service: Notarized documents cannot be updated.';
         if (debug > 1) console.log(message);
@@ -701,10 +701,10 @@ const getBag = async function(request, response) {
 };
 
 
-const postBag = async function(request, response) {
+const putBag = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
         if (debug > 1) console.log(message);
         message = 'Test Service: Bags are created and deleted automatically.';
         if (debug > 1) console.log(message);
@@ -722,10 +722,10 @@ const postBag = async function(request, response) {
 };
 
 
-const putMessage = async function(request, response) {
+const postMessage = async function(request, response) {
     var message;
     try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
+        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
         const bag = bali.tag(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
@@ -833,8 +833,8 @@ documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
 const bagRouter = express.Router();
 bagRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headBag);
 bagRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getBag);
-bagRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postBag);
-bagRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putMessage);
+bagRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postMessage);
+bagRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putBag);
 bagRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
 
 const service = express();
