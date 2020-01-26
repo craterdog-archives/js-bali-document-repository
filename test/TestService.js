@@ -843,7 +843,7 @@ service.use(bodyParser.text({ type: 'application/bali' }));
 service.use('/names', nameRouter);
 service.use('/drafts', draftRouter);
 service.use('/documents', documentRouter);
-service.use('/bags', bagRouter);
+service.use('/messages', bagRouter);
 
 service.listen(3000, function() {
     var message = 'Service: Server running on port 3000';

@@ -301,7 +301,7 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.messageCount = async function(bag) {
         try {
-            const bucket = configuration.bags;
+            const bucket = configuration.messages;
             const key = generateBagKey(bag);
             const list = await listObjects(bucket, key);
             return list.length;
@@ -322,7 +322,7 @@ const S3Storage = function(notary, configuration, debug) {
     this.addMessage = async function(bag, message) {
         const identifier = bali.tag();
         try {
-            const bucket = configuration.bags;
+            const bucket = configuration.messages;
             const key = generateMessageKey(bag, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
@@ -346,7 +346,7 @@ const S3Storage = function(notary, configuration, debug) {
     this.removeMessage = async function(bag) {
         try {
             while (true) {
-                const bucket = configuration.bags;
+                const bucket = configuration.messages;
                 var key = generateBagKey(bag);
                 const list = await listObjects(bucket, key);
                 const count = list.length;

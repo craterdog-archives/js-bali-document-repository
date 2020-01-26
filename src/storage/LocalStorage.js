@@ -301,7 +301,7 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.messageCount = async function(bag) {
-        const path = generatePath('bags', bag);
+        const path = generatePath('messages', bag);
         try {
             const files = await pfs.readdir(path, 'utf8');
             return files.length;
@@ -323,7 +323,7 @@ const LocalStorage = function(notary, root, debug) {
     this.addMessage = async function(bag, message) {
         const identifier = bali.tag().getValue();  // strip off the leading '#'
         try {
-            const file = generateFilename('bags', bag, identifier);
+            const file = generateFilename('messages', bag, identifier);
             const path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
@@ -345,7 +345,7 @@ const LocalStorage = function(notary, root, debug) {
 
     this.removeMessage = async function(bag) {
         try {
-            const path = generatePath('bags', bag);
+            const path = generatePath('messages', bag);
             const files = await pfs.readdir(path, 'utf8');
             if (files.length) {
                 const messages = bali.list(files);

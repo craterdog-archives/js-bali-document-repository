@@ -268,7 +268,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.messageCount = async function(bag) {
         try {
-            const response = await sendRequest('GET', 'bags', bag);
+            const response = await sendRequest('GET', 'messages', bag);
             return Number(response.data.toString('utf8'));
         } catch (cause) {
             const exception = bali.exception({
@@ -286,7 +286,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.addMessage = async function(bag, message) {
         try {
-            const response = await sendRequest('PUT', 'bags', bag, undefined, message);
+            const response = await sendRequest('PUT', 'messages', bag, undefined, message);
             if (response.status > 299) throw Error('Unable to bag the message: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new message
@@ -307,7 +307,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.removeMessage = async function(bag) {
         try {
-            const response = await sendRequest('DELETE', 'bags', bag);
+            const response = await sendRequest('DELETE', 'messages', bag);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
