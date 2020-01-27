@@ -270,17 +270,18 @@ const CachedStorage = function(storage, debug) {
         }
     };
 
-    this.messageCount = async function(bag) {
+    this.messageCount = async function(tag, version) {
         try {
             // pass-through, messages are not cached
-            return await storage.messageCount(bag);
+            return await storage.messageCount(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -288,18 +289,18 @@ const CachedStorage = function(storage, debug) {
         }
     };
 
-    this.addMessage = async function(bag, document) {
+    this.addMessage = async function(tag, version, document) {
         try {
             // pass-through, messages are not cached
-            return await storage.addMessage(bag, document);
+            return await storage.addMessage(tag, version, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $bag: bag,
-                $identifier: identifier,
+                $tag: tag,
+                $version: version,
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -308,17 +309,18 @@ const CachedStorage = function(storage, debug) {
         }
     };
 
-    this.removeMessage = async function(bag) {
+    this.removeMessage = async function(tag, version) {
         try {
             // pass-through, messages are not cached
-            return await storage.removeMessage(bag);
+            return await storage.removeMessage(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/CachedStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $storage: storage.toString(),
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());

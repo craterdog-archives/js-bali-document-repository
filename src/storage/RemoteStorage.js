@@ -266,9 +266,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.messageCount = async function(bag) {
+    this.messageCount = async function(tag, version) {
         try {
-            const response = await sendRequest('GET', 'messages', bag);
+            const response = await sendRequest('GET', 'messages', tag, version);
             return Number(response.data.toString('utf8'));
         } catch (cause) {
             const exception = bali.exception({
@@ -276,7 +276,8 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $uri: uri,
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -284,9 +285,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.addMessage = async function(bag, message) {
+    this.addMessage = async function(tag, version, message) {
         try {
-            const response = await sendRequest('POST', 'messages', bag, undefined, message);
+            const response = await sendRequest('POST', 'messages', tag, version, message);
             if (response.status > 299) throw Error('Unable to bag the message: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new message
@@ -296,7 +297,8 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $uri: uri,
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -305,9 +307,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.removeMessage = async function(bag) {
+    this.removeMessage = async function(tag, version) {
         try {
-            const response = await sendRequest('DELETE', 'messages', bag);
+            const response = await sendRequest('DELETE', 'messages', tag, version);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -318,7 +320,8 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $uri: uri,
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());

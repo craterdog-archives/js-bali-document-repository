@@ -380,24 +380,29 @@ const DocumentRepository = function(storage, debug) {
      * This method the current number of messages that are in the specified message bag in the
      * document repository.
      *
-     * @param {Tag} bag The unique tag for the message bag.
+     * @param {Tag} tag The unique tag for the message bag.
+     * @param {Version} version The version string for the message bag.
      * @returns {Number} The number of messages that are currently in the message bag.
      */
-    this.messageCount = async function(bag) {
+    this.messageCount = async function(tag, version) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$version', version, [
+                    '/bali/elements/Version'
+                ]);
             }
-            return await storage.messageCount(bag);
+            return await storage.messageCount(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug) console.error(exception.toString());
@@ -410,27 +415,32 @@ const DocumentRepository = function(storage, debug) {
      * If the bag does not exist it will be created. If it is called multiple times with
      * the same message, multiple copies of the message are placed in the bag.
      *
-     * @param {Tag} bag The unique tag for the message bag.
+     * @param {Tag} tag The unique tag for the message bag.
+     * @param {Version} version The version string for the message bag.
      * @param {Catalog} message A catalog containing the message to be added.
      */
-    this.addMessage = async function(bag, message) {
+    this.addMessage = async function(tag, version, message) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$tag', tag, [
                     '/bali/elements/Tag'
+                ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$version', version, [
+                    '/bali/elements/Version'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.addMessage(bag, message);
+            return await storage.addMessage(tag, version, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to bag a message.'
             }, cause);
@@ -443,24 +453,29 @@ const DocumentRepository = function(storage, debug) {
      * This method removes a randomly chosen message from the specified bag in the
      * document repository. If the bag is empty, nothing is returned.
      *
-     * @param {Tag} bag The unique tag for the message bag.
+     * @param {Tag} tag The unique tag for the message bag.
+     * @param {Version} version The version string for the message bag.
      * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
      */
-    this.removeMessage = async function(bag) {
+    this.removeMessage = async function(tag, version) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$tag', tag, [
                     '/bali/elements/Tag'
                 ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$version', version, [
+                    '/bali/elements/Version'
+                ]);
             }
-            return await storage.removeMessage(bag);
+            return await storage.removeMessage(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to remove a message.'
             }, cause);
             if (debug) console.error(exception.toString());

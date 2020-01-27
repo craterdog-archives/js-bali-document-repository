@@ -299,10 +299,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.messageCount = async function(bag) {
+    this.messageCount = async function(tag, version) {
         try {
             const bucket = configuration.messages;
-            const key = generateBagKey(bag);
+            const key = generateBagKey(tag, version);
             const list = await listObjects(bucket, key);
             return list.length;
         } catch (cause) {
@@ -311,7 +311,8 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -319,11 +320,11 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.addMessage = async function(bag, message) {
-        const identifier = bali.tag();
+    this.addMessage = async function(tag, version, message) {
         try {
+            const identifier = message.getValue('$content').getParameter('$tag');
             const bucket = configuration.messages;
-            const key = generateMessageKey(bag, identifier);
+            const key = generateMessageKey(tag, version, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
             return await notary.citeDocument(message);
@@ -333,8 +334,8 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $bag: bag,
-                $identifier: identifier,
+                $tag: tag,
+                $version: version,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -343,11 +344,11 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.removeMessage = async function(bag) {
+    this.removeMessage = async function(tag, version) {
         try {
             while (true) {
                 const bucket = configuration.messages;
-                var key = generateBagKey(bag);
+                var key = generateBagKey(tag, version);
                 const list = await listObjects(bucket, key);
                 const count = list.length;
                 if (count === 0) break;  // no more messages
@@ -371,7 +372,8 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -392,12 +394,15 @@ const S3Storage = function(notary, configuration, debug) {
         return key;
     };
 
-    const generateBagKey = function(bag) {
-        return bag.toString().slice(1);  // remove the leading '#'
+    const generateBagKey = function(tag, version) {
+        var key = tag.toString().slice(1);  // remove the leading '#'
+        key += '/' + version.toString();
+        return key;
     };
 
-    const generateMessageKey = function(bag, identifier) {
-        var key = bag.toString().slice(1);  // remove the leading '#'
+    const generateMessageKey = function(tag, version, identifier) {
+        var key = tag.toString().slice(1);  // remove the leading '#'
+        key += '/' + version.toString();
         key += '/' + identifier.toString().slice(1);  // remove the leading '#'
         key += '.bali';
         return key;

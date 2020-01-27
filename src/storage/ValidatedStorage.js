@@ -247,16 +247,17 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.messageCount = async function(bag) {
+    this.messageCount = async function(tag, version) {
         try {
-            return await repository.messageCount(bag);
+            return await repository.messageCount(tag, version);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -264,17 +265,18 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.addMessage = async function(bag, message) {
+    this.addMessage = async function(tag, version, message) {
         try {
             await validateMessage(message);
-            return await repository.addMessage(bag, message);
+            return await repository.addMessage(tag, version, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -283,9 +285,9 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-    this.removeMessage = async function(bag) {
+    this.removeMessage = async function(tag, version) {
         try {
-            const message = await repository.removeMessage(bag);
+            const message = await repository.removeMessage(tag, version);
             if (message) await validateMessage(message);
             return message;
         } catch (cause) {
@@ -294,7 +296,8 @@ const ValidatedStorage = function(notary, repository, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $repository: repository.toString(),
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());

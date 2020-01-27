@@ -159,32 +159,72 @@ describe('Bali Nebula™ Document Repository', function() {
             });
 
             it('should perform a message bag lifecycle', async function() {
-                const bag = bali.tag();
-                var message = await notary.notarizeDocument(transaction);
+                // create the bag
+                const tag = bali.tag();
+                const version = bali.version();
+                const bag = await notary.notarizeDocument(bali.catalog({
+                        $description: 'This is an example bag.'
+                    }, {
+                        $type: '/bali/examples/Bag/v1',
+                        $tag: tag,
+                        $version: version,
+                        $permissions: '/bali/permissions/public/v1',
+                        $previous: bali.pattern.NONE
+                    })
+                );
+                await repository.writeDocument(bag);
+
+                // make sure the message bag is empty
+                expect(await repository.messageCount(tag, version)).to.equal(0);
+                expect(await repository.removeMessage(tag, version)).to.not.exist;
+
+                // add some messages to the bag
+                const generateMessage = async function(count) {
+                    const content = bali.catalog({
+                        $count: count
+                    }, {
+                        $type: '/bali/examples/Message/v1',
+                        $tag: bali.tag(),
+                        $version: bali.version(),
+                        $permissions: '/bali/permissions/public/v1',
+                        $previous: bali.pattern.NONE
+                    });
+                    return await notary.notarizeDocument(content);
+                };
+
+                var message = await generateMessage(1);
+                if (debug > 0) console.log('message 1: ' + message);
                 citation = await notary.citeDocument(message);
+                expect(citation.isEqualTo(await repository.addMessage(tag, version, message))).is.true;
+                expect(await repository.messageCount(tag, version)).to.equal(1);
+
+                message = await generateMessage(2);
+                if (debug > 0) console.log('message 2: ' + message);
+                citation = await notary.citeDocument(message);
+                expect(citation.isEqualTo(await repository.addMessage(tag, version, message))).is.true;
+                expect(await repository.messageCount(tag, version)).to.equal(2);
+
+                message = await generateMessage(3);
+                if (debug > 0) console.log('message 3: ' + message);
+                citation = await notary.citeDocument(message);
+                expect(citation.isEqualTo(await repository.addMessage(tag, version, message))).is.true;
+                expect(await repository.messageCount(tag, version)).to.equal(3);
+
+                // remove the messages from the bag
+                message = await repository.removeMessage(tag, version);
+                if (debug > 0) console.log('message 1: ' + message);
+                expect(await repository.messageCount(tag, version)).to.equal(2);
+
+                message = await repository.removeMessage(tag, version);
+                if (debug > 0) console.log('message 2: ' + message);
+                expect(await repository.messageCount(tag, version)).to.equal(1);
+
+                message = await repository.removeMessage(tag, version);
+                if (debug > 0) console.log('message 3: ' + message);
+                expect(await repository.messageCount(tag, version)).to.equal(0);
 
                 // make sure the message bag is empty
-                expect(await repository.messageCount(bag)).to.equal(0);
-                expect(await repository.removeMessage(bag)).to.not.exist;
-
-                // add some messages
-                expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
-                expect(await repository.messageCount(bag)).to.equal(1);
-                expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
-                expect(await repository.messageCount(bag)).to.equal(2);
-                expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
-                expect(await repository.messageCount(bag)).to.equal(3);
-
-                // remove the messages
-                expect(message.isEqualTo(await repository.removeMessage(bag))).is.true;
-                expect(await repository.messageCount(bag)).to.equal(2);
-                expect(message.isEqualTo(await repository.removeMessage(bag))).is.true;
-                expect(await repository.messageCount(bag)).to.equal(1);
-                expect(message.isEqualTo(await repository.removeMessage(bag))).is.true;
-                expect(await repository.messageCount(bag)).to.equal(0);
-
-                // make sure the message bag is empty
-                expect(await repository.removeMessage(bag)).to.not.exist;
+                expect(await repository.removeMessage(tag, version)).to.not.exist;
 
             });
 

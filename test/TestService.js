@@ -664,7 +664,8 @@ const getBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const bag = bali.tag(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -673,7 +674,7 @@ const getBag = async function(request, response) {
             response.end();
             return;
         }
-        const count = await repository.messageCount(bag);
+        const count = await repository.messageCount(tag, version);
         if (debug > 1) console.log(message);
         const data = count.toString();
         const options = {
@@ -726,7 +727,8 @@ const postMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        const bag = bali.tag(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -736,7 +738,7 @@ const postMessage = async function(request, response) {
             return;
         }
         message = bali.component(request.body);
-        const citation = await repository.addMessage(bag, message);
+        const citation = await repository.addMessage(tag, version, message);
         const data = citation.toString();
         const options = {
             'Content-Length': data.length,
@@ -763,7 +765,8 @@ const deleteMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        const bag = bali.tag(request.params.identifier);
+        const tag = extractTag(request.params.identifier);
+        const version = extractVersion(request.params.identifier);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -772,7 +775,7 @@ const deleteMessage = async function(request, response) {
             response.end();
             return;
         }
-        message = await repository.removeMessage(bag);
+        message = await repository.removeMessage(tag, version);
         if (message) {
             const data = message.toString();
             const options = {

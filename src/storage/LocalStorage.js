@@ -74,7 +74,8 @@ const LocalStorage = function(notary, root, debug) {
 
     this.nameExists = async function(name) {
         try {
-            const file = generateFilename('names', name);
+            const path = generatePath(['names']);
+            const file = generateFilename(path, name.toString());
             await pfs.stat(file);  // attempt to access the citation
             return true; // no exception, the citation exists
         } catch (cause) {
@@ -94,13 +95,15 @@ const LocalStorage = function(notary, root, debug) {
 
     this.readName = async function(name) {
         try {
-            var file = generateFilename('names', name);
+            var path = generatePath(['names']);
+            var file = generateFilename(path, name.toString());
             var source = await pfs.readFile(file, 'utf8');
             const citation = bali.component(source);
             if (citation) {
                 const tag = citation.getValue('$tag');
                 const version = citation.getValue('$version');
-                file = generateFilename('documents', tag, version);
+                path = generatePath(['documents', tag.toString().slice(1)]);
+                file = generateFilename(path, version.toString());
                 var source = await pfs.readFile(file, 'utf8');
                 const document = bali.component(source);
                 const matches = await notary.citationMatches(citation, document);
@@ -124,8 +127,9 @@ const LocalStorage = function(notary, root, debug) {
 
     this.writeName = async function(name, citation) {
         try {
-            const file = generateFilename('names', name);
-            const path = file.slice(0, file.lastIndexOf('/'));
+            var path = generatePath(['names']);
+            const file = generateFilename(path, name.toString());
+            path = file.slice(0, file.lastIndexOf('/'));
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
@@ -146,7 +150,8 @@ const LocalStorage = function(notary, root, debug) {
 
     this.draftExists = async function(tag, version) {
         try {
-            const file = generateFilename('drafts', tag, version);
+            const path = generatePath(['drafts', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             await pfs.stat(file);  // attempt to access the draft
             return true; // no exception, the draft exists
         } catch (cause) {
@@ -167,7 +172,8 @@ const LocalStorage = function(notary, root, debug) {
 
     this.readDraft = async function(tag, version) {
         try {
-            const file = generateFilename('drafts', tag, version);
+            const path = generatePath(['drafts', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
         } catch (cause) {
@@ -190,8 +196,8 @@ const LocalStorage = function(notary, root, debug) {
         const tag = draft.getValue('$content').getParameter('$tag');
         const version = draft.getValue('$content').getParameter('$version');
         try {
-            const file = generateFilename('drafts', tag, version);
-            const path = file.slice(0, file.lastIndexOf('/'));
+            const path = generatePath(['drafts', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
@@ -213,9 +219,15 @@ const LocalStorage = function(notary, root, debug) {
 
     this.deleteDraft = async function(tag, version) {
         try {
-            const file = generateFilename('drafts', tag, version);
+            const path = generatePath(['drafts', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             const source = await pfs.readFile(file, 'utf8');
             await pfs.unlink(file);  // delete the draft
+            try {
+                await pfs.rmdir(path);  // attempt to remove the tag directory if no more versions
+            } catch (cause) {
+                // ignore
+            }
             return bali.component(source);  // the draft was deleted
         } catch (cause) {
             if (cause.code === 'ENOENT') return undefined; // the draft did not exist
@@ -235,7 +247,8 @@ const LocalStorage = function(notary, root, debug) {
 
     this.documentExists = async function(tag, version) {
         try {
-            const file = generateFilename('documents', tag, version);
+            const path = generatePath(['documents', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             await pfs.stat(file);  // attempt to access the document
             return true; // no exception, the document exists
         } catch (cause) {
@@ -256,7 +269,8 @@ const LocalStorage = function(notary, root, debug) {
 
     this.readDocument = async function(tag, version) {
         try {
-            const file = generateFilename('documents', tag, version);
+            const path = generatePath(['documents', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             const source = await pfs.readFile(file, 'utf8');
             return bali.component(source);
         } catch (cause) {
@@ -279,8 +293,8 @@ const LocalStorage = function(notary, root, debug) {
         const tag = document.getValue('$content').getParameter('$tag');
         const version = document.getValue('$content').getParameter('$version');
         try {
-            const file = generateFilename('documents', tag, version);
-            const path = file.slice(0, file.lastIndexOf('/'));
+            const path = generatePath(['documents', tag.toString().slice(1)]);
+            const file = generateFilename(path, version.toString());
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o400});
@@ -300,9 +314,9 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    this.messageCount = async function(bag) {
-        const path = generatePath('messages', bag);
+    this.messageCount = async function(tag, version) {
         try {
+            const path = generatePath(['messages', tag.toString().slice(1), version.toString()]);
             const files = await pfs.readdir(path, 'utf8');
             return files.length;
         } catch (cause) {
@@ -312,7 +326,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
-                $path: path,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -320,12 +335,12 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    this.addMessage = async function(bag, message) {
-        const identifier = bali.tag().getValue();  // strip off the leading '#'
+    this.addMessage = async function(tag, version, message) {
         try {
-            const file = generateFilename('messages', bag, identifier);
-            const path = file.slice(0, file.lastIndexOf('/'));
+            const identifier = message.getValue('$content').getParameter('$tag');
+            const path = generatePath(['messages', tag.toString().slice(1), version.toString()]);
             await pfs.mkdir(path, {recursive: true, mode: 0o700});
+            const file = generateFilename(path, identifier.toString().slice(1));
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await pfs.writeFile(file, source, {encoding: 'utf8', mode: 0o600});
             return await notary.citeDocument(message);
@@ -334,7 +349,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -343,9 +359,9 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    this.removeMessage = async function(bag) {
+    this.removeMessage = async function(tag, version) {
         try {
-            const path = generatePath('messages', bag);
+            var path = generatePath(['messages', tag.toString().slice(1), version.toString()]);
             const files = await pfs.readdir(path, 'utf8');
             if (files.length) {
                 const messages = bali.list(files);
@@ -354,10 +370,26 @@ const LocalStorage = function(notary, root, debug) {
                 const file = path + '/' + messages.getItem(index).getValue();
                 const source = await pfs.readFile(file, 'utf8');
                 await pfs.unlink(file);  // delete the file
-                if (files.length === 1) await pfs.rmdir(path);  // last message was removed
+                if (files.length === 1) {
+                    // the last message was removed
+                    await pfs.rmdir(path);  // remove the version directory
+                    path = file.slice(0, path.lastIndexOf('/'));  // slice off the trailing version
+                    try {
+                        await pfs.rmdir(path);  // attempt to remove the tag directory if no more versions
+                    } catch (cause) {
+                        // ignore
+                    }
+                }
                 return bali.component(source);
             } else {
-                await pfs.rmdir(path);  // remove the empty directory
+                // the bag is empty
+                await pfs.rmdir(path);  // remove the version directory
+                path = file.slice(0, file.lastIndexOf('/'));  // slice off the trailing version
+                try {
+                    await pfs.rmdir(path);  // attempt to remove the tag directory if no more versions
+                } catch (cause) {
+                    // ignore
+                }
             }
         } catch (cause) {
             if (cause.code === 'ENOENT') return undefined; // the directory does not exist
@@ -366,7 +398,8 @@ const LocalStorage = function(notary, root, debug) {
                 $module: '/bali/repositories/LocalStorage',
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
-                $bag: bag,
+                $tag: tag,
+                $version: version,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -374,16 +407,13 @@ const LocalStorage = function(notary, root, debug) {
         }
     };
 
-    const generatePath = function(type, directory) {
-        // the directory is either a name beginning with '/' or a tag beginning with '#'
-        const path = root + type + '/' + directory.toString().slice(1);  // remove the leading '/' or '#'
+    const generatePath = function(directories) {
+        const path = root + '/' + directories.join('/');
         return path;
     };
 
-    const generateFilename = function(type, directory, file) {
-        // the directory is either a name beginning with '/' or a tag beginning with '#'
-        var filename = generatePath(type, directory);
-        if (file) filename += '/' + file;
+    const generateFilename = function(path, file) {
+        var filename = path + '/' + file;
         filename += '.bali';
         return filename;
     };
