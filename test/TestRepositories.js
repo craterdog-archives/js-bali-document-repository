@@ -193,34 +193,28 @@ describe('Bali Nebula™ Document Repository', function() {
                 };
 
                 var message = await generateMessage(1);
-                if (debug > 0) console.log('message 1: ' + message);
                 citation = await notary.citeDocument(message);
                 expect(citation.isEqualTo(await repository.addMessage(tag, version, message))).is.true;
                 expect(await repository.messageCount(tag, version)).to.equal(1);
 
                 message = await generateMessage(2);
-                if (debug > 0) console.log('message 2: ' + message);
                 citation = await notary.citeDocument(message);
                 expect(citation.isEqualTo(await repository.addMessage(tag, version, message))).is.true;
                 expect(await repository.messageCount(tag, version)).to.equal(2);
 
                 message = await generateMessage(3);
-                if (debug > 0) console.log('message 3: ' + message);
                 citation = await notary.citeDocument(message);
                 expect(citation.isEqualTo(await repository.addMessage(tag, version, message))).is.true;
                 expect(await repository.messageCount(tag, version)).to.equal(3);
 
                 // remove the messages from the bag
                 message = await repository.removeMessage(tag, version);
-                if (debug > 0) console.log('message 1: ' + message);
                 expect(await repository.messageCount(tag, version)).to.equal(2);
 
                 message = await repository.removeMessage(tag, version);
-                if (debug > 0) console.log('message 2: ' + message);
                 expect(await repository.messageCount(tag, version)).to.equal(1);
 
                 message = await repository.removeMessage(tag, version);
-                if (debug > 0) console.log('message 3: ' + message);
                 expect(await repository.messageCount(tag, version)).to.equal(0);
 
                 // make sure the message bag is empty
