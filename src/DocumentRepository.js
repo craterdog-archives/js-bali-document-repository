@@ -118,6 +118,7 @@ const DocumentRepository = function(storage, debug) {
      *
      * @param {Name} name The unique name for the document.
      * @param {Catalog} citation A catalog containing the document citation.
+     * @returns {Catalog} A catalog containing the document citation.
      */
     this.writeName = async function(name, citation) {
         try {
@@ -221,6 +222,7 @@ const DocumentRepository = function(storage, debug) {
      * overwritten with the new draft.
      *
      * @param {Catalog} draft A catalog containing the draft document.
+     * @returns {Catalog} A catalog containing the document citation.
      */
     this.writeDraft = async function(draft) {
         try {
@@ -353,6 +355,7 @@ const DocumentRepository = function(storage, debug) {
      * is thrown.
      *
      * @param {Catalog} document A catalog containing the document.
+     * @returns {Catalog} A catalog containing the document citation.
      */
     this.writeDocument = async function(document) {
         try {
@@ -362,7 +365,11 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.writeDocument(document);
+            const citation = await storage.writeDocument(document);
+            const tag = citation.getValue('$tag');
+            const version = citation.getValue('$version');
+            await storage.deleteDraft(tag, version);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
