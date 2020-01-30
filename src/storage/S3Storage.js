@@ -61,9 +61,9 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.nameExists = async function(name) {
         try {
-            const bucket = configuration.names;
-            const key = generateNameKey(name);
-            return await doesExist(bucket, key);
+            const location = generateLocation('names');
+            const identifier = generateNameIdentifier(name);
+            return await componentExists(location, identifier);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -80,15 +80,15 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.readName = async function(name) {
         try {
-            var bucket = configuration.names;
-            var key = generateNameKey(name);
-            var object = await getObject(bucket, key);
+            var location = generateLocation('names');
+            var identifier = generateNameIdentifier(name);
+            var object = await readComponent(location, identifier);
             if (object) {
                 var source = object.toString();
                 const citation = bali.component(source);
-                bucket = configuration.documents;
-                key = generateDocumentKey(citation);
-                object = await getObject(bucket, key);
+                location = generateLocation('documents');
+                identifier = generateDocumentIdentifier(citation);
+                object = await readComponent(location, identifier);
                 if (object) {
                     source = object.toString();
                     const document = bali.component(source);
@@ -113,11 +113,11 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.writeName = async function(name, citation) {
         try {
-            const bucket = configuration.names;
-            const key = generateNameKey(name);
-            if (await doesExist(bucket, key)) throw Error('The citation already exists.');
+            const location = generateLocation('names');
+            const identifier = generateNameIdentifier(name);
+            if (await componentExists(location, identifier)) throw Error('The citation already exists.');
             const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
-            await putObject(bucket, key, source);
+            await writeComponent(location, identifier, source);
             return citation;
         } catch (cause) {
             const exception = bali.exception({
@@ -136,9 +136,9 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.draftExists = async function(citation) {
         try {
-            const bucket = configuration.drafts;
-            const key = generateDocumentKey(citation);
-            return await doesExist(bucket, key);
+            const location = generateLocation('drafts');
+            const identifier = generateDocumentIdentifier(citation);
+            return await componentExists(location, identifier);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -155,9 +155,9 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.readDraft = async function(citation) {
         try {
-            const bucket = configuration.drafts;
-            const key = generateDocumentKey(citation);
-            const object = await getObject(bucket, key);
+            const location = generateLocation('drafts');
+            const identifier = generateDocumentIdentifier(citation);
+            const object = await readComponent(location, identifier);
             if (object) {
                 const source = object.toString();
                 const draft = bali.component(source);
@@ -179,11 +179,11 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.writeDraft = async function(draft) {
         try {
-            const bucket = configuration.drafts;
+            const location = generateLocation('drafts');
             const citation = await notary.citeDocument(draft);
-            const key = generateDocumentKey(citation);
+            const identifier = generateDocumentIdentifier(citation);
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
-            await putObject(bucket, key, source);
+            await writeComponent(location, identifier, source);
             return await notary.citeDocument(draft);
         } catch (cause) {
             const exception = bali.exception({
@@ -201,13 +201,13 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.deleteDraft = async function(citation) {
         try {
-            const bucket = configuration.drafts;
-            const key = generateDocumentKey(citation);
-            const object = await getObject(bucket, key);
+            const location = generateLocation('drafts');
+            const identifier = generateDocumentIdentifier(citation);
+            const object = await readComponent(location, identifier);
             if (object) {
                 const source = object.toString();
                 const draft = bali.component(source);
-                await deleteObject(bucket, key);
+                await deleteComponent(location, identifier);
                 return draft;
             }
         } catch (cause) {
@@ -226,9 +226,9 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.documentExists = async function(citation) {
         try {
-            const bucket = configuration.documents;
-            const key = generateDocumentKey(citation);
-            return await doesExist(bucket, key);
+            const location = generateLocation('documents');
+            const identifier = generateDocumentIdentifier(citation);
+            return await componentExists(location, identifier);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -245,9 +245,9 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.readDocument = async function(citation) {
         try {
-            const bucket = configuration.documents;
-            const key = generateDocumentKey(citation);
-            const object = await getObject(bucket, key);
+            const location = generateLocation('documents');
+            const identifier = generateDocumentIdentifier(citation);
+            const object = await readComponent(location, identifier);
             if (object) {
                 const source = object.toString();
                 const document = bali.component(source);
@@ -269,12 +269,12 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.writeDocument = async function(document) {
         try {
-            const bucket = configuration.documents;
+            const location = generateLocation('documents');
             const citation = await notary.citeDocument(document);
-            const key = generateDocumentKey(citation);
-            if (await doesExist(bucket, key)) throw Error('The document already exists.');
+            const identifier = generateDocumentIdentifier(citation);
+            if (await componentExists(location, identifier)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
-            await putObject(bucket, key, source);
+            await writeComponent(location, identifier, source);
             return await notary.citeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
@@ -292,9 +292,9 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.messageCount = async function(bag) {
         try {
-            const bucket = configuration.messages;
-            const key = generateBagKey(bag);
-            const list = await listObjects(bucket, key);
+            const location = generateLocation('messages');
+            const identifier = generateBagIdentifier(bag);
+            const list = await listComponents(location, identifier);
             return list.length;
         } catch (cause) {
             const exception = bali.exception({
@@ -312,11 +312,11 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.addMessage = async function(bag, message) {
         try {
-            const identifier = message.getValue('$content').getParameter('$tag');
-            const bucket = configuration.messages;
-            const key = generateMessageKey(bag, identifier);
+            const tag = message.getValue('$content').getParameter('$tag');
+            const location = generateLocation('messages');
+            const identifier = generateMessageIdentifier(bag, tag);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
-            await putObject(bucket, key, source);
+            await writeComponent(location, identifier, source);
             return await notary.citeDocument(message);
         } catch (cause) {
             const exception = bali.exception({
@@ -336,21 +336,21 @@ const S3Storage = function(notary, configuration, debug) {
     this.removeMessage = async function(bag) {
         try {
             while (true) {
-                const bucket = configuration.messages;
-                var key = generateBagKey(bag);
-                const list = await listObjects(bucket, key);
+                const location = generateLocation('messages');
+                var identifier = generateBagIdentifier(bag);
+                const list = await listComponents(location, identifier);
                 const count = list.length;
                 if (count === 0) break;  // no more messages
                 const messages = bali.list(list);
                 // select a message at random since a distributed bag cannot guarantee FIFO
                 const generator = bali.generator();
                 const index = generator.generateIndex(count);
-                key = messages.getItem(index).getValue();
-                const object = await getObject(bucket, key);
+                identifier = messages.getItem(index).getValue();
+                const object = await readComponent(location, identifier);
                 if (object) {
                     var message = object.toString();
                     message = bali.component(message);
-                    await deleteObject(bucket, key);
+                    await deleteComponent(location, identifier);
                     return message;  // we got there first
                 }
                 // someone else got there first, keep trying
@@ -369,37 +369,41 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    const generateNameKey = function(name) {
-        var key = name.toString().slice(1);  // remove the leading '/'
-        key += '.bali';
-        return key;
+    const generateLocation = function(type) {
+        return configuration[type];
     };
 
-    const generateDocumentKey = function(citation) {
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
-        var key = tag.toString().slice(1);  // remove the leading '#'
-        key += '/' + version.toString();
-        key += '.bali';
-        return key;
+    const generateNameIdentifier = function(name) {
+        var identifier = name.toString().slice(1);  // remove the leading '/'
+        identifier += '.bali';
+        return identifier;
     };
 
-    const generateBagKey = function(citation) {
+    const generateDocumentIdentifier = function(citation) {
         const tag = citation.getValue('$tag');
         const version = citation.getValue('$version');
-        var key = tag.toString().slice(1);  // remove the leading '#'
-        key += '/' + version.toString();
-        return key;
+        var identifier = tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version.toString();
+        identifier += '.bali';
+        return identifier;
     };
 
-    const generateMessageKey = function(citation, identifier) {
+    const generateBagIdentifier = function(citation) {
         const tag = citation.getValue('$tag');
         const version = citation.getValue('$version');
-        var key = tag.toString().slice(1);  // remove the leading '#'
-        key += '/' + version.toString();
-        key += '/' + identifier.toString().slice(1);  // remove the leading '#'
-        key += '.bali';
-        return key;
+        var identifier = tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version.toString();
+        return identifier;
+    };
+
+    const generateMessageIdentifier = function(citation, message) {
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
+        var identifier = tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version.toString();
+        identifier += '/' + message.toString().slice(1);  // remove the leading '#'
+        identifier += '.bali';
+        return identifier;
     };
 
     return this;
@@ -424,11 +428,11 @@ const sleep = function(milliseconds) {
 
 // AWS S3 PROMISIFICATION
 
-const listObjects = function(bucket, prefix) {
+const listComponents = function(location, prefix) {
     return new Promise(function(resolve, reject) {
         try {
             // the resulting list contains objects with metadata, we only want the keys
-            s3.listObjectsV2({Bucket: bucket, Prefix: prefix, MaxKeys: 64}, function(error, data) {
+            s3.listObjectsV2({Bucket: location, Prefix: prefix, MaxKeys: 64}, function(error, data) {
                 if (error) {
                     reject(error);
                 } else {
@@ -446,12 +450,12 @@ const listObjects = function(bucket, prefix) {
 };
 
 
-const doesExist = function(bucket, key) {
+const componentExists = function(location, identifier) {
     return new Promise(function(resolve, reject) {
         try {
             // the result is an object containing metadata about the object or an error
             // if it never existed
-            s3.headObject({Bucket: bucket, Key: key}, function(error, data) {
+            s3.headObject({Bucket: location, Key: identifier}, function(error, data) {
                 // must check for the delete marker for versioned buckets
                 if (error || data.DeleteMarker || !data.ContentLength) {
                     resolve(false);
@@ -466,11 +470,11 @@ const doesExist = function(bucket, key) {
 };
 
 
-const getObject = function(bucket, key) {
+const readComponent = function(location, identifier) {
     return new Promise(function(resolve, reject) {
         try {
             // the resulting object is always a Buffer (may contain utf8 encoded string)
-            s3.getObject({Bucket: bucket, Key: key}, function(error, data) {
+            s3.getObject({Bucket: location, Key: identifier}, function(error, data) {
                 // must check for the delete marker for versioned buckets
                 if (error || data.DeleteMarker || !data.ContentLength) {
                     resolve(undefined);
@@ -485,12 +489,12 @@ const getObject = function(bucket, key) {
 };
 
 
-const putObject = function(bucket, key, object) {
+const writeComponent = function(location, identifier, object) {
     return new Promise(function(resolve, reject) {
         try {
             // the object may be of type String or Buffer (strings are converted to utf8
             // Buffer automatically)
-            s3.putObject({Bucket: bucket, Key: key, Body: object}, function(error) {
+            s3.putObject({Bucket: location, Key: identifier, Body: object}, function(error) {
                 if (error) {
                     reject(error);
                 } else {
@@ -504,12 +508,12 @@ const putObject = function(bucket, key, object) {
 };
 
 
-const deleteObject = function(bucket, key) {
+const deleteComponent = function(location, identifier) {
     return new Promise(function(resolve, reject) {
         try {
             // NOTE: for non-versioned buckets, deleteObject returns an empty object so
             // there is no way to know whether or not the object even existed.
-            s3.deleteObject({Bucket: bucket, Key: key}, function(error) {
+            s3.deleteObject({Bucket: location, Key: identifier}, function(error) {
                 if (error) {
                     reject(error);
                 } else {
