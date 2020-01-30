@@ -20,18 +20,27 @@ const EOL = '\n';
 
 // PRIVATE FUNCTIONS
 
-const extractName = function(path) {
+const extractName = function(request) {
+    const path = request.params.identifier;
     return bali.component(path);
 };
 
 
-const extractTag = function(path) {
-    return bali.component('#' + path.slice(0, path.lastIndexOf('/')));
-};
-
-
-const extractVersion = function(path) {
-    return bali.component(path.slice(path.lastIndexOf('/') + 1));
+const extractCitation = function(request) {
+    const path = request.params.identifier;
+    const protocol = notary.getProtocols().getItem(-1);  // most recent protocol
+    const tag = bali.component('#' + path.slice(0, path.lastIndexOf('/')));
+    const version = bali.component(path.slice(path.lastIndexOf('/') + 1));
+    const digest = request.headers['nebula-digest'];
+    const citation = bali.catalog({
+        $protocol: protocol,
+        $tag: tag,
+        $version: version,
+        $digest: digest
+    }, {
+        $type: '/bali/notary/Citation/v1'
+    });
+    return citation;
 };
 
 
@@ -39,12 +48,11 @@ const invalidCredentials = async function(request) {
     try {
         var credentials = request.headers['nebula-credentials'];
         if (credentials) {
-            credentials = decodeURI(credentials).slice(2, -2);  // strip off double quote delimiters
+            const decoder = bali.decoder(0, debug);
+            credentials = Buffer.from(decoder.base32Decode(credentials)).toString('utf8');
             credentials = bali.component(credentials);
             const citation = credentials.getValue('$certificate');
-            const tag = citation.getValue('$tag');
-            const version = citation.getValue('$version');
-            var certificate = await repository.readDocument(tag, version);
+            var certificate = await repository.readDocument(citation);
             certificate = certificate || bali.component(request.body);  // if self-signed certificate
             const isValid = await notary.validDocument(credentials, certificate);
             return !isValid;
@@ -65,7 +73,7 @@ const headName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const name = extractName(request.params.identifier);
+        const name = extractName(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -101,7 +109,7 @@ const getName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const name = extractName(request.params.identifier);
+        const name = extractName(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -148,7 +156,7 @@ const putName = async function(request, response) {
     var message;
     try {
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        const name = extractName(request.params.identifier);
+        const name = extractName(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -165,9 +173,7 @@ const putName = async function(request, response) {
             return;
         }
         var citation = bali.component(request.body);
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
-        if (!(await repository.documentExists(tag, version))) {
+        if (!(await repository.documentExists(citation))) {
             message = 'Test Service: The cited document must exist.';
             if (debug > 1) console.log(message);
             response.writeHead(409, message);
@@ -248,8 +254,7 @@ const headDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -258,7 +263,7 @@ const headDraft = async function(request, response) {
             response.end();
             return;
         }
-        if (!(await repository.draftExists(tag, version))) {
+        if (!(await repository.draftExists(citation))) {
             message = 'Test Service: The draft document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
@@ -285,8 +290,7 @@ const getDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -295,7 +299,7 @@ const getDraft = async function(request, response) {
             response.end();
             return;
         }
-        const draft = await repository.readDraft(tag, version);
+        const draft = await repository.readDraft(citation);
         if (!draft) {
             message = 'Test Service: The draft document does not exist.';
             if (debug > 1) console.log(message);
@@ -355,8 +359,7 @@ const putDraft = async function(request, response) {
     try {
         const draft = bali.component(request.body);
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + draft;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        var citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -365,8 +368,11 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        const updated = await repository.documentExists(tag, version);
+        const updated = await repository.documentExists(citation);
         const content = draft.getValue('$content');
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
+
         if (!tag.isEqualTo(content.getParameter('$tag')) || !version.isEqualTo(content.getParameter('$version'))) {
             message = 'Test Service: The tag and version of the draft document are incorrect.';
             if (debug > 1) console.log(message);
@@ -374,7 +380,7 @@ const putDraft = async function(request, response) {
             response.end();
             return;
         }
-        const citation = await repository.writeDraft(draft);
+        citation = await repository.writeDraft(draft);
         const data = citation.toString();
         const options = {
             'Content-Length': data.length,
@@ -414,8 +420,7 @@ const deleteDraft = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -424,7 +429,7 @@ const deleteDraft = async function(request, response) {
             response.end();
             return;
         }
-        const draft = await repository.deleteDraft(tag, version);
+        const draft = await repository.deleteDraft(citation);
         if (!draft) {
             message = 'Test Service: The draft document did not exist.';
             if (debug > 1) console.log(message);
@@ -462,8 +467,7 @@ const headDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: HEAD ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -472,7 +476,7 @@ const headDocument = async function(request, response) {
             response.end();
             return;
         }
-        if (!(await repository.documentExists(tag, version))) {
+        if (!(await repository.documentExists(citation))) {
             message = 'Test Service: The notarized document does not exist.';
             if (debug > 1) console.log(message);
             response.writeHead(404, message);
@@ -499,8 +503,7 @@ const getDocument = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -509,7 +512,7 @@ const getDocument = async function(request, response) {
             response.end();
             return;
         }
-        const document = await repository.readDocument(tag, version);
+        const document = await repository.readDocument(citation);
         if (!document) {
             message = 'Test Service: The notarized document does not exist.';
             if (debug > 1) console.log(message);
@@ -548,8 +551,7 @@ const putDocument = async function(request, response) {
     try {
         const document = bali.component(request.body);
         message = 'Test Service: PUT ' + request.originalUrl + ' ' + document;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        var citation = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -558,7 +560,7 @@ const putDocument = async function(request, response) {
             response.end();
             return;
         }
-        if (await repository.documentExists(tag, version)) {
+        if (await repository.documentExists(citation)) {
             message = 'Test Service: A committed document with this version already exists.';
             if (debug > 1) console.log(message);
             response.writeHead(409, message);
@@ -566,6 +568,8 @@ const putDocument = async function(request, response) {
             return;
         }
         const content = document.getValue('$content');
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
         if (!tag.isEqualTo(content.getParameter('$tag')) || !version.isEqualTo(content.getParameter('$version'))) {
             message = 'Test Service: The tag and version of the document are incorrect.';
             if (debug > 1) console.log(message);
@@ -573,9 +577,9 @@ const putDocument = async function(request, response) {
             response.end();
             return;
         }
-        const citation = await repository.writeDocument(document);
+        citation = await repository.writeDocument(document);
         const data = citation.toString();
-        await repository.deleteDraft(tag, version);
+        await repository.deleteDraft(citation);
         const options = {
             'Content-Length': data.length,
             'Content-Type': 'application/bali',
@@ -664,8 +668,7 @@ const getBag = async function(request, response) {
     var message;
     try {
         message = 'Test Service: GET ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const bag = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -674,7 +677,7 @@ const getBag = async function(request, response) {
             response.end();
             return;
         }
-        const count = await repository.messageCount(tag, version);
+        const count = await repository.messageCount(bag);
         if (debug > 1) console.log(message);
         const data = count.toString();
         const options = {
@@ -727,8 +730,7 @@ const postMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const bag = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -738,7 +740,7 @@ const postMessage = async function(request, response) {
             return;
         }
         message = bali.component(request.body);
-        const citation = await repository.addMessage(tag, version, message);
+        const citation = await repository.addMessage(bag, message);
         const data = citation.toString();
         const options = {
             'Content-Length': data.length,
@@ -765,8 +767,7 @@ const deleteMessage = async function(request, response) {
     var message;
     try {
         message = 'Test Service: DELETE ' + request.originalUrl;
-        const tag = extractTag(request.params.identifier);
-        const version = extractVersion(request.params.identifier);
+        const bag = extractCitation(request);
         if (debug > 1) console.log(message);
         if (await invalidCredentials(request)) {
             message = 'Test Service: The credentials are invalid.';
@@ -775,7 +776,7 @@ const deleteMessage = async function(request, response) {
             response.end();
             return;
         }
-        message = await repository.removeMessage(tag, version);
+        message = await repository.removeMessage(bag);
         if (message) {
             const data = message.toString();
             const options = {

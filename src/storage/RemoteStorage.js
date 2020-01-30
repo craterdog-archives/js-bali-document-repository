@@ -60,7 +60,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.nameExists = async function(name) {
         try {
-            const response = await sendRequest('HEAD', 'names', name, undefined, undefined);
+            const response = await sendRequest('HEAD', 'names', name);
             return response.status === 200;
         } catch (cause) {
             const exception = bali.exception({
@@ -100,7 +100,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeName = async function(name, citation) {
         try {
-            const response = await sendRequest('PUT', 'names', name, undefined, citation);
+            const response = await sendRequest('PUT', 'names', name, citation);
             if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
             return citation;
         } catch (cause) {
@@ -118,9 +118,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.draftExists = async function(tag, version) {
+    this.draftExists = async function(citation) {
         try {
-            const response = await sendRequest('HEAD', 'drafts', tag, version, undefined);
+            const response = await sendRequest('HEAD', 'drafts', citation);
             return response.status === 200;
         } catch (cause) {
             const exception = bali.exception({
@@ -128,8 +128,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -137,9 +136,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.readDraft = async function(tag, version) {
+    this.readDraft = async function(citation) {
         try {
-            const response = await sendRequest('GET', 'drafts', tag, version);
+            const response = await sendRequest('GET', 'drafts', citation);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -150,8 +149,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$readDraft',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -161,9 +159,8 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeDraft = async function(draft) {
         try {
-            const tag = draft.getValue('$content').getParameter('$tag');
-            const version = draft.getValue('$content').getParameter('$version');
-            const response = await sendRequest('PUT', 'drafts', tag, version, draft);
+            const citation = await notary.citeDocument(draft);
+            const response = await sendRequest('PUT', 'drafts', citation, draft);
             if (response.status > 299) throw Error('Unable to save the draft: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new document
@@ -181,9 +178,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.deleteDraft = async function(tag, version) {
+    this.deleteDraft = async function(citation) {
         try {
-            const response = await sendRequest('DELETE', 'drafts', tag, version);
+            const response = await sendRequest('DELETE', 'drafts', citation);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -194,8 +191,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -203,9 +199,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.documentExists = async function(tag, version) {
+    this.documentExists = async function(citation) {
         try {
-            const response = await sendRequest('HEAD', 'documents', tag, version, undefined);
+            const response = await sendRequest('HEAD', 'documents', citation);
             return response.status === 200;
         } catch (cause) {
             const exception = bali.exception({
@@ -213,8 +209,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while checking whether or not a document exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -222,9 +217,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.readDocument = async function(tag, version) {
+    this.readDocument = async function(citation) {
         try {
-            const response = await sendRequest('GET', 'documents', tag, version);
+            const response = await sendRequest('GET', 'documents', citation);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -235,8 +230,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to read a document from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -246,9 +240,8 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeDocument = async function(document) {
         try {
-            const tag = document.getValue('$content').getParameter('$tag');
-            const version = document.getValue('$content').getParameter('$version');
-            const response = await sendRequest('PUT', 'documents', tag, version, document);
+            const citation = await notary.citeDocument(document);
+            const response = await sendRequest('PUT', 'documents', citation, document);
             if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new document
@@ -266,9 +259,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.messageCount = async function(tag, version) {
+    this.messageCount = async function(bag) {
         try {
-            const response = await sendRequest('GET', 'messages', tag, version);
+            const response = await sendRequest('GET', 'messages', bag);
             return Number(response.data.toString('utf8'));
         } catch (cause) {
             const exception = bali.exception({
@@ -276,8 +269,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $bag: bag,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -285,9 +277,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.addMessage = async function(tag, version, message) {
+    this.addMessage = async function(bag, message) {
         try {
-            const response = await sendRequest('POST', 'messages', tag, version, message);
+            const response = await sendRequest('POST', 'messages', bag, message);
             if (response.status > 299) throw Error('Unable to bag the message: ' + response.status);
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new message
@@ -297,8 +289,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $bag: bag,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -307,9 +298,9 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.removeMessage = async function(tag, version) {
+    this.removeMessage = async function(bag) {
         try {
-            const response = await sendRequest('DELETE', 'messages', tag, version);
+            const response = await sendRequest('DELETE', 'messages', bag);
             if (response.status === 200) {
                 const source = response.data.toString('utf8');
                 return bali.component(source);
@@ -320,8 +311,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $uri: uri,
-                $tag: tag,
-                $version: version,
+                $bag: bag,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -332,28 +322,50 @@ const RemoteStorage = function(notary, uri, debug) {
 
     // PRIVATE FUNCTIONS
 
+    const generatePath = function(identifier) {
+        var path = '';
+        if (identifier.isComponent && identifier.isType('/bali/collections/Catalog')) {
+            path += identifier.getValue('$tag').toString().slice(1);  // remove the leading '#'
+            path += '/' + identifier.getValue('$version').toString();
+        } else {
+            path += identifier.toString().slice(1);  // remove the leading '/'
+        }
+        return path;
+    };
+
+    const generateCredentials = async function() {
+        const decoder = bali.decoder(0, debug);
+        var credentials = (await notary.generateCredentials()).toString();
+        credentials = decoder.base32Encode(Buffer.from(credentials, 'utf8')).replace(/\s+/g, '');
+        return credentials;
+    };
+
+    const generateDigest = function(identifier) {
+        var digest = '';
+        if (identifier.isComponent && identifier.isType('/bali/collections/Catalog')) {
+            digest += identifier.getValue('$digest').toString().slice(1, -1).replace(/\s+/g, '');
+        }
+        return digest;
+    };
+
     /**
      * This function sends a RESTful web request to the remote repository with the specified, method,
-     * type, resource identifier and version. If a document is included it is sent as the body of the
+     * type, resource and identifier. If a document is included it is sent as the body of the
      * request. The result that is returned by the web service is returned from this function.
      *
      * @param {String} method The HTTP method type of the request.
      * @param {String} type The type of resource being acted upon.
-     * @param {Name|Tag} identifier The identifier of the specific resource being acted upon.
-     * @param {Version} version The version of the specific resource being acted upon.
+     * @param {Name|Catalog} identifier The identifier of the specific resource being acted upon.
      * @param {Catalog} document An optional signed document to be passed to the web service.
      * @returns {Object} The response to the request.
      */
-    const sendRequest = async function(method, type, identifier, version, document) {
+    const sendRequest = async function(method, type, identifier, document) {
 
         // the POSIX end of line character
         const EOL = '\n';
 
-        // generate the credentials
-        const credentials = await notary.generateCredentials();
-
         // setup the request URI and options
-        const fullURI = uri + '/' + type + '/' + identifier.toString().slice(1) + (version ? '/' + version : '');
+        const fullURI = uri + '/' + type + '/' + generatePath(identifier);
         const options = {
             url: fullURI,
             method: method,
@@ -364,7 +376,8 @@ const RemoteStorage = function(notary, uri, debug) {
             },
             headers: {
                 'User-Agent': 'Bali Document Repository API/v2 (NodeJS/v12) Bali Nebula/v2',
-                'Nebula-Credentials': encodeURI('"' + EOL + credentials + EOL + '"'),
+                'Nebula-Credentials': await generateCredentials(),
+                'Nebula-Digest': generateDigest(identifier),
                 'Accept': 'application/bali'
             }
         };

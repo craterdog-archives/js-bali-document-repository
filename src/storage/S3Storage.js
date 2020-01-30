@@ -87,9 +87,7 @@ const S3Storage = function(notary, configuration, debug) {
                 var source = object.toString();
                 const citation = bali.component(source);
                 bucket = configuration.documents;
-                const tag = citation.getValue('$tag');
-                const version = citation.getValue('$version');
-                key = generateDocumentKey(tag, version);
+                key = generateDocumentKey(citation);
                 object = await getObject(bucket, key);
                 if (object) {
                     source = object.toString();
@@ -136,10 +134,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.draftExists = async function(tag, version) {
+    this.draftExists = async function(citation) {
         try {
             const bucket = configuration.drafts;
-            const key = generateDocumentKey(tag, version);
+            const key = generateDocumentKey(citation);
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
@@ -147,8 +145,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$draftExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while checking whether or not a draft exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -156,10 +153,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.readDraft = async function(tag, version) {
+    this.readDraft = async function(citation) {
         try {
             const bucket = configuration.drafts;
-            const key = generateDocumentKey(tag, version);
+            const key = generateDocumentKey(citation);
             const object = await getObject(bucket, key);
             if (object) {
                 const source = object.toString();
@@ -172,8 +169,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$readDraft',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -184,9 +180,8 @@ const S3Storage = function(notary, configuration, debug) {
     this.writeDraft = async function(draft) {
         try {
             const bucket = configuration.drafts;
-            const tag = draft.getValue('$content').getParameter('$tag');
-            const version = draft.getValue('$content').getParameter('$version');
-            const key = generateDocumentKey(tag, version);
+            const citation = await notary.citeDocument(draft);
+            const key = generateDocumentKey(citation);
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
             return await notary.citeDocument(draft);
@@ -204,10 +199,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.deleteDraft = async function(tag, version) {
+    this.deleteDraft = async function(citation) {
         try {
             const bucket = configuration.drafts;
-            const key = generateDocumentKey(tag, version);
+            const key = generateDocumentKey(citation);
             const object = await getObject(bucket, key);
             if (object) {
                 const source = object.toString();
@@ -221,8 +216,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$deleteDraft',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -230,10 +224,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.documentExists = async function(tag, version) {
+    this.documentExists = async function(citation) {
         try {
             const bucket = configuration.documents;
-            const key = generateDocumentKey(tag, version);
+            const key = generateDocumentKey(citation);
             return await doesExist(bucket, key);
         } catch (cause) {
             const exception = bali.exception({
@@ -241,8 +235,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$documentExists',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while checking whether or not a document exists.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -250,10 +243,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.readDocument = async function(tag, version) {
+    this.readDocument = async function(citation) {
         try {
             const bucket = configuration.documents;
-            const key = generateDocumentKey(tag, version);
+            const key = generateDocumentKey(citation);
             const object = await getObject(bucket, key);
             if (object) {
                 const source = object.toString();
@@ -266,8 +259,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$readDocument',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to read a document from the repository.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -278,9 +270,8 @@ const S3Storage = function(notary, configuration, debug) {
     this.writeDocument = async function(document) {
         try {
             const bucket = configuration.documents;
-            const tag = document.getValue('$content').getParameter('$tag');
-            const version = document.getValue('$content').getParameter('$version');
-            const key = generateDocumentKey(tag, version);
+            const citation = await notary.citeDocument(document);
+            const key = generateDocumentKey(citation);
             if (await doesExist(bucket, key)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
@@ -299,10 +290,10 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.messageCount = async function(tag, version) {
+    this.messageCount = async function(bag) {
         try {
             const bucket = configuration.messages;
-            const key = generateBagKey(tag, version);
+            const key = generateBagKey(bag);
             const list = await listObjects(bucket, key);
             return list.length;
         } catch (cause) {
@@ -311,8 +302,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$messageCount',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $bag: bag,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -320,11 +310,11 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.addMessage = async function(tag, version, message) {
+    this.addMessage = async function(bag, message) {
         try {
             const identifier = message.getValue('$content').getParameter('$tag');
             const bucket = configuration.messages;
-            const key = generateMessageKey(tag, version, identifier);
+            const key = generateMessageKey(bag, identifier);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await putObject(bucket, key, source);
             return await notary.citeDocument(message);
@@ -334,8 +324,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$addMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $bag: bag,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to add a message to a bag.'
             }, cause);
@@ -344,11 +333,11 @@ const S3Storage = function(notary, configuration, debug) {
         }
     };
 
-    this.removeMessage = async function(tag, version) {
+    this.removeMessage = async function(bag) {
         try {
             while (true) {
                 const bucket = configuration.messages;
-                var key = generateBagKey(tag, version);
+                var key = generateBagKey(bag);
                 const list = await listObjects(bucket, key);
                 const count = list.length;
                 if (count === 0) break;  // no more messages
@@ -372,8 +361,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$removeMessage',
                 $exception: '$unexpected',
                 $configuration: configuration,
-                $tag: tag,
-                $version: version,
+                $bag: bag,
                 $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
             }, cause);
             if (debug > 0) console.error(exception.toString());
@@ -387,20 +375,26 @@ const S3Storage = function(notary, configuration, debug) {
         return key;
     };
 
-    const generateDocumentKey = function(tag, version) {
+    const generateDocumentKey = function(citation) {
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
         var key = tag.toString().slice(1);  // remove the leading '#'
         key += '/' + version.toString();
         key += '.bali';
         return key;
     };
 
-    const generateBagKey = function(tag, version) {
+    const generateBagKey = function(citation) {
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
         var key = tag.toString().slice(1);  // remove the leading '#'
         key += '/' + version.toString();
         return key;
     };
 
-    const generateMessageKey = function(tag, version, identifier) {
+    const generateMessageKey = function(citation, identifier) {
+        const tag = citation.getValue('$tag');
+        const version = citation.getValue('$version');
         var key = tag.toString().slice(1);  // remove the leading '#'
         key += '/' + version.toString();
         key += '/' + identifier.toString().slice(1);  // remove the leading '#'
