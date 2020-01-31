@@ -330,7 +330,6 @@ const listComponents = function(location, prefix) {
     });
 };
 
-
 const componentExists = function(location, identifier) {
     return new Promise(function(resolve, reject) {
         try {
@@ -350,7 +349,6 @@ const componentExists = function(location, identifier) {
     });
 };
 
-
 const readComponent = function(location, identifier) {
     return new Promise(function(resolve, reject) {
         try {
@@ -369,7 +367,6 @@ const readComponent = function(location, identifier) {
     });
 };
 
-
 const writeComponent = function(location, identifier, component, isMutable) {
     return new Promise(function(resolve, reject) {
         try {
@@ -386,7 +383,6 @@ const writeComponent = function(location, identifier, component, isMutable) {
         }
     });
 };
-
 
 const deleteComponent = function(location, identifier) {
     return new Promise(function(resolve, reject) {

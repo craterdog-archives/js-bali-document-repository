@@ -339,7 +339,6 @@ const listComponents = async function(location, identifier) {
     }
 };
 
-
 const componentExists = async function(location, identifier) {
     try {
         const file = location + '/' + identifier;
@@ -352,7 +351,6 @@ const componentExists = async function(location, identifier) {
     }
 };
 
-
 const readComponent = async function(location, identifier) {
     try {
         const file = location + '/' + identifier;
@@ -364,7 +362,6 @@ const readComponent = async function(location, identifier) {
     }
 };
 
-
 const writeComponent = async function(location, identifier, component, isMutable) {
     const mode = isMutable ? 0o600 : 0o400;
     const file = location + '/' + identifier;
@@ -373,7 +370,6 @@ const writeComponent = async function(location, identifier, component, isMutable
     const source = component.toString() + EOL;  // add POSIX compliant <EOL>
     await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
 };
-
 
 const deleteComponent = async function(location, identifier) {
     try {

@@ -53,265 +53,94 @@ const CachedStorage = function(storage, debug) {
     };
 
     this.nameExists = async function(name) {
-        try {
-            // check the cache first
-            const key = generateKey(name);
-            if (cache.names.read(key)) return true;
-            // not found so we must check the backend storage
-            return await storage.nameExists(name);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$nameExists',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $name: name,
-                $text: 'An unexpected error occurred while checking whether or not a citation exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // check the cache first
+        const key = generateKey(name);
+        if (cache.names.read(key)) return true;
+        // not found so we must check the backend storage
+        return await storage.nameExists(name);
     };
 
     this.readName = async function(name) {
-        try {
-            // check the cache first
-            const key = generateKey(name);
-            var document = cache.names.read(key);
-            if (!document) {
-                // not found so we must read from the backend storage
-                document = await storage.readName(name);
-                // add the document to the cache
-                if (document) cache.names.write(name, document);
-            }
-            return document;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$readName',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to read a document from the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        // check the cache first
+        const key = generateKey(name);
+        var document = cache.names.read(key);
+        if (!document) {
+            // not found so we must read from the backend storage
+            document = await storage.readName(name);
+            // add the document to the cache
+            if (document) cache.names.write(name, document);
         }
+        return document;
     };
 
     this.writeName = async function(name, citation) {
-        try {
-            // pass-through, citations are not cached
-            return await storage.writeName(name, citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$writeName',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $name: name,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to write a citation to the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, citations are not cached
+        return await storage.writeName(name, citation);
     };
 
     this.draftExists = async function(citation) {
-        try {
-            // pass-through, drafts are not cached
-            return await storage.draftExists(citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$draftExists',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $citation: citation,
-                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, drafts are not cached
+        return await storage.draftExists(citation);
     };
 
     this.readDraft = async function(citation) {
-        try {
-            // pass-through, drafts are not cached
-            return await storage.readDraft(citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$readDraft',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to read a draft from the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, drafts are not cached
+        return await storage.readDraft(citation);
     };
 
     this.writeDraft = async function(draft) {
-        try {
-            // pass-through, drafts are not cached
-            return await storage.writeDraft(draft);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$writeDraft',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $draft: draft,
-                $text: 'An unexpected error occurred while attempting to write a draft to the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, drafts are not cached
+        return await storage.writeDraft(draft);
     };
 
     this.deleteDraft = async function(citation) {
-        try {
-            // pass-through, drafts are not cached
-            return await storage.deleteDraft(citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$deleteDraft',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to delete a draft from the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, drafts are not cached
+        return await storage.deleteDraft(citation);
     };
 
     this.documentExists = async function(citation) {
-        try {
-            // check the cache
-            const key = generateKey(citation);
-            if (cache.documents.read(key)) return true;
-            // not found so we must check the backend storage
-            return await storage.documentExists(citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$documentExists',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $citation: citation,
-                $text: 'An unexpected error occurred while checking whether or not a document exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // check the cache
+        const key = generateKey(citation);
+        if (cache.documents.read(key)) return true;
+        // not found so we must check the backend storage
+        return await storage.documentExists(citation);
     };
 
     this.readDocument = async function(citation) {
-        try {
-            // check the cache
-            const key = generateKey(citation);
-            var document = cache.documents.read(key);
-            if (!document) {
-                // not found so we must read from the backend storage
-                document = await storage.readDocument(citation);
-                // add the document to the cache
-                if (document) cache.documents.write(key, document);
-            }
-            return document;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$readDocument',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to read a document from the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        // check the cache
+        const key = generateKey(citation);
+        var document = cache.documents.read(key);
+        if (!document) {
+            // not found so we must read from the backend storage
+            document = await storage.readDocument(citation);
+            // add the document to the cache
+            if (document) cache.documents.write(key, document);
         }
+        return document;
     };
 
     this.writeDocument = async function(document) {
-        try {
-            // add the document to the backend storage
-            const citation = await storage.writeDocument(document);
-            // cache the document
-            const key = generateKey(citation);
-            cache.documents.write(key, document);
-            return citation;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$writeDocument',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $document: document,
-                $text: 'An unexpected error occurred while attempting to write a document to the storage.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // add the document to the backend storage
+        const citation = await storage.writeDocument(document);
+        // cache the document
+        const key = generateKey(citation);
+        cache.documents.write(key, document);
+        return citation;
     };
 
     this.messageCount = async function(bag) {
-        try {
-            // pass-through, messages are not cached
-            return await storage.messageCount(bag);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$messageCount',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, messages are not cached
+        return await storage.messageCount(bag);
     };
 
     this.addMessage = async function(bag, document) {
-        try {
-            // pass-through, messages are not cached
-            return await storage.addMessage(bag, document);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$addMessage',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $bag: bag,
-                $document: document,
-                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, messages are not cached
+        return await storage.addMessage(bag, document);
     };
 
     this.removeMessage = async function(bag) {
-        try {
-            // pass-through, messages are not cached
-            return await storage.removeMessage(bag);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/CachedStorage',
-                $procedure: '$removeMessage',
-                $exception: '$unexpected',
-                $storage: storage.toString(),
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        // pass-through, messages are not cached
+        return await storage.removeMessage(bag);
     };
 
     const generateKey = function(identifier) {

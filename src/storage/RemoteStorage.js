@@ -59,263 +59,127 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.nameExists = async function(name) {
-        try {
-            const response = await sendRequest('HEAD', 'names', name);
-            return response.status === 200;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$nameExists',
-                $exception: '$unexpected',
-                $uri: uri,
-                $name: name,
-                $text: 'An unexpected error occurred while checking whether or not a citation exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const response = await sendRequest('HEAD', 'names', name);
+        return response.status === 200;
     };
 
     this.readName = async function(name) {
-        try {
-            const response = await sendRequest('GET', 'names', name);
-            if (response.status === 200) {
-                const source = response.data.toString('utf8');
-                const document = bali.component(source);
-                return document;
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$readName',
-                $exception: '$unexpected',
-                $uri: uri,
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to read a document from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const response = await sendRequest('GET', 'names', name);
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            const document = bali.component(source);
+            return document;
         }
     };
 
     this.writeName = async function(name, citation) {
-        try {
-            const response = await sendRequest('PUT', 'names', name, citation);
-            if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
-            return citation;
-        } catch (cause) {
+        const response = await sendRequest('PUT', 'names', name, citation);
+        if (response.status > 299) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$writeName',
-                $exception: '$unexpected',
+                $exception: '$remote',
                 $uri: uri,
                 $name: name,
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to write a citation to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
+                $status: response.status,
+                $text: 'Unable to create the named citation.'
+            });
             throw exception;
         }
+        return citation;
     };
 
     this.draftExists = async function(citation) {
-        try {
-            const response = await sendRequest('HEAD', 'drafts', citation);
-            return response.status === 200;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$draftExists',
-                $exception: '$unexpected',
-                $uri: uri,
-                $citation: citation,
-                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const response = await sendRequest('HEAD', 'drafts', citation);
+        return response.status === 200;
     };
 
     this.readDraft = async function(citation) {
-        try {
-            const response = await sendRequest('GET', 'drafts', citation);
-            if (response.status === 200) {
-                const source = response.data.toString('utf8');
-                return bali.component(source);
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$readDraft',
-                $exception: '$unexpected',
-                $uri: uri,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const response = await sendRequest('GET', 'drafts', citation);
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
         }
     };
 
     this.writeDraft = async function(draft) {
-        try {
-            const citation = await notary.citeDocument(draft);
-            const response = await sendRequest('PUT', 'drafts', citation, draft);
-            if (response.status > 299) throw Error('Unable to save the draft: ' + response.status);
-            const source = response.data.toString('utf8');
-            return bali.component(source);  // return a citation to the new document
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$writeDraft',
-                $exception: '$unexpected',
-                $uri: uri,
-                $draft: draft,
-                $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const citation = await notary.citeDocument(draft);
+        const response = await sendRequest('PUT', 'drafts', citation, draft);
+        if (response.status > 299) throw Error('Unable to save the draft: ' + response.status);
+        const source = response.data.toString('utf8');
+        return bali.component(source);  // return a citation to the new document
     };
 
     this.deleteDraft = async function(citation) {
-        try {
-            const response = await sendRequest('DELETE', 'drafts', citation);
-            if (response.status === 200) {
-                const source = response.data.toString('utf8');
-                return bali.component(source);
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$deleteDraft',
-                $exception: '$unexpected',
-                $uri: uri,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const response = await sendRequest('DELETE', 'drafts', citation);
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
         }
     };
 
     this.documentExists = async function(citation) {
-        try {
-            const response = await sendRequest('HEAD', 'documents', citation);
-            return response.status === 200;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$documentExists',
-                $exception: '$unexpected',
-                $uri: uri,
-                $citation: citation,
-                $text: 'An unexpected error occurred while checking whether or not a document exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const response = await sendRequest('HEAD', 'documents', citation);
+        return response.status === 200;
     };
 
     this.readDocument = async function(citation) {
-        try {
-            const response = await sendRequest('GET', 'documents', citation);
-            if (response.status === 200) {
-                const source = response.data.toString('utf8');
-                return bali.component(source);
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$readDocument',
-                $exception: '$unexpected',
-                $uri: uri,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to read a document from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const response = await sendRequest('GET', 'documents', citation);
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
         }
     };
 
     this.writeDocument = async function(document) {
-        try {
-            const citation = await notary.citeDocument(document);
-            const response = await sendRequest('PUT', 'documents', citation, document);
-            if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
-            const source = response.data.toString('utf8');
-            return bali.component(source);  // return a citation to the new document
-        } catch (cause) {
+        const citation = await notary.citeDocument(document);
+        const response = await sendRequest('PUT', 'documents', citation, document);
+        if (response.status > 299) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$writeDocument',
-                $exception: '$unexpected',
+                $exception: '$remote',
                 $uri: uri,
                 $document: document,
-                $text: 'An unexpected error occurred while attempting to write a document to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
+                $status: response.status,
+                $text: 'Unable to create the document.'
+            });
             throw exception;
         }
+        const source = response.data.toString('utf8');
+        return bali.component(source);  // return a citation to the new document
     };
 
     this.messageCount = async function(bag) {
-        try {
-            const response = await sendRequest('GET', 'messages', bag);
-            return Number(response.data.toString('utf8'));
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$messageCount',
-                $exception: '$unexpected',
-                $uri: uri,
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const response = await sendRequest('GET', 'messages', bag);
+        return Number(response.data.toString('utf8'));
     };
 
     this.addMessage = async function(bag, message) {
-        try {
             const response = await sendRequest('POST', 'messages', bag, message);
-            if (response.status > 299) throw Error('Unable to bag the message: ' + response.status);
+            if (response.status > 299) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/RemoteStorage',
+                    $procedure: '$addMessage',
+                    $exception: '$remote',
+                    $uri: uri,
+                    $bag: bag,
+                    $message: message,
+                    $status: response.status,
+                    $text: 'Unable to add the message to the bag.'
+                });
+                throw exception;
+            }
             const source = response.data.toString('utf8');
             return bali.component(source);  // return a citation to the new message
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$addMessage',
-                $exception: '$unexpected',
-                $uri: uri,
-                $bag: bag,
-                $message: message,
-                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
     };
 
     this.removeMessage = async function(bag) {
-        try {
-            const response = await sendRequest('DELETE', 'messages', bag);
-            if (response.status === 200) {
-                const source = response.data.toString('utf8');
-                return bali.component(source);
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$removeMessage',
-                $exception: '$unexpected',
-                $uri: uri,
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const response = await sendRequest('DELETE', 'messages', bag);
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
         }
     };
 
@@ -411,7 +275,6 @@ const RemoteStorage = function(notary, uri, debug) {
                     $details: bali.text(cause.request.statusText),
                     $text: bali.text('The request received no response.')
                 }, cause);
-                if (debug) console.error(exception.toString());
                 throw exception;
             }
             // the request could not be sent
@@ -424,7 +287,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $document: document,
                 $text: bali.text('The request was not formed correctly.')
             }, cause);
-            if (debug) console.error(exception.toString());
             throw exception;
         }
     };
