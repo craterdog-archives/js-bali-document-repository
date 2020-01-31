@@ -60,312 +60,192 @@ const S3Storage = function(notary, configuration, debug) {
     };
 
     this.nameExists = async function(name) {
-        try {
-            const location = generateLocation('names');
-            const identifier = generateNameIdentifier(name);
-            return await componentExists(location, identifier);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$nameExists',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $name: name,
-                $text: 'An unexpected error occurred while checking whether or not a citation exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const location = generateLocation('names');
+        const identifier = generateNameIdentifier(name);
+        return await componentExists(location, identifier);
     };
 
     this.readName = async function(name) {
-        try {
-            var location = generateLocation('names');
-            var identifier = generateNameIdentifier(name);
-            var object = await readComponent(location, identifier);
-            if (object) {
-                var source = object.toString();
-                const citation = bali.component(source);
-                location = generateLocation('documents');
-                identifier = generateDocumentIdentifier(citation);
-                object = await readComponent(location, identifier);
-                if (object) {
-                    source = object.toString();
-                    const document = bali.component(source);
-                    // do validation here since ValidatedStorage doesn't have access to the citation
-                    const matches = await notary.citationMatches(citation, document);
-                    if (!matches) throw Error('The cited document was modified after it was created.');
-                    return document;
+        // attempt to read the citation associated with the name
+        var location = generateLocation('names');
+        var identifier = generateNameIdentifier(name);
+        var bytes = await readComponent(location, identifier);
+        if (bytes) {
+            // attempt to read the cited document
+            var source = bytes.toString('utf8');
+            const citation = bali.component(source);
+            location = generateLocation('documents');
+            identifier = generateDocumentIdentifier(citation);
+            bytes = await readComponent(location, identifier);
+            if (bytes) {
+                // validate the citation here since ValidatedStorage doesn't have access to it
+                source = bytes.toString('utf8');
+                const document = bali.component(source);
+                const matches = await notary.citationMatches(citation, document);
+                if (!matches) {
+                    const exception = bali.exception({
+                        $module: '/bali/repositories/S3Storage',
+                        $procedure: '$readName',
+                        $exception: '$corruptedDocument',
+                        $name: name,
+                        $citation: citation,
+                        $location: location,
+                        $identifier: identifier,
+                        $document: document,
+                        $text: 'The cited document was modified after it was created.'
+                    });
+                    throw exception;
                 }
+                return document;
             }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$readName',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to read a citation from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
         }
     };
 
     this.writeName = async function(name, citation) {
-        try {
-            const location = generateLocation('names');
-            const identifier = generateNameIdentifier(name);
-            if (await componentExists(location, identifier)) throw Error('The citation already exists.');
-            const source = citation.toString() + EOL;  // add POSIX compliant <EOL>
-            await writeComponent(location, identifier, source);
-            return citation;
-        } catch (cause) {
+        const location = generateLocation('names');
+        const identifier = generateNameIdentifier(name);
+        if (await componentExists(location, identifier)) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
                 $procedure: '$writeName',
-                $exception: '$unexpected',
-                $configuration: configuration,
+                $exception: '$nameExists',
                 $name: name,
+                $location: location,
+                $identifier: identifier,
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to write a citation to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
+                $text: 'The named citation already exists.'
+            });
             throw exception;
         }
+        await writeComponent(location, identifier, citation);
+        return citation;
     };
 
     this.draftExists = async function(citation) {
-        try {
-            const location = generateLocation('drafts');
-            const identifier = generateDocumentIdentifier(citation);
-            return await componentExists(location, identifier);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$draftExists',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $citation: citation,
-                $text: 'An unexpected error occurred while checking whether or not a draft exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const location = generateLocation('drafts');
+        const identifier = generateDocumentIdentifier(citation);
+        return await componentExists(location, identifier);
     };
 
     this.readDraft = async function(citation) {
-        try {
-            const location = generateLocation('drafts');
-            const identifier = generateDocumentIdentifier(citation);
-            const object = await readComponent(location, identifier);
-            if (object) {
-                const source = object.toString();
-                const draft = bali.component(source);
-                return draft;
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$readDraft',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to read a draft from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const location = generateLocation('drafts');
+        const identifier = generateDocumentIdentifier(citation);
+        const bytes = await readComponent(location, identifier);
+        if (bytes) {
+            const source = bytes.toString('utf8');
+            const draft = bali.component(source);
+            return draft;
         }
     };
 
     this.writeDraft = async function(draft) {
-        try {
-            const location = generateLocation('drafts');
-            const citation = await notary.citeDocument(draft);
-            const identifier = generateDocumentIdentifier(citation);
-            const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
-            await writeComponent(location, identifier, source);
-            return citation;
-        } catch (cause) {
+        const citation = await notary.citeDocument(draft);
+        var location = generateLocation('documents');
+        const identifier = generateDocumentIdentifier(citation);
+        if (await componentExists(location, identifier)) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
                 $procedure: '$writeDraft',
-                $exception: '$unexpected',
-                $configuration: configuration,
+                $exception: '$documentExists',
+                $location: location,
+                $identifier: identifier,
                 $draft: draft,
-                $text: 'An unexpected error occurred while attempting to write a draft to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
+                $text: 'A committed document with the same tag and version already exists.'
+            });
             throw exception;
         }
+        location = generateLocation('drafts');
+        await writeComponent(location, identifier, draft, true);
+        return citation;
     };
 
     this.deleteDraft = async function(citation) {
-        try {
-            const location = generateLocation('drafts');
-            const identifier = generateDocumentIdentifier(citation);
-            const object = await readComponent(location, identifier);
-            if (object) {
-                const source = object.toString();
-                const draft = bali.component(source);
-                await deleteComponent(location, identifier);
-                return draft;
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$deleteDraft',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to delete a draft from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const location = generateLocation('drafts');
+        const identifier = generateDocumentIdentifier(citation);
+        const bytes = await readComponent(location, identifier);
+        if (bytes) {
+            const source = bytes.toString('utf8');
+            const draft = bali.component(source);
+            await deleteComponent(location, identifier);
+            return draft;
         }
     };
 
     this.documentExists = async function(citation) {
-        try {
-            const location = generateLocation('documents');
-            const identifier = generateDocumentIdentifier(citation);
-            return await componentExists(location, identifier);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$documentExists',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $citation: citation,
-                $text: 'An unexpected error occurred while checking whether or not a document exists.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const location = generateLocation('documents');
+        const identifier = generateDocumentIdentifier(citation);
+        return await componentExists(location, identifier);
     };
 
     this.readDocument = async function(citation) {
-        try {
-            const location = generateLocation('documents');
-            const identifier = generateDocumentIdentifier(citation);
-            const object = await readComponent(location, identifier);
-            if (object) {
-                const source = object.toString();
-                const document = bali.component(source);
-                return document;
-            }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$readDocument',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to read a document from the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+        const location = generateLocation('documents');
+        const identifier = generateDocumentIdentifier(citation);
+        const bytes = await readComponent(location, identifier);
+        if (bytes) {
+            const source = bytes.toString('utf8');
+            const document = bali.component(source);
+            return document;
         }
     };
 
     this.writeDocument = async function(document) {
-        try {
-            const location = generateLocation('documents');
-            const citation = await notary.citeDocument(document);
-            const identifier = generateDocumentIdentifier(citation);
-            if (await componentExists(location, identifier)) throw Error('The document already exists.');
-            const source = document.toString() + EOL;  // add POSIX compliant <EOL>
-            await writeComponent(location, identifier, source);
-            return citation;
-        } catch (cause) {
+        const citation = await notary.citeDocument(document);
+        var location = generateLocation('documents');
+        const identifier = generateDocumentIdentifier(citation);
+        if (await componentExists(location, identifier)) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
                 $procedure: '$writeDocument',
-                $exception: '$unexpected',
-                $configuration: configuration,
+                $exception: '$documentExists',
+                $location: location,
+                $identifier: identifier,
                 $document: document,
-                $text: 'An unexpected error occurred while attempting to write a document to the repository.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
+                $text: 'The document already exists.'
+            });
             throw exception;
         }
+        await writeComponent(location, identifier, document);
+        // delete any existing draft of this document
+        location = generateLocation('drafts');
+        await deleteComponent(location, identifier);
+        return citation;
     };
 
     this.messageCount = async function(bag) {
-        try {
-            const location = generateLocation('messages');
-            const identifier = generateBagIdentifier(bag);
-            const list = await listComponents(location, identifier);
-            return list.length;
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$messageCount',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const location = generateLocation('messages');
+        const identifier = generateBagIdentifier(bag);
+        const list = await listComponents(location, identifier);
+        return list.length;
     };
 
     this.addMessage = async function(bag, message) {
-        try {
-            const location = generateLocation('messages');
-            const identifier = generateMessageIdentifier(bag, message);
-            const source = message.toString() + EOL;  // add POSIX compliant <EOL>
-            await writeComponent(location, identifier, source);
-            return await notary.citeDocument(message);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$addMessage',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $bag: bag,
-                $message: message,
-                $text: 'An unexpected error occurred while attempting to add a message to a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
-        }
+        const citation = await notary.citeDocument(message);
+        const location = generateLocation('messages');
+        const identifier = generateMessageIdentifier(bag, message);
+        await writeComponent(location, identifier, message, true);
+        return citation;
     };
 
     this.removeMessage = async function(bag) {
-        try {
-            while (true) {
-                const location = generateLocation('messages');
-                var identifier = generateBagIdentifier(bag);
-                const list = await listComponents(location, identifier);
-                const count = list.length;
-                if (count === 0) break;  // no more messages
-                const messages = bali.list(list);
-                // select a message at random since a distributed bag cannot guarantee FIFO
-                const generator = bali.generator();
-                const index = generator.generateIndex(count);
-                identifier = messages.getItem(index).getValue();
-                const object = await readComponent(location, identifier);
-                if (object) {
-                    var message = object.toString();
-                    message = bali.component(message);
-                    await deleteComponent(location, identifier);
-                    return message;  // we got there first
-                }
-                // someone else got there first, keep trying
+        while (true) {
+            const location = generateLocation('messages');
+            var identifier = generateBagIdentifier(bag);
+            const list = await listComponents(location, identifier);
+            const count = list.length;
+            if (count === 0) break;  // no more messages
+            const messages = bali.list(list);
+            // select a message at random since a distributed bag cannot guarantee FIFO
+            const generator = bali.generator();
+            const index = generator.generateIndex(count);
+            identifier = messages.getItem(index).getValue();
+            const bytes = await readComponent(location, identifier);
+            if (bytes) {
+                var message = bytes.toString('utf8');
+                message = bali.component(message);
+                await deleteComponent(location, identifier);
+                return message;  // we got there first
             }
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
-                $procedure: '$removeMessage',
-                $exception: '$unexpected',
-                $configuration: configuration,
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to remove a message from a bag.'
-            }, cause);
-            if (debug > 0) console.error(exception.toString());
-            throw exception;
+            // someone else got there first, keep trying
         }
     };
 
@@ -490,12 +370,11 @@ const readComponent = function(location, identifier) {
 };
 
 
-const writeComponent = function(location, identifier, object) {
+const writeComponent = function(location, identifier, component, isMutable) {
     return new Promise(function(resolve, reject) {
         try {
-            // the object may be of type String or Buffer (strings are converted to utf8
-            // Buffer automatically)
-            s3.putObject({Bucket: location, Key: identifier, Body: object}, function(error) {
+            const source = component.toString() + EOL;  // add POSIX compliant <EOL>
+            s3.putObject({Bucket: location, Key: identifier, Body: source}, function(error) {
                 if (error) {
                     reject(error);
                 } else {
