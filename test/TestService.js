@@ -31,7 +31,7 @@ const extractCitation = function(request) {
     const protocol = notary.getProtocols().getItem(-1);  // most recent protocol
     const tag = bali.component('#' + path.slice(0, path.lastIndexOf('/')));
     const version = bali.component(path.slice(path.lastIndexOf('/') + 1));
-    const digest = request.headers['nebula-digest'];
+    const digest = "'" + request.headers['nebula-digest'] + "'";
     const citation = bali.catalog({
         $protocol: protocol,
         $tag: tag,

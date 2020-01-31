@@ -100,7 +100,8 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.writeName = async function(name, citation) {
         try {
-            await validateCitation(citation);
+            const document = await repository.readDocument(citation);
+            await validateCitation(citation, document);
             return await repository.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
@@ -137,7 +138,10 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.readDraft = async function(citation) {
         try {
             const draft = await repository.readDraft(citation);
-            if (draft) await validateDocument(draft);
+            if (draft) {
+                await validateCitation(citation, draft);
+                await validateDocument(draft);
+            }
             return draft;
         } catch (cause) {
             const exception = bali.exception({
@@ -208,7 +212,10 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.readDocument = async function(citation) {
         try {
             const document = await repository.readDocument(citation);
-            if (document) await validateDocument(document);
+            if (document) {
+                await validateCitation(citation, document);
+                await validateDocument(document);
+            }
             return document;
         } catch (cause) {
             const exception = bali.exception({
@@ -305,13 +312,12 @@ const ValidatedStorage = function(notary, repository, debug) {
      * thrown.
      *
      * @param {Catalog} citation The document citation to be validated.
-     * @returns {Catalog} The validated document cited by the citation.
+     * @param {Catalog} document The cited document.
      * @throws {Exception} The digest generated for the document does not match the digest
      * contained within the document citation.
      */
-    const validateCitation = async function(citation) {
+    const validateCitation = async function(citation, document) {
         try {
-            const document = await repository.readDocument(citation);
             if (!document) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/ValidatedStorage',
@@ -337,7 +343,6 @@ const ValidatedStorage = function(notary, repository, debug) {
                 if (debug) console.error(exception.toString());
                 throw exception;
             }
-            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -380,13 +385,15 @@ const ValidatedStorage = function(notary, repository, debug) {
             // validate the previous version of the document if one exists
             const previousCitation = content.getParameter('$previous');
             if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
-                await validateCitation(previousCitation);
+                const previousDocument = await repository.readDocument(previousCitation);
+                await validateCitation(previousCitation, previousDocument);
             }
 
             // validate the certificate if one exists
             var certificate;
             if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
-                certificate = await validateCitation(certificateCitation);
+                certificate = await repository.readDocument(certificateCitation);
+                await validateCitation(certificateCitation, certificate);
             } else {
                 certificate = document;  // the document is a self-signed certificate
             }
@@ -445,7 +452,8 @@ const ValidatedStorage = function(notary, repository, debug) {
             }
 
             // validate the certificate
-            var certificate = await validateCitation(certificateCitation);
+            const certificate = await repository.readDocument(certificateCitation);
+            await validateCitation(certificateCitation, certificate);
 
             // validate the message using its certificate
             const valid = await notary.validDocument(message, certificate);
