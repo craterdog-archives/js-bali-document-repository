@@ -92,6 +92,7 @@ const S3Storage = function(notary, configuration, debug) {
                 if (object) {
                     source = object.toString();
                     const document = bali.component(source);
+                    // do validation here since ValidatedStorage doesn't have access to the citation
                     const matches = await notary.citationMatches(citation, document);
                     if (!matches) throw Error('The cited document was modified after it was created.');
                     return document;
@@ -184,7 +185,7 @@ const S3Storage = function(notary, configuration, debug) {
             const identifier = generateDocumentIdentifier(citation);
             const source = draft.toString() + EOL;  // add POSIX compliant <EOL>
             await writeComponent(location, identifier, source);
-            return await notary.citeDocument(draft);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -275,7 +276,7 @@ const S3Storage = function(notary, configuration, debug) {
             if (await componentExists(location, identifier)) throw Error('The document already exists.');
             const source = document.toString() + EOL;  // add POSIX compliant <EOL>
             await writeComponent(location, identifier, source);
-            return await notary.citeDocument(document);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/S3Storage',
@@ -312,9 +313,8 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.addMessage = async function(bag, message) {
         try {
-            const tag = message.getValue('$content').getParameter('$tag');
             const location = generateLocation('messages');
-            const identifier = generateMessageIdentifier(bag, tag);
+            const identifier = generateMessageIdentifier(bag, message);
             const source = message.toString() + EOL;  // add POSIX compliant <EOL>
             await writeComponent(location, identifier, source);
             return await notary.citeDocument(message);
@@ -388,20 +388,21 @@ const S3Storage = function(notary, configuration, debug) {
         return identifier;
     };
 
-    const generateBagIdentifier = function(citation) {
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
+    const generateBagIdentifier = function(bag) {
+        const tag = bag.getValue('$tag');
+        const version = bag.getValue('$version');
         var identifier = tag.toString().slice(1);  // remove the leading '#'
         identifier += '/' + version.toString();
         return identifier;
     };
 
-    const generateMessageIdentifier = function(citation, message) {
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
+    const generateMessageIdentifier = function(bag, message) {
+        var tag = bag.getValue('$tag');
+        const version = bag.getValue('$version');
         var identifier = tag.toString().slice(1);  // remove the leading '#'
         identifier += '/' + version.toString();
-        identifier += '/' + message.toString().slice(1);  // remove the leading '#'
+        tag = message.getValue('$content').getParameter('$tag');
+        identifier += '/' + tag.toString().slice(1);  // remove the leading '#'
         identifier += '.bali';
         return identifier;
     };
