@@ -151,11 +151,6 @@ const RemoteStorage = function(notary, uri, debug) {
         return bali.component(source);  // return a citation to the new document
     };
 
-    this.messageCount = async function(bag) {
-        const response = await sendRequest('GET', 'messages', bag);
-        return Number(response.data.toString('utf8'));
-    };
-
     this.addMessage = async function(bag, message) {
             const response = await sendRequest('POST', 'messages', bag, message);
             if (response.status > 299) {
@@ -175,8 +170,13 @@ const RemoteStorage = function(notary, uri, debug) {
             return bali.component(source);  // return a citation to the new message
     };
 
+    this.messageAvailable = async function(bag) {
+        const response = await sendRequest('HEAD', 'messages', bag);
+        return Boolean(response.data.toString('utf8'));
+    };
+
     this.removeMessage = async function(bag) {
-        const response = await sendRequest('DELETE', 'messages', bag);
+        const response = await sendRequest('GET', 'messages', bag);
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             return bali.component(source);

@@ -118,13 +118,13 @@ const ValidatedStorage = function(notary, repository, debug) {
         return await repository.writeDocument(document);
     };
 
-    this.messageCount = async function(bag) {
-        return await repository.messageCount(bag);
-    };
-
     this.addMessage = async function(bag, message) {
         await validateMessage(message);
         return await repository.addMessage(bag, message);
+    };
+
+    this.messageAvailable = async function(bag) {
+        return await repository.messageAvailable(bag);
     };
 
     this.removeMessage = async function(bag) {

@@ -211,26 +211,27 @@ const S3Storage = function(notary, configuration, debug) {
         return citation;
     };
 
-    this.messageCount = async function(bag) {
-        const location = generateLocation('messages');
-        const identifier = generateBagIdentifier(bag);
-        const list = await listComponents(location, identifier);
-        return list.length;
-    };
-
     this.addMessage = async function(bag, message) {
         const citation = await notary.citeDocument(message);
-        const location = generateLocation('messages');
+        const location = generateLocation('messages/available');
         const identifier = generateMessageIdentifier(bag, message);
         await writeComponent(location, identifier, message, true);
         return citation;
     };
 
+    this.messageAvailable = async function(bag) {
+        const location = generateLocation('messages/available');
+        const identifier = generateBagIdentifier(bag);
+        const list = await listComponents(location, identifier);
+        return list.length > 0;
+    };
+
     this.removeMessage = async function(bag) {
+        const available = generateLocation('messages/available');
+        const processing = generateLocation('messages/processing');
         while (true) {
-            const location = generateLocation('messages');
             var identifier = generateBagIdentifier(bag);
-            const list = await listComponents(location, identifier);
+            const list = await listComponents(available, identifier);
             const count = list.length;
             if (count === 0) break;  // no more messages
             const messages = bali.list(list);
@@ -238,14 +239,15 @@ const S3Storage = function(notary, configuration, debug) {
             const generator = bali.generator();
             const index = generator.generateIndex(count);
             identifier = messages.getItem(index).getValue();
-            const bytes = await readComponent(location, identifier);
-            if (bytes) {
-                var message = bytes.toString('utf8');
-                message = bali.component(message);
-                await deleteComponent(location, identifier);
-                return message;  // we got there first
+            if (! await moveComponent(available, processing, identifier)) {
+                // someone else got there first, keep trying
+                continue;
             }
-            // someone else got there first, keep trying
+            // we got there first
+            const bytes = await readComponent(processing, identifier);
+            const source = bytes.toString('utf8');
+            const message = bali.component(source);
+            return message;
         }
     };
 
@@ -269,10 +271,7 @@ const S3Storage = function(notary, configuration, debug) {
     };
 
     const generateBagIdentifier = function(bag) {
-        const tag = bag.getValue('$tag');
-        const version = bag.getValue('$version');
-        var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version.toString();
+        var identifier = bag.toString().slice(1);  // remove the leading '/'
         return identifier;
     };
 

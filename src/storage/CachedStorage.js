@@ -128,14 +128,14 @@ const CachedStorage = function(storage, debug) {
         return citation;
     };
 
-    this.messageCount = async function(bag) {
-        // pass-through, messages are not cached
-        return await storage.messageCount(bag);
-    };
-
     this.addMessage = async function(bag, document) {
         // pass-through, messages are not cached
         return await storage.addMessage(bag, document);
+    };
+
+    this.messageAvailable = async function(bag) {
+        // pass-through, messages are not cached
+        return await storage.messageAvailable(bag);
     };
 
     this.removeMessage = async function(bag) {
