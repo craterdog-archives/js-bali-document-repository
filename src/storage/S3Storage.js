@@ -212,43 +212,73 @@ const S3Storage = function(notary, configuration, debug) {
     };
 
     this.addMessage = async function(bag, message) {
+        const location = generateLocation('messages');
         const citation = await notary.citeDocument(message);
-        const location = generateLocation('messages/available');
-        const identifier = generateMessageIdentifier(bag, message);
+        const identifier = generateMessageIdentifier(bag, 'available', citation);
         await writeComponent(location, identifier, message, true);
         return citation;
     };
 
     this.messageAvailable = async function(bag) {
-        const location = generateLocation('messages/available');
-        const identifier = generateBagIdentifier(bag);
+        const location = generateLocation('messages');
+        const identifier = generateBagIdentifier(bag, 'available');
         const list = await listComponents(location, identifier);
         return list.length > 0;
     };
 
     this.removeMessage = async function(bag) {
-        const available = generateLocation('messages/available');
-        const processing = generateLocation('messages/processing');
+        const location = generateLocation('messages');
+        const available = generateBagIdentifier(bag, 'available');
+        const processing = generateBagIdentifier(bag, 'processing');
         while (true) {
-            var identifier = generateBagIdentifier(bag);
-            const list = await listComponents(available, identifier);
+            const list = await listComponents(location, available);
             const count = list.length;
             if (count === 0) break;  // no more messages
             const messages = bali.list(list);
             // select a message at random since a distributed bag cannot guarantee FIFO
             const generator = bali.generator();
             const index = generator.generateIndex(count);
-            identifier = messages.getItem(index).getValue();
-            if (! await moveComponent(available, processing, identifier)) {
+            const identifier = messages.getItem(index).getValue();
+            const availableMessage = available + '/' + identifier;
+            const processingMessage = processing + '/' + identifier;
+            if (! await moveComponent(location, availableMessage, processingMessage)) {
                 // someone else got there first, keep trying
                 continue;
             }
             // we got there first
-            const bytes = await readComponent(processing, identifier);
+            const bytes = await readComponent(location, processingMessage);
             const source = bytes.toString('utf8');
             const message = bali.component(source);
             return message;
         }
+    };
+
+    this.returnMessage = async function(bag, message) {
+        const location = generateLocation('messages');
+        const citation = await notary.citeDocument(message);
+        const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
+        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
+        if (! await deleteComponent(location, processingIdentifier)) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/LocalStorage',
+                $procedure: '$returnMessage',
+                $exception: '$notProcessing',
+                $bag: bag,
+                $message: message,
+                $text: 'The message is not currently being processed.'
+            });
+            throw exception;
+        }
+        await writeComponent(location, availableIdentifier, message, true);
+        return citation;
+    };
+
+    this.deleteMessage = async function(bag, citation) {
+        const location = generateLocation('messages');
+        const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
+        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
+        if (await deleteComponent(location, processingIdentifier)) return true;
+        return await deleteComponent(location, availableIdentifier);
     };
 
     const generateLocation = function(type) {
@@ -374,6 +404,31 @@ const writeComponent = function(location, identifier, component, isMutable) {
                 if (error) {
                     reject(error);
                 } else {
+                    resolve();
+                }
+            });
+        } catch (cause) {
+            reject(cause);
+        }
+    });
+};
+
+const moveComponent = function(location, source, destination) {
+    return new Promise(function(resolve, reject) {
+        try {
+            // NOTE: for non-versioned buckets, deleteObject returns an empty object so
+            // there is no way to know whether or not the object even existed.
+            s3.copyObject({Bucket: location, CopySource: source, Key: destination}, function(error) {
+                if (error) {
+                    reject(error);
+                } else {
+                    s3.deleteObject({Bucket: location, Key: source}, function(error) {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve();
+                        }
+                    });
                     resolve();
                 }
             });

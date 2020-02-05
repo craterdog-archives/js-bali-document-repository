@@ -133,6 +133,15 @@ const ValidatedStorage = function(notary, repository, debug) {
         return message;
     };
 
+    this.returnMessage = async function(bag, message) {
+        await validateMessage(message);
+        return await repository.returnMessage(bag, message);
+    };
+
+    this.deleteMessage = async function(bag, citation) {
+        return await repository.deleteMessage(bag, citation);
+    };
+
     // PRIVATE FUNCTIONS
 
     /**

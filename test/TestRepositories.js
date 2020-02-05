@@ -29,9 +29,9 @@ const configuration = {
 };
 
 const repositories = {
-    'Local Storage': Repositories.repository(Repositories.local(notary, directory, debug), debug)/*,
+    'Local Storage': Repositories.repository(Repositories.local(notary, directory, debug), debug),
     'Cached Storage': Repositories.repository(Repositories.cached(Repositories.local(notary, directory, debug), debug), debug),
-    'Validated Storage': Repositories.repository(Repositories.validated(notary, Repositories.local(notary, directory, debug), debug), debug),
+    'Validated Storage': Repositories.repository(Repositories.validated(notary, Repositories.local(notary, directory, debug), debug), debug)/*,
     'Remote Storage': Repositories.repository(Repositories.remote(notary, uri, debug), debug),
     'S3 Storage': Repositories.repository(Repositories.s3(notary, configuration, debug), debug)*/
 };
@@ -166,7 +166,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 var citation = await repository.writeDocument(document);
 
                 // name the bag
-                const bag = '/bali/examples/testBag/v1';
+                const bag = '/bali/examples/' + citation.getValue('$tag').toString().slice(1) + '/v1';
                 await repository.writeName(bag, citation);
 
                 // make sure the message bag is empty

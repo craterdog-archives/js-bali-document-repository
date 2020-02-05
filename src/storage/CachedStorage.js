@@ -128,9 +128,9 @@ const CachedStorage = function(storage, debug) {
         return citation;
     };
 
-    this.addMessage = async function(bag, document) {
+    this.addMessage = async function(bag, message) {
         // pass-through, messages are not cached
-        return await storage.addMessage(bag, document);
+        return await storage.addMessage(bag, message);
     };
 
     this.messageAvailable = async function(bag) {
@@ -141,6 +141,16 @@ const CachedStorage = function(storage, debug) {
     this.removeMessage = async function(bag) {
         // pass-through, messages are not cached
         return await storage.removeMessage(bag);
+    };
+
+    this.returnMessage = async function(bag, message) {
+        // pass-through, messages are not cached
+        return await storage.returnMessage(bag, message);
+    };
+
+    this.deleteMessage = async function(bag, citation) {
+        // pass-through, messages are not cached
+        return await storage.deleteMessage(bag, citation);
     };
 
     const generateKey = function(identifier) {
