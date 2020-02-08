@@ -9,13 +9,13 @@
  ************************************************************************/
 'use strict';
 
+const DocumentEngine = require('./src/DocumentEngine').DocumentEngine;
 const DocumentRepository = require('./src/DocumentRepository').DocumentRepository;
 const CachedStorage = require('./src/storage/CachedStorage').CachedStorage;
 const LocalStorage = require('./src/storage/LocalStorage').LocalStorage;
 const RemoteStorage = require('./src/storage/RemoteStorage').RemoteStorage;
 const S3Storage = require('./src/storage/S3Storage').S3Storage;
 const ValidatedStorage = require('./src/storage/ValidatedStorage').ValidatedStorage;
-const HTTPEngine = require('./src/utilities/HTTPEngine').HTTPEngine;
 
 
 /**
@@ -212,7 +212,7 @@ const service = function(notary, configuration, debug) {
 exports.service = service;
 
 /**
- * This function initializes an HTTP engine with a digital notary and a document repository.
+ * This function initializes a document engine with a digital notary and a document repository.
  * It enforces the symantics for HTTP requests involving HEAD, GET, PUT, POST, and DELETE methods.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
@@ -226,9 +226,9 @@ exports.service = service;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {HTTPEngine} The HTTP engine.
+ * @returns {DocumentEngine} The Document engine.
  */
 const engine = function(notary, repository, debug) {
-    return new HTTPEngine(notary, repository, debug);
+    return new DocumentEngine(notary, repository, debug);
 };
 exports.engine = engine;
