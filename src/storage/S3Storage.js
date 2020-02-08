@@ -211,6 +211,20 @@ const S3Storage = function(notary, configuration, debug) {
         return citation;
     };
 
+    this.messageAvailable = async function(bag) {
+        const location = generateLocation('messages');
+        const identifier = generateBagIdentifier(bag, 'available');
+        const list = await listComponents(location, identifier);
+        return list.length > 0;
+    };
+
+    this.messageCount = async function(bag) {
+        const location = generateLocation('messages');
+        const identifier = generateBagIdentifier(bag, 'available');
+        const list = await listComponents(location, identifier);
+        return list.length;
+    };
+
     this.addMessage = async function(bag, message) {
         const location = generateLocation('messages');
         const citation = await notary.citeDocument(message);
@@ -219,14 +233,7 @@ const S3Storage = function(notary, configuration, debug) {
         return citation;
     };
 
-    this.messageAvailable = async function(bag) {
-        const location = generateLocation('messages');
-        const identifier = generateBagIdentifier(bag, 'available');
-        const list = await listComponents(location, identifier);
-        return list.length > 0;
-    };
-
-    this.removeMessage = async function(bag) {
+    this.borrowMessage = async function(bag) {
         const location = generateLocation('messages');
         const available = generateBagIdentifier(bag, 'available');
         const processing = generateBagIdentifier(bag, 'processing');
@@ -241,12 +248,17 @@ const S3Storage = function(notary, configuration, debug) {
             const identifier = messages.getItem(index).getValue();
             const availableMessage = available + '/' + identifier;
             const processingMessage = processing + '/' + identifier;
-            if (! await moveComponent(location, availableMessage, processingMessage)) {
+            const bytes = await readComponent(location, availableMessage);
+            if (!bytes) {
+                // someone else got there first, keep trying
+                continue;
+            }
+            if (! await deleteComponent(location, availableMessage)) {
                 // someone else got there first, keep trying
                 continue;
             }
             // we got there first
-            const bytes = await readComponent(location, processingMessage);
+            await writeComponent(location, processingMessage, bytes, true);
             const source = bytes.toString('utf8');
             const message = bali.component(source);
             return message;
@@ -295,23 +307,27 @@ const S3Storage = function(notary, configuration, debug) {
         const tag = citation.getValue('$tag');
         const version = citation.getValue('$version');
         var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version.toString();
+        identifier += '/' + version;
         identifier += '.bali';
         return identifier;
     };
 
-    const generateBagIdentifier = function(bag) {
-        var identifier = bag.toString().slice(1);  // remove the leading '/'
+    const generateBagIdentifier = function(bag, state) {
+        const tag = bag.getValue('$tag');
+        const version = bag.getValue('$version');
+        var identifier = tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version;
+        identifier += '/' + state;
         return identifier;
     };
 
-    const generateMessageIdentifier = function(bag, message) {
-        var tag = bag.getValue('$tag');
+    const generateMessageIdentifier = function(bag, state, citation) {
+        const tag = bag.getValue('$tag');
         const version = bag.getValue('$version');
         var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version.toString();
-        tag = message.getValue('$content').getParameter('$tag');
-        identifier += '/' + tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version;
+        identifier += '/' + state;
+        identifier += '/' + citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
         identifier += '.bali';
         return identifier;
     };
@@ -348,7 +364,7 @@ const listComponents = function(location, prefix) {
                 } else {
                     const list = [];
                     data.Contents.forEach(function(object) {
-                        list.push(object.Key);
+                        list.push(object.Key.replace(prefix + '/', ''));
                     });
                     resolve(list);
                 }
@@ -413,31 +429,6 @@ const writeComponent = function(location, identifier, component, isMutable) {
     });
 };
 
-const moveComponent = function(location, source, destination) {
-    return new Promise(function(resolve, reject) {
-        try {
-            // NOTE: for non-versioned buckets, deleteObject returns an empty object so
-            // there is no way to know whether or not the object even existed.
-            s3.copyObject({Bucket: location, CopySource: source, Key: destination}, function(error) {
-                if (error) {
-                    reject(error);
-                } else {
-                    s3.deleteObject({Bucket: location, Key: source}, function(error) {
-                        if (error) {
-                            reject(error);
-                        } else {
-                            resolve();
-                        }
-                    });
-                    resolve();
-                }
-            });
-        } catch (cause) {
-            reject(cause);
-        }
-    });
-};
-
 const deleteComponent = function(location, identifier) {
     return new Promise(function(resolve, reject) {
         try {
@@ -445,9 +436,9 @@ const deleteComponent = function(location, identifier) {
             // there is no way to know whether or not the object even existed.
             s3.deleteObject({Bucket: location, Key: identifier}, function(error) {
                 if (error) {
-                    reject(error);
+                    resolve(false);
                 } else {
-                    resolve();
+                    resolve(true);
                 }
             });
         } catch (cause) {

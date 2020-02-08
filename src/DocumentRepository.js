@@ -348,9 +348,67 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
+     * This method determines the whether or not there is a message available to be retrieved from
+     * the specified message bag in the document repository.
+     *
+     * @param {Catalog} bag A catalog citing the bag in the document repository.
+     * @returns {Boolean} Whether or not there is a message available to be retrieved.
+     */
+    this.messageAvailable = async function(bag) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$messageAvailable', '$bag', bag, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+            return await storage.messageAvailable(bag);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$messageAvailable',
+                $exception: '$unexpected',
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check for available messages in a bag.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This method determines the current number of messages that are in the specified message bag
+     * in the document repository.
+     *
+     * @param {Catalog} bag A catalog citing the bag in the document repository.
+     * @returns {Number} The number of messages that are currently in the message bag.
+     */
+    this.messageCount = async function(bag) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$borrowMessage', '$bag', bag, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+            return await storage.messageCount(bag);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$messageCount',
+                $exception: '$unexpected',
+                $bag: bag,
+                $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
      * This method adds a new message into the specified bag in the document repository.
      *
-     * @param {Name} bag The name of the bag in the document repository.
+     * @param {Catalog} bag A catalog citing the bag in the document repository.
      * @param {Catalog} message A catalog containing the message to be added.
      * @returns {Catalog} A citation to the newly added message.
      */
@@ -359,7 +417,7 @@ const DocumentRepository = function(storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$bag', bag, [
-                    '/bali/elements/Name'
+                    '/bali/collections/Catalog'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$message', message, [
                     '/bali/collections/Catalog'
@@ -381,57 +439,28 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method determines the whether or not there is a message available to be retrieved from
-     * the specified message bag in the document repository.
-     *
-     * @param {Name} bag The name of the bag in the document repository.
-     * @returns {Boolean} Whether or not there is a message available to be retrieved.
-     */
-    this.messageAvailable = async function(bag) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$messageAvailable', '$bag', bag, [
-                    '/bali/elements/Name'
-                ]);
-            }
-            return await storage.messageAvailable(bag);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$messageAvailable',
-                $exception: '$unexpected',
-                $bag: bag,
-                $text: 'An unexpected error occurred while attempting to check for available messages in a bag.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
      * This method removes a randomly chosen message from the specified bag in the
      * document repository. The removed message will not be available to other clients for one
      * minute. If the client that removed the message does not call <code>deleteMessage()</code>
      * within that time, the message is automatically added back into the bag for other clients
      * to process. If the bag is empty, nothing is returned.
      *
-     * @param {Name} bag The name of the bag in the document repository.
+     * @param {Catalog} bag A catalog citing the bag in the document repository.
      * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
      */
-    this.removeMessage = async function(bag) {
+    this.borrowMessage = async function(bag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$removeMessage', '$bag', bag, [
-                    '/bali/elements/Name'
+                validator.validateType('/bali/repositories/DocumentRepository', '$borrowMessage', '$bag', bag, [
+                    '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.removeMessage(bag);
+            return await storage.borrowMessage(bag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$removeMessage',
+                $procedure: '$borrowMessage',
                 $exception: '$unexpected',
                 $bag: bag,
                 $text: 'An unexpected error occurred while attempting to remove a message.'
@@ -448,7 +477,7 @@ const DocumentRepository = function(storage, debug) {
      * for processing. Any changes to the state of the message will be reflected in the updated
      * message.
      *
-     * @param {Name} bag The name of the bag in the document repository.
+     * @param {Catalog} bag A catalog citing the bag in the document repository.
      * @param {Catalog} message A catalog containing the message being returned.
      * @returns {Catalog} A citation to the updated message.
      */
@@ -457,7 +486,7 @@ const DocumentRepository = function(storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$returnMessage', '$bag', bag, [
-                    '/bali/elements/Name'
+                    '/bali/collections/Catalog'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$returnMessage', '$message', message, [
                     '/bali/collections/Catalog'
@@ -482,7 +511,7 @@ const DocumentRepository = function(storage, debug) {
      * This method permanently deletes a message from the specified bag in the document repository.
      * It should be called once the processing of the message has successfully completed.
      *
-     * @param {Name} bag The name of the bag in the document repository.
+     * @param {Catalog} bag A catalog citing the bag in the document repository.
      * @param {Catalog} citation A catalog containing a citation to the message to be deleted.
      * @returns {Boolean} Whether or not the cited message still existed.
      */
@@ -491,7 +520,7 @@ const DocumentRepository = function(storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$bag', bag, [
-                    '/bali/elements/Name'
+                    '/bali/collections/Catalog'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$citation', citation, [
                     '/bali/collections/Catalog'

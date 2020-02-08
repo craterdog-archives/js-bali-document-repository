@@ -224,6 +224,20 @@ const LocalStorage = function(notary, root, debug) {
         return citation;
     };
 
+    this.messageAvailable = async function(bag) {
+        const location = generateLocation('messages');
+        const identifier = generateBagIdentifier(bag, 'available');
+        const list = await listComponents(location, identifier);
+        return list.length > 0;
+    };
+
+    this.messageCount = async function(bag) {
+        const location = generateLocation('messages');
+        const identifier = generateBagIdentifier(bag, 'available');
+        const list = await listComponents(location, identifier);
+        return list.length;
+    };
+
     this.addMessage = async function(bag, message) {
         const location = generateLocation('messages');
         const citation = await notary.citeDocument(message);
@@ -232,14 +246,7 @@ const LocalStorage = function(notary, root, debug) {
         return citation;
     };
 
-    this.messageAvailable = async function(bag) {
-        const location = generateLocation('messages');
-        const identifier = generateBagIdentifier(bag, 'available');
-        const list = await listComponents(location, identifier);
-        return list.length > 0;
-    };
-
-    this.removeMessage = async function(bag) {
+    this.borrowMessage = async function(bag) {
         const location = generateLocation('messages');
         const available = generateBagIdentifier(bag, 'available');
         const processing = generateBagIdentifier(bag, 'processing');
@@ -254,12 +261,17 @@ const LocalStorage = function(notary, root, debug) {
             const identifier = messages.getItem(index).getValue();
             const availableMessage = available + '/' + identifier;
             const processingMessage = processing + '/' + identifier;
-            if (! await moveComponent(location, availableMessage, processingMessage)) {
+            const bytes = await readComponent(location, availableMessage);
+            if (!bytes) {
+                // someone else got there first, keep trying
+                continue;
+            }
+            if (! await deleteComponent(location, availableMessage)) {
                 // someone else got there first, keep trying
                 continue;
             }
             // we got there first
-            const bytes = await readComponent(location, processingMessage);
+            await writeComponent(location, processingMessage, bytes, true);
             const source = bytes.toString('utf8');
             const message = bali.component(source);
             return message;
@@ -309,19 +321,25 @@ const LocalStorage = function(notary, root, debug) {
         const tag = citation.getValue('$tag');
         const version = citation.getValue('$version');
         var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version.toString();
+        identifier += '/' + version;
         identifier += '.bali';
         return identifier;
     };
 
     const generateBagIdentifier = function(bag, state) {
-        var identifier = bag.toString().slice(1);  // remove the leading '/'
+        const tag = bag.getValue('$tag');
+        const version = bag.getValue('$version');
+        var identifier = tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version;
         identifier += '/' + state;
         return identifier;
     };
 
     const generateMessageIdentifier = function(bag, state, citation) {
-        var identifier = bag.toString().slice(1);  // remove the leading '/'
+        const tag = bag.getValue('$tag');
+        const version = bag.getValue('$version');
+        var identifier = tag.toString().slice(1);  // remove the leading '#'
+        identifier += '/' + version;
         identifier += '/' + state;
         identifier += '/' + citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
         identifier += '.bali';
@@ -392,23 +410,6 @@ const writeComponent = async function(location, identifier, component, isMutable
     await pfs.mkdir(path, {recursive: true, mode: 0o700});
     const source = component.toString() + EOL;  // add POSIX compliant <EOL>
     await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
-};
-
-const moveComponent = async function(location, source, destination) {
-    try {
-        const sourceFile = location + '/' + source;
-        const sourcePath = sourceFile.slice(0, sourceFile.lastIndexOf('/'));
-        const destinationFile = location + '/' + destination;
-        const destinationPath = destinationFile.slice(0, destinationFile.lastIndexOf('/'));
-        await pfs.mkdir(destinationPath, {recursive: true, mode: 0o700});
-        await pfs.rename(sourceFile, destinationFile);
-        try { await pfs.rmdir(sourcePath); } catch (exception) {}  // ignore if directory is not empty
-        return true;
-    } catch (exception) {
-        if (exception.code === 'ENOENT') return false; // the file did not exist
-        // something else went wrong
-        throw exception;
-    }
 };
 
 const deleteComponent = async function(location, identifier) {

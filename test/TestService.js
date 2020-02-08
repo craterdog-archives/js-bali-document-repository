@@ -8,848 +8,249 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 1;  // [0..3]
+const debug = 2;  // [0..3]
 const bali = require('bali-component-framework').api(debug);
 const notary = require('bali-digital-notary').service(debug);
 const directory = 'test/config/';
 const repository = require('../').test(notary, directory, debug);
+const engine = require('../').engine(notary, repository, debug);
 const express = require("express");
 const bodyParser = require('body-parser');
-const EOL = '\n';
 
 
 // PRIVATE FUNCTIONS
 
-const extractName = function(request) {
-    const path = request.params.identifier;
-    return bali.component(path);
+if (debug > 2) console.log('Loading the Test Repository Service');
+
+const process = async function(request, response) {
+    const result = await handler(request);
+    response.writeHead(result.statusCode, result.statusMessage, result.headers);
+    response.end(result.body);
 };
 
 
-const extractCitation = function(request) {
-    const path = request.params.identifier;
-    const protocol = notary.getProtocols().getItem(-1);  // most recent protocol
-    const tag = bali.component('#' + path.slice(0, path.lastIndexOf('/')));
-    const version = bali.component(path.slice(path.lastIndexOf('/') + 1));
-    const digest = "'" + request.headers['nebula-digest'] + "'";
-    const citation = bali.catalog({
-        $protocol: protocol,
-        $tag: tag,
-        $version: version,
-        $digest: digest
-    }, {
-        $type: '/bali/notary/Citation/v1'
-    });
-    return citation;
-};
-
-
-const invalidCredentials = async function(request) {
+const handler = async function(request) {
+    var parameters;
     try {
-        var credentials = request.headers['nebula-credentials'];
-        if (credentials) {
-            const decoder = bali.decoder(0, debug);
-            credentials = Buffer.from(decoder.base32Decode(credentials)).toString('utf8');
-            credentials = bali.component(credentials);
-            const citation = credentials.getValue('$certificate');
-            var certificate = await repository.readDocument(citation);
-            certificate = certificate || bali.component(request.body);  // if self-signed certificate
-            const isValid = await notary.validDocument(credentials, certificate);
-            return !isValid;
+        // extract the request parameters
+        parameters = engine.decodeRequest(request);
+        if (!parameters) {
+            if (debug > 2) console.log('The service received a badly formed request.');
+            return engine.encodeError(400, 'text/html', 'Bad Request');
         }
-        return false;  // for brower testing only
-    } catch (e) {
-        var message = 'Test Service: The credentials were badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
+
+        // validate the request type
+        if (!handleRequest[parameters.type]) {
+            if (debug > 2) console.log('The service received an invalid request type: ' + parameters.type);
+            return engine.encodeError(400, parameters.responseType, 'Bad Request');
         }
-        return true;  // missing the credentials
+
+        // validate the request method
+        if (!handleRequest[parameters.type][parameters.method]) {
+            if (debug > 2) console.log('The service received an invalid request method: ' + parameters.method);
+            return engine.encodeError(405, parameters.responseType, 'Method Not Allowed');
+        }
+
+        // validate any credentials that were passed with the request (there may not be any)
+        if (!(await engine.validCredentials(parameters))) {
+            if (debug > 2) console.log('Invalid credentials were passed with the request.');
+            return engine.encodeError(401, parameters.responseType, 'Invalid Credentials');
+        }
+
+        // handle the request
+        const response = await handleRequest[parameters.type][parameters.method](parameters);
+        if (debug > 2) console.log('Response: ' + bali.catalog(response));
+        return response;
+
+    } catch (cause) {
+        if (debug > 0) {
+            const exception = bali.exception({
+                $module: '/bali/services/TestRepository',
+                $procedure: '$handler',
+                $exception: '$processingFailed',
+                $parameters: parameters,
+                $text: 'The processing of the HTTP request failed.'
+            }, cause);
+            console.log(exception.toString());
+            console.log('Response: 503 (Service Unavailable)');
+        }
+        return engine.encodeError(503, 'Service Unavailable');
     }
 };
 
 
-const headName = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: HEAD ' + request.originalUrl;
-        const name = extractName(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (!(await repository.nameExists(name))) {
-            message = 'Test Service: The named document citation does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        message = 'Test Service: The named document citation exists.';
-        if (debug > 1) console.log(message);
-        response.writeHead(200, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
+const handleRequest = {
 
+    names: {
+        HEAD: async function(parameters) {
+            const name = engine.extractName(parameters);
+            const existing = await repository.readName(name);
+            return await engine.encodeResponse(parameters, existing, existing, false);  // body is stripped off
+        },
 
-const getName = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: GET ' + request.originalUrl;
-        const name = extractName(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const document = await repository.readName(name);
-        if (!document) {
-            message = 'Test Service: The named document does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        const data = document.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'immutable'
-        };
-        message = 'Test Service: The named document was retrieved.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
-        }
-        response.writeHead(200, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
+        GET: async function(parameters) {
+            const name = engine.extractName(parameters);
+            const existing = await repository.readName(name);
+            return await engine.encodeResponse(parameters, existing, existing, false);
+        },
 
+        PUT: async function(parameters) {
+            const name = engine.extractName(parameters);
+            const citation = parameters.body;
+            const existing = await repository.readName(name);
+            const response = await engine.encodeResponse(parameters, existing, existing, false);
+            if (response.statusCode === 201) await repository.writeName(name, citation);
+            return response;
+        },
 
-const putName = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        const name = extractName(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (await repository.nameExists(name)) {
-            message = 'Test Service: The document citation already exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(409, message);
-            response.end();
-            return;
-        }
-        var citation = bali.component(request.body);
-        if (!(await repository.documentExists(citation))) {
-            message = 'Test Service: The cited document must exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(409, message);
-            response.end();
-            return;
-        }
-        citation = await repository.writeName(name, citation);
+        POST: async function(parameters) {
+            return engine.encodeError(405, parameters.responseType, 'Method Not Allowed');
+        },
 
-        const data = citation.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: The named document citation was created.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
+        DELETE: async function(parameters) {
+            return engine.encodeError(405, parameters.responseType, 'Method Not Allowed');
         }
-        response.writeHead(201, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
+    },
 
+    drafts: {
+        HEAD: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const existing = await repository.readDraft(citation);
+            return await engine.encodeResponse(parameters, existing, existing, true);  // body is stripped off
+        },
 
-const postName = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Document names cannot be updated.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
+        GET: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const existing = await repository.readDraft(citation);
+            return await engine.encodeResponse(parameters, existing, existing, true);
+        },
 
+        PUT: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const draft = parameters.body;
+            const existing = await repository.readDraft(citation);
+            const response = await engine.encodeResponse(parameters, existing, existing, true);
+            if (response.statusCode < 300) await repository.writeDraft(draft);
+            return response;
+        },
 
-const deleteName = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Document names cannot be deleted.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
+        POST: async function(parameters) {
+            return engine.encodeError(405, parameters.responseType, 'Method Not Allowed');
+        },
 
+        DELETE: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const existing = await repository.readDraft(citation);
+            const response = await engine.encodeResponse(parameters, existing, existing, true);
+            if (response.statusCode === 200) await repository.deleteDraft(citation);
+            return response;
+        }
+    },
 
-const headDraft = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: HEAD ' + request.originalUrl;
-        const citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (!(await repository.draftExists(citation))) {
-            message = 'Test Service: The draft document does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        message = 'Test Service: The draft document exists.';
-        if (debug > 1) console.log(message);
-        response.writeHead(200, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
+    documents: {
+        HEAD: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const existing = await repository.readDocument(citation);
+            return await engine.encodeResponse(parameters, existing, existing, false);  // body is stripped off
+        },
 
+        GET: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const existing = await repository.readDocument(citation);
+            return await engine.encodeResponse(parameters, existing, existing, false);
+        },
 
-const getDraft = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: GET ' + request.originalUrl;
-        const citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const draft = await repository.readDraft(citation);
-        if (!draft) {
-            message = 'Test Service: The draft document does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        const data = draft.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: The draft document was retrieved.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
-        }
-        response.writeHead(200, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const postDraft = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Draft documents cannot be posted.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const putDraft = async function(request, response) {
-    var message;
-    try {
-        const draft = bali.component(request.body);
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + draft;
-        var citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const updated = await repository.documentExists(citation);
-        const content = draft.getValue('$content');
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
-
-        if (!tag.isEqualTo(content.getParameter('$tag')) || !version.isEqualTo(content.getParameter('$version'))) {
-            message = 'Test Service: The tag and version of the draft document are incorrect.';
-            if (debug > 1) console.log(message);
-            response.writeHead(409, message);
-            response.end();
-            return;
-        }
-        citation = await repository.writeDraft(draft);
-        const data = citation.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: The draft document was retrieved.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
-        }
-        if (updated) {
-            message = 'Test Service: The draft document was updated.';
-            if (debug > 1) console.log(message);
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
-            message = 'Test Service: The draft document was created.';
-            if (debug > 1) console.log(message);
-            response.writeHead(201, message, options);
-            response.end(data);
-        }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const deleteDraft = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        const citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const draft = await repository.deleteDraft(citation);
-        if (!draft) {
-            message = 'Test Service: The draft document did not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        const data = draft.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: The draft document was deleted.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
-        }
-        response.writeHead(200, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const headDocument = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: HEAD ' + request.originalUrl;
-        const citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (!(await repository.documentExists(citation))) {
-            message = 'Test Service: The notarized document does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        message = 'Test Service: The notarized document exists.';
-        if (debug > 1) console.log(message);
-        response.writeHead(200, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const getDocument = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: GET ' + request.originalUrl;
-        const citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const document = await repository.readDocument(citation);
-        if (!document) {
-            message = 'Test Service: The notarized document does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
-            return;
-        }
-        const data = document.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'immutable'
-        };
-        message = 'Test Service: The notarized document was retrieved.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
-        }
-        response.writeHead(200, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const putDocument = async function(request, response) {
-    var message;
-    try {
-        const document = bali.component(request.body);
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + document;
-        var citation = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        if (await repository.documentExists(citation)) {
-            message = 'Test Service: A committed document with this version already exists.';
-            if (debug > 1) console.log(message);
-            response.writeHead(409, message);
-            response.end();
-            return;
-        }
-        const content = document.getValue('$content');
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
-        if (!tag.isEqualTo(content.getParameter('$tag')) || !version.isEqualTo(content.getParameter('$version'))) {
-            message = 'Test Service: The tag and version of the document are incorrect.';
-            if (debug > 1) console.log(message);
-            response.writeHead(409, message);
-            response.end();
-            return;
-        }
-        citation = await repository.writeDocument(document);
-        const data = citation.toString();
-        await repository.deleteDraft(citation);
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: The committed document was created.';
-        if (debug > 1) console.log(message);
-        response.writeHead(201, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const postDocument = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Notarized documents cannot be updated.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const deleteDocument = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Notarized documents cannot be deleted.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const headBag = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: HEAD ' + request.originalUrl;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Bags cannot be headed.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const getBag = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: GET ' + request.originalUrl;
-        const bag = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        const count = await repository.messageCount(bag);
-        if (debug > 1) console.log(message);
-        const data = count.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: The message bag contains ' + count + ' messages.';
-        if (debug > 1) console.log(message);
-        if (debug > 2) {
-            console.log('    options: ' + bali.catalog(options));
-            console.log('    result: ' + data);
-        }
-        response.writeHead(200, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const putBag = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: PUT ' + request.originalUrl + ' ' + request.body;
-        if (debug > 1) console.log(message);
-        message = 'Test Service: Bags are created and deleted automatically.';
-        if (debug > 1) console.log(message);
-        response.writeHead(405, message);
-        response.end();
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const postMessage = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: POST ' + request.originalUrl + ' ' + request.body;
-        const bag = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        message = bali.component(request.body);
-        const citation = await repository.addMessage(bag, message);
-        const data = citation.toString();
-        const options = {
-            'Content-Length': data.length,
-            'Content-Type': 'application/bali',
-            'Cache-Control': 'no-store'
-        };
-        message = 'Test Service: A message was added to the bag.';
-        if (debug > 1) console.log(message);
-        response.writeHead(201, message, options);
-        response.end(data);
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
-        }
-        response.writeHead(400, message);
-        response.end();
-    }
-};
-
-
-const deleteMessage = async function(request, response) {
-    var message;
-    try {
-        message = 'Test Service: DELETE ' + request.originalUrl;
-        const bag = extractCitation(request);
-        if (debug > 1) console.log(message);
-        if (await invalidCredentials(request)) {
-            message = 'Test Service: The credentials are invalid.';
-            if (debug > 1) console.log(message);
-            response.writeHead(401, message);
-            response.end();
-            return;
-        }
-        message = await repository.removeMessage(bag);
-        if (message) {
-            const data = message.toString();
-            const options = {
-                'Content-Length': data.length,
-                'Content-Type': 'application/bali',
-                'Cache-Control': 'no-store'
-            };
-            message = 'Test Service: A message was removed from the bag.';
-            if (debug > 1) console.log(message);
-            if (debug > 2) {
-                console.log('    options: ' + bali.catalog(options));
-                console.log('    result: ' + data);
+        PUT: async function(parameters) {
+            const citation = engine.extractCitation(parameters);
+            const document = parameters.body;
+            const existing = await repository.readDocument(citation);
+            const response = await engine.encodeResponse(parameters, existing, existing, false);
+            if (response.statusCode === 201) {
+                await repository.writeDocument(document);
             }
-            response.writeHead(200, message, options);
-            response.end(data);
-        } else {
-            message = 'Test Service: The bag does not exist.';
-            if (debug > 1) console.log(message);
-            response.writeHead(404, message);
-            response.end();
+            return response;
+        },
+
+        POST: async function(parameters) {
+            return engine.encodeError(405, parameters.responseType, 'Method Not Allowed');
+        },
+
+        DELETE: async function(parameters) {
+            return engine.encodeError(405, parameters.responseType, 'Method Not Allowed');
         }
-    } catch (e) {
-        message = 'Test Service: The request was badly formed.';
-        if (debug > 1) {
-            console.log(message);
-            console.log(e.toString());
+    },
+
+    messages: {
+        HEAD: async function(parameters) {
+            const bag = engine.extractCitation(parameters);
+            const authority = await repository.readDocument(bag);
+            const count = bali.number(await repository.messageCount(bag));
+            return await engine.encodeResponse(parameters, authority, count.getMagnitude() > 0 ? count : undefined, true);  // body is stripped off
+        },
+
+        GET: async function(parameters) {
+            const bag = engine.extractCitation(parameters);
+            const authority = await repository.readDocument(bag);
+            const count = bali.number(await repository.messageCount(bag));
+            return await engine.encodeResponse(parameters, authority, count, true);
+        },
+
+        PUT: async function(parameters) {
+            const bag = engine.extractCitation(parameters);
+            const authority = await repository.readDocument(bag);
+            const message = parameters.body;
+            const response = await engine.encodeResponse(parameters, authority, message, true);
+            if (response.statusCode === 200) {
+                await repository.returnMessage(bag, message);
+            } else if (response.statusCode === 201) {
+                return engine.encodeError(404, parameters.responseType, 'The bag does not exist.');
+            }
+            return response;
+        },
+
+        POST: async function(parameters) {
+            const bag = engine.extractCitation(parameters);
+            const authority = await repository.readDocument(bag);
+            const message = parameters.body;
+            const response = await engine.encodeResponse(parameters, authority, message, true);
+            if (response.statusCode === 201) {
+                await repository.addMessage(bag, message);
+            }
+            return response;
+        },
+
+        DELETE: async function(parameters) {
+            const bag = engine.extractCitation(parameters);
+            const authority = await repository.readDocument(bag);
+            var result;
+            if (authority) {
+                if (parameters.resources.length === 2) {
+                    // borrow a random message from the bag
+                    result = await repository.borrowMessage(bag);
+                } else {
+                    // permanently delete the specified message from the bag
+                    const citation = engine.extractSecondCitation(parameters);
+                    result = bali.probability(await repository.deleteMessage(bag, citation));
+                }
+            }
+            return await engine.encodeResponse(parameters, authority, result, true);
         }
-        response.writeHead(400, message);
-        response.end();
     }
+
 };
 
 
 // SERVICE INITIALIZATION
 
-const nameRouter = express.Router();
-// Note: the leading slash is part of the named document identifier
-nameRouter.head(':identifier([a-zA-Z0-9/\\.]+)', headName);
-nameRouter.get(':identifier([a-zA-Z0-9/\\.]+)', getName);
-nameRouter.post(':identifier([a-zA-Z0-9/\\.]+)', postName);
-nameRouter.put(':identifier([a-zA-Z0-9/\\.]+)', putName);
-nameRouter.delete(':identifier([a-zA-Z0-9/\\.]+)', deleteName);
-
-const draftRouter = express.Router();
-draftRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headDraft);
-draftRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDraft);
-draftRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDraft);
-draftRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDraft);
-draftRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDraft);
-
-const documentRouter = express.Router();
-documentRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headDocument);
-documentRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getDocument);
-documentRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postDocument);
-documentRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putDocument);
-documentRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteDocument);
-
-const bagRouter = express.Router();
-bagRouter.head('/:identifier([a-zA-Z0-9/\\.]+)', headBag);
-bagRouter.get('/:identifier([a-zA-Z0-9/\\.]+)', getBag);
-bagRouter.post('/:identifier([a-zA-Z0-9/\\.]+)', postMessage);
-bagRouter.put('/:identifier([a-zA-Z0-9/\\.]+)', putBag);
-bagRouter.delete('/:identifier([a-zA-Z0-9/\\.]+)', deleteMessage);
+const router = express.Router();
+router.all(':identifier([a-zA-Z0-9/\\.]+)', process);
 
 const service = express();
-
 service.use(bodyParser.text({ type: 'application/bali' }));
-service.use('/names', nameRouter);
-service.use('/drafts', draftRouter);
-service.use('/documents', documentRouter);
-service.use('/messages', bagRouter);
+service.use('', router);
 
 service.listen(3000, function() {
     var message = 'Service: Server running on port 3000';
     if (debug > 1) console.log(message);
 });
+

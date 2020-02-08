@@ -74,19 +74,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeName = async function(name, citation) {
         const response = await sendRequest('PUT', 'names', name, citation);
-        if (response.status > 299) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$writeName',
-                $exception: '$remote',
-                $uri: uri,
-                $name: name,
-                $citation: citation,
-                $status: response.status,
-                $text: 'Unable to create the named citation.'
-            });
-            throw exception;
-        }
+        if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
         return citation;
     };
 
@@ -135,52 +123,47 @@ const RemoteStorage = function(notary, uri, debug) {
     this.writeDocument = async function(document) {
         const citation = await notary.citeDocument(document);
         const response = await sendRequest('PUT', 'documents', citation, document);
-        if (response.status > 299) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$writeDocument',
-                $exception: '$remote',
-                $uri: uri,
-                $document: document,
-                $status: response.status,
-                $text: 'Unable to create the document.'
-            });
-            throw exception;
-        }
+        if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
         const source = response.data.toString('utf8');
         return bali.component(source);  // return a citation to the new document
     };
 
-    this.addMessage = async function(bag, message) {
-            const response = await sendRequest('POST', 'messages', bag, message);
-            if (response.status > 299) {
-                const exception = bali.exception({
-                    $module: '/bali/repositories/RemoteStorage',
-                    $procedure: '$addMessage',
-                    $exception: '$remote',
-                    $uri: uri,
-                    $bag: bag,
-                    $message: message,
-                    $status: response.status,
-                    $text: 'Unable to add the message to the bag.'
-                });
-                throw exception;
-            }
-            const source = response.data.toString('utf8');
-            return bali.component(source);  // return a citation to the new message
-    };
-
     this.messageAvailable = async function(bag) {
         const response = await sendRequest('HEAD', 'messages', bag);
-        return Boolean(response.data.toString('utf8'));
+        return response.status === 200;
     };
 
-    this.removeMessage = async function(bag) {
+    this.messageCount = async function(bag) {
         const response = await sendRequest('GET', 'messages', bag);
+        return Number(response.data.toString('utf8'));
+    };
+
+    this.addMessage = async function(bag, message) {
+        const response = await sendRequest('POST', 'messages', bag, message);
+        if (response.status > 299) throw Error('Unable to add the message to the bag: ' + response.status);
+        const source = response.data.toString('utf8');
+        return bali.component(source);  // return a citation to the new message
+    };
+
+    this.borrowMessage = async function(bag) {
+        const response = await sendRequest('DELETE', 'messages', bag);
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             return bali.component(source);
         }
+    };
+
+    this.returnMessage = async function(bag, message) {
+        const citation = await notary.citeDocument(message);
+        const response = await sendRequest('PUT', 'messages' + '/' + generatePath(bag), citation, message);
+        if (response.status > 299) throw Error('Unable to return the message to the bag: ' + response.status);
+        const source = response.data.toString('utf8');
+        return bali.component(source);  // return a citation to the new document
+    };
+
+    this.deleteMessage = async function(bag, citation) {
+        const response = await sendRequest('DELETE', 'messages' + '/' + generatePath(bag), citation);
+        return response.status === 200;
     };
 
 
@@ -225,11 +208,8 @@ const RemoteStorage = function(notary, uri, debug) {
      */
     const sendRequest = async function(method, type, identifier, document) {
 
-        // the POSIX end of line character
-        const EOL = '\n';
-
         // setup the request URI and options
-        const fullURI = uri + '/' + type + '/' + generatePath(identifier);
+        const fullURI = uri + '/repository/' + type + '/' + generatePath(identifier);
         const options = {
             url: fullURI,
             method: method,

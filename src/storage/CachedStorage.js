@@ -128,19 +128,24 @@ const CachedStorage = function(storage, debug) {
         return citation;
     };
 
-    this.addMessage = async function(bag, message) {
-        // pass-through, messages are not cached
-        return await storage.addMessage(bag, message);
-    };
-
     this.messageAvailable = async function(bag) {
         // pass-through, messages are not cached
         return await storage.messageAvailable(bag);
     };
 
-    this.removeMessage = async function(bag) {
+    this.messageCount = async function(bag) {
         // pass-through, messages are not cached
-        return await storage.removeMessage(bag);
+        return await storage.messageCount(bag);
+    };
+
+    this.addMessage = async function(bag, message) {
+        // pass-through, messages are not cached
+        return await storage.addMessage(bag, message);
+    };
+
+    this.borrowMessage = async function(bag) {
+        // pass-through, messages are not cached
+        return await storage.borrowMessage(bag);
     };
 
     this.returnMessage = async function(bag, message) {
