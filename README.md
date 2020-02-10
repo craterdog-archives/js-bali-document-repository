@@ -15,7 +15,14 @@ npm install bali-document-repository
 ```
 Then add the following line to your NodeJS modules:
 ```
-const bali = require('bali-document-repository');
+const bali = require('bali-component-framework').api();
+const account = bali.tag();  // new random account tag
+const securityModule = require('bali-digital-notary').ssm();
+const notary = require('bali-digital-notary').notary(securityModule, account);
+const local = require('bali-document-repository').local(notary);
+const validated = require('bali-document-repository').validated(notary, local);
+const cached = require('bali-document-repository').cached(validated);
+const repository = require('bali-document-repository').repository(cached);
 ```
 
 ### Contributing
