@@ -236,7 +236,8 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
             digest = bali.component("'" + digest + "'");
         }
 
-        const resultType = request.headers['accept'] || request.headers['Accept'] || 'text/html';
+        var resultType = request.headers['accept'] || request.headers['Accept'];
+        if (resultType !== 'application/bali') resultType = 'text/html';  // for a browser
 
         const tokens = path.split('/');
         const service = tokens[1];
