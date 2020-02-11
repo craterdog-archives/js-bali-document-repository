@@ -1,6 +1,6 @@
 {
   "name": "bali-document-repository",
-  "version": "2.23.3",
+  "version": "2.23.4",
   "description": "This project defines the interface to, and various implementations of, the Bali Document Repository™.",
   "repository": {
     "type": "git",
