@@ -240,7 +240,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
         const service = tokens[1];
         const type = tokens[2];
         const resources = tokens.slice(3);
-        const body = !(request.body instanceof Object) ? bali.component(request.body) : undefined;
+        const body = (request.body && (request.body.constructor.name === 'String')) ? bali.component(request.body) : undefined;
 
         const parameters = {
             credentials: credentials,
