@@ -122,6 +122,8 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
             {
                 $status: status,
                 $message: message
+            }, {
+                $type: '/bali/services/Error/v1'
             }
         );
         const response = {
