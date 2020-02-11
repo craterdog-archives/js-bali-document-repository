@@ -219,10 +219,10 @@ const RemoteStorage = function(notary, uri, debug) {
                 return status < 400;  // only flag unexpected server errors
             },
             headers: {
-                'User-Agent': 'Bali Document Repository API/v2 (NodeJS/v12) Bali Nebula/v2',
-                'Nebula-Credentials': await generateCredentials(),
-                'Nebula-Digest': generateDigest(identifier),
-                'Accept': 'application/bali'
+                'user-agent': 'Bali Document Repository API/v2 (NodeJS/v12) Bali Nebula/v2',
+                'nebula-credentials': await generateCredentials(),
+                'nebula-digest': generateDigest(identifier),
+                'accept': 'application/bali'
             }
         };
 
@@ -230,8 +230,8 @@ const RemoteStorage = function(notary, uri, debug) {
         const data = document ? document.toString() : undefined;
         if (data) {
             options.data = data;
-            options.headers['Content-Type'] = 'application/bali';
-            options.headers['Content-Length'] = data.length;
+            options.headers['content-type'] = 'application/bali';
+            options.headers['content-length'] = data.length;
         }
 
         // send the request

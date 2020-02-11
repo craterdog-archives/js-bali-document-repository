@@ -224,19 +224,19 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
         const path = request.path;
         if (debug > 1) console.log('Request ' + method + ': ' + path);
 
-        var credentials = request.headers['nebula-credentials'];
+        var credentials = request.headers['nebula-credentials'] || request.headers['Nebula-Credentials'];
         if (credentials) {
             const decoder = bali.decoder(0, debug);
             credentials = Buffer.from(decoder.base32Decode(credentials)).toString('utf8');
             credentials = bali.component(credentials);
         }
 
-        var digest = request.headers['nebula-digest'];
+        var digest = request.headers['nebula-digest'] || request.headers['Nebula-Digest'];
         if (digest) {
             digest = bali.component("'" + digest + "'");
         }
 
-        const resultType = request.headers['accept'] || 'text/html';
+        const resultType = request.headers['accept'] || request.headers['Accept'] || 'text/html';
 
         const tokens = path.split('/');
         const service = tokens[1];
