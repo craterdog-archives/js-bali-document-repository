@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 1;  // [0..3]
+const debug = 0;  // [0..3]
 const bali = require('bali-component-framework').api(debug);
 const notary = require('bali-digital-notary').service(debug);
 const directory = 'test/config/';
@@ -17,7 +17,7 @@ const engine = require('../').engine(notary, repository, debug);
 const express = require("express");
 const bodyParser = require('body-parser');
 
-if (debug > 1) console.log('Loading the Test Repository Service');
+if (debug > 0) console.log('Loading the Test Repository Service');
 
 const processRequest = async function(request, response) {
     const result = await engine.processRequest(request);
