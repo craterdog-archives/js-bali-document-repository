@@ -212,8 +212,6 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
     const decodeRequest = function(request) {
         const method = request.httpMethod || request.method;
         const path = request.path;
-        if (debug > 0) console.log('Request ' + method + ': ' + path);
-
         var credentials = request.headers['nebula-credentials'] || request.headers['Nebula-Credentials'];
         if (credentials) {
             const decoder = bali.decoder(0, debug);
