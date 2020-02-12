@@ -410,7 +410,7 @@ const DocumentRepository = function(storage, debug) {
      *
      * @param {Catalog} bag A catalog citing the bag in the document repository.
      * @param {Catalog} message A catalog containing the message to be added.
-     * @returns {Catalog} A citation to the newly added message.
+     * @returns {Tag} A tag identifying the newly added message.
      */
     this.addMessage = async function(bag, message) {
         try {
@@ -441,7 +441,7 @@ const DocumentRepository = function(storage, debug) {
     /**
      * This method removes a randomly chosen message from the specified bag in the
      * document repository. The removed message will not be available to other clients for one
-     * minute. If the client that removed the message does not call <code>deleteMessage()</code>
+     * minute. If the client that borrowed the message does not call <code>deleteMessage()</code>
      * within that time, the message is automatically added back into the bag for other clients
      * to process. If the bag is empty, nothing is returned.
      *
@@ -479,7 +479,7 @@ const DocumentRepository = function(storage, debug) {
      *
      * @param {Catalog} bag A catalog citing the bag in the document repository.
      * @param {Catalog} message A catalog containing the message being returned.
-     * @returns {Catalog} A citation to the updated message.
+     * @returns {Boolean} Whether or not the message was successfully returned.
      */
     this.returnMessage = async function(bag, message) {
         try {

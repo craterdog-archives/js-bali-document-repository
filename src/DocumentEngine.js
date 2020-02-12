@@ -115,11 +115,9 @@ const DocumentEngine = function(notary, repository, debug) {
                 const message = parameters.body;
                 const response = await this.encodeResponse(parameters, authority, message, true);
                 if (response.statusCode === 200) {
-                    await repository.returnMessage(bag, message);
-                } else if (response.statusCode === 201) {
-                    return this.encodeError(404, parameters.responseType, 'The bag does not exist.');
+                    if (await repository.returnMessage(bag, message)) return response;
                 }
-                return response;
+                return this.encodeError(409, parameters.responseType, 'Resource Conflict');
             },
 
             POST: async function(parameters) {
@@ -143,8 +141,8 @@ const DocumentEngine = function(notary, repository, debug) {
                         result = await repository.borrowMessage(bag);
                     } else {
                         // permanently delete the specified message from the bag
-                        const citation = this.extractSecondCitation(parameters);
-                        result = bali.probability(await repository.deleteMessage(bag, citation));
+                        const tag = this.extractTag(parameters);
+                        result = bali.probability(await repository.deleteMessage(bag, tag));
                     }
                 }
                 return await this.encodeResponse(parameters, authority, result, true);

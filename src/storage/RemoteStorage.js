@@ -73,7 +73,7 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.writeName = async function(name, citation) {
-        const response = await sendRequest('PUT', 'names', name, citation);
+        const response = await sendRequest('PUT', 'names', name, undefined, citation);
         if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
         return citation;
     };
@@ -93,7 +93,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeDraft = async function(draft) {
         const citation = await notary.citeDocument(draft);
-        const response = await sendRequest('PUT', 'drafts', citation, draft);
+        const response = await sendRequest('PUT', 'drafts', citation, undefined, draft);
         if (response.status > 299) throw Error('Unable to save the draft: ' + response.status);
         const source = response.data.toString('utf8');
         return bali.component(source);  // return a citation to the new document
@@ -122,7 +122,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeDocument = async function(document) {
         const citation = await notary.citeDocument(document);
-        const response = await sendRequest('PUT', 'documents', citation, document);
+        const response = await sendRequest('PUT', 'documents', citation, undefined, document);
         if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
         const source = response.data.toString('utf8');
         return bali.component(source);  // return a citation to the new document
@@ -139,10 +139,10 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.addMessage = async function(bag, message) {
-        const response = await sendRequest('POST', 'messages', bag, message);
+        const response = await sendRequest('POST', 'messages', bag, undefined, message);
         if (response.status > 299) throw Error('Unable to add the message to the bag: ' + response.status);
-        const source = response.data.toString('utf8');
-        return bali.component(source);  // return a citation to the new message
+        const tag = extractTag(message);
+        return tag;
     };
 
     this.borrowMessage = async function(bag) {
@@ -154,28 +154,32 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.returnMessage = async function(bag, message) {
-        const citation = await notary.citeDocument(message);
-        const response = await sendRequest('PUT', 'messages' + '/' + generatePath(bag), citation, message);
-        if (response.status > 299) throw Error('Unable to return the message to the bag: ' + response.status);
-        const source = response.data.toString('utf8');
-        return bali.component(source);  // return a citation to the new document
+        const tag = extractTag(message);
+        const response = await sendRequest('PUT', 'messages', bag, tag, message);
+        return response.status === 200;
     };
 
-    this.deleteMessage = async function(bag, citation) {
-        const response = await sendRequest('DELETE', 'messages' + '/' + generatePath(bag), citation);
+    this.deleteMessage = async function(bag, tag) {
+        const response = await sendRequest('DELETE', 'messages', bag, tag);
         return response.status === 200;
     };
 
 
     // PRIVATE FUNCTIONS
 
-    const generatePath = function(identifier) {
+    const extractTag = function(message) {
+        const content = message.getValue('$content');
+        const tag = content.getParameter('$tag');
+        return tag;
+    };
+
+    const generatePath = function(resource) {
         var path = '';
-        if (identifier.isComponent && identifier.isType('/bali/collections/Catalog')) {
-            path += identifier.getValue('$tag').toString().slice(1);  // remove the leading '#'
-            path += '/' + identifier.getValue('$version').toString();
+        if (resource.isComponent && resource.isType('/bali/collections/Catalog')) {
+            path += resource.getValue('$tag').toString().slice(1);  // remove the leading '#'
+            path += '/' + resource.getValue('$version').toString();
         } else {
-            path += identifier.toString().slice(1);  // remove the leading '/'
+            path += resource.toString().slice(1);  // remove the leading '/'
         }
         return path;
     };
@@ -187,29 +191,30 @@ const RemoteStorage = function(notary, uri, debug) {
         return credentials;
     };
 
-    const generateDigest = function(identifier) {
+    const generateDigest = function(resource) {
         var digest = '';
-        if (identifier.isComponent && identifier.isType('/bali/collections/Catalog')) {
-            digest += identifier.getValue('$digest').toString().slice(1, -1).replace(/\s+/g, '');
+        if (resource.isComponent && resource.isType('/bali/collections/Catalog')) {
+            digest += resource.getValue('$digest').toString().slice(1, -1).replace(/\s+/g, '');
         }
         return digest;
     };
 
     /**
      * This function sends a RESTful web request to the remote repository with the specified, method,
-     * type, resource and identifier. If a document is included it is sent as the body of the
+     * type, resource and tag. If a document is included it is sent as the body of the
      * request. The result that is returned by the web service is returned from this function.
      *
      * @param {String} method The HTTP method type of the request.
      * @param {String} type The type of resource being acted upon.
-     * @param {Name|Catalog} identifier The identifier of the specific resource being acted upon.
+     * @param {Name|Catalog} resource The resource of the specific resource being acted upon.
+     * @param {Tag} tag An optional tag used to identify a subcomponent of the resource.
      * @param {Catalog} document An optional signed document to be passed to the web service.
      * @returns {Object} The response to the request.
      */
-    const sendRequest = async function(method, type, identifier, document) {
+    const sendRequest = async function(method, type, resource, tag, document) {
 
         // setup the request URI and options
-        const fullURI = uri + '/repository/' + type + '/' + generatePath(identifier);
+        const fullURI = uri + '/repository/' + type + '/' + generatePath(resource) + (tag ? '/' + tag.toString().slice(1) : '');
         const options = {
             url: fullURI,
             method: method,
@@ -221,7 +226,7 @@ const RemoteStorage = function(notary, uri, debug) {
             headers: {
                 'user-agent': 'Bali Document Repository API/v2 (NodeJS/v12) Bali Nebula/v2',
                 'nebula-credentials': await generateCredentials(),
-                'nebula-digest': generateDigest(identifier),
+                'nebula-digest': generateDigest(resource),
                 'accept': 'application/bali'
             }
         };

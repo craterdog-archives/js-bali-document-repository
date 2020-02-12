@@ -36,7 +36,6 @@ const repositories = {
     'S3 Storage': Repositories.repository(Repositories.s3(notary, configuration, debug), debug)
 };
 
-
 describe('Bali Nebula™ Document Repository', function() {
 
     for (var key in repositories) {
@@ -187,30 +186,36 @@ describe('Bali Nebula™ Document Repository', function() {
                     return await notary.notarizeDocument(content);
                 };
 
+                const extractTag = function(message) {
+                    const content = message.getValue('$content');
+                    const tag = content.getParameter('$tag');
+                    return tag;
+                };
+
                 var message = await generateMessage(1);
-                var citation = await notary.citeDocument(message);
-                expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
+                var tag = extractTag(message);
+                expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
                 expect(await repository.messageAvailable(bag)).to.equal(true);
 
                 message = await generateMessage(2);
-                citation = await notary.citeDocument(message);
-                expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
+                tag = extractTag(message);
+                expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
                 expect(await repository.messageAvailable(bag)).to.equal(true);
 
                 message = await generateMessage(3);
-                citation = await notary.citeDocument(message);
-                expect(citation.isEqualTo(await repository.addMessage(bag, message))).is.true;
+                tag = extractTag(message);
+                expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
                 expect(await repository.messageAvailable(bag)).to.equal(true);
 
                 // remove the messages from the bag
                 message = await repository.borrowMessage(bag);
-                citation = await notary.citeDocument(message);
-                await repository.deleteMessage(bag, citation);
+                tag = extractTag(message);
+                await repository.deleteMessage(bag, tag);
                 expect(await repository.messageAvailable(bag)).to.equal(true);
 
                 message = await repository.borrowMessage(bag);
-                citation = await notary.citeDocument(message);
-                await repository.deleteMessage(bag, citation);
+                tag = extractTag(message);
+                await repository.deleteMessage(bag, tag);
                 expect(await repository.messageAvailable(bag)).to.equal(true);
 
                 message = await repository.borrowMessage(bag);
@@ -218,8 +223,8 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(await repository.messageAvailable(bag)).to.equal(true);
 
                 message = await repository.borrowMessage(bag);
-                citation = await notary.citeDocument(message);
-                await repository.deleteMessage(bag, citation);
+                tag = extractTag(message);
+                await repository.deleteMessage(bag, tag);
                 expect(await repository.messageAvailable(bag)).to.equal(false);
 
                 // make sure the message bag is empty

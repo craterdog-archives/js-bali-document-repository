@@ -240,10 +240,10 @@ const LocalStorage = function(notary, root, debug) {
 
     this.addMessage = async function(bag, message) {
         const location = generateLocation('messages');
-        const citation = await notary.citeDocument(message);
-        const identifier = generateMessageIdentifier(bag, 'available', citation);
+        const tag = extractTag(message);
+        const identifier = generateMessageIdentifier(bag, 'available', tag);
         await writeComponent(location, identifier, message, true);
-        return citation;
+        return tag;
     };
 
     this.borrowMessage = async function(bag) {
@@ -280,9 +280,9 @@ const LocalStorage = function(notary, root, debug) {
 
     this.returnMessage = async function(bag, message) {
         const location = generateLocation('messages');
-        const citation = await notary.citeDocument(message);
-        const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
-        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
+        const tag = extractTag(message);
+        const availableIdentifier = generateMessageIdentifier(bag, 'available', tag);
+        const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
         if (! await deleteComponent(location, processingIdentifier)) {
             const exception = bali.exception({
                 $module: '/bali/repositories/LocalStorage',
@@ -295,15 +295,21 @@ const LocalStorage = function(notary, root, debug) {
             throw exception;
         }
         await writeComponent(location, availableIdentifier, message, true);
-        return citation;
+        return tag;
     };
 
-    this.deleteMessage = async function(bag, citation) {
+    this.deleteMessage = async function(bag, tag) {
         const location = generateLocation('messages');
-        const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
-        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
+        const availableIdentifier = generateMessageIdentifier(bag, 'available', tag);
+        const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
         if (await deleteComponent(location, processingIdentifier)) return true;
         return await deleteComponent(location, availableIdentifier);
+    };
+
+    const extractTag = function(message) {
+        const content = message.getValue('$content');
+        const tag = content.getParameter('$tag');
+        return tag;
     };
 
     const generateLocation = function(type) {
@@ -318,30 +324,24 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     const generateDocumentIdentifier = function(citation) {
-        const tag = citation.getValue('$tag');
-        const version = citation.getValue('$version');
-        var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version;
+        var identifier = citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + citation.getValue('$version');
         identifier += '.bali';
         return identifier;
     };
 
     const generateBagIdentifier = function(bag, state) {
-        const tag = bag.getValue('$tag');
-        const version = bag.getValue('$version');
-        var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version;
+        var identifier = bag.getValue('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + bag.getValue('$version');
         identifier += '/' + state;
         return identifier;
     };
 
-    const generateMessageIdentifier = function(bag, state, citation) {
-        const tag = bag.getValue('$tag');
-        const version = bag.getValue('$version');
-        var identifier = tag.toString().slice(1);  // remove the leading '#'
-        identifier += '/' + version;
+    const generateMessageIdentifier = function(bag, state, tag) {
+        var identifier = bag.getValue('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + bag.getValue('$version');
         identifier += '/' + state;
-        identifier += '/' + citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + tag.toString().slice(1);  // remove the leading '#'
         identifier += '.bali';
         return identifier;
     };

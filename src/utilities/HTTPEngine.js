@@ -101,19 +101,9 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
     };
 
 
-    this.extractSecondCitation = function(parameters) {
+    this.extractTag = function(parameters) {
         const tag = bali.component('#' + parameters.resources[2]);
-        const version = bali.version();
-        const digest = parameters.digest2;
-        const citation = bali.catalog({
-            $protocol: protocol,
-            $tag: tag,
-            $version: version,
-            $digest: digest
-        }, {
-            $type: '/bali/notary/Citation/v1'
-        });
-        return citation;
+        return tag;
     };
 
 
