@@ -512,28 +512,28 @@ const DocumentRepository = function(storage, debug) {
      * It should be called once the processing of the message has successfully completed.
      *
      * @param {Catalog} bag A catalog citing the bag in the document repository.
-     * @param {Catalog} citation A catalog containing a citation to the message to be deleted.
+     * @param {Tag} tag A tag identifying the message to be deleted.
      * @returns {Boolean} Whether or not the cited message still existed.
      */
-    this.deleteMessage = async function(bag, citation) {
+    this.deleteMessage = async function(bag, tag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$bag', bag, [
                     '/bali/collections/Catalog'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$citation', citation, [
-                    '/bali/collections/Catalog'
+                validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$tag', tag, [
+                    '/bali/elements/Tag'
                 ]);
             }
-            return await storage.deleteMessage(bag, citation);
+            return await storage.deleteMessage(bag, tag);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$deleteMessage',
                 $exception: '$unexpected',
                 $bag: bag,
-                $citation: citation,
+                $tag: tag,
                 $text: 'An unexpected error occurred while attempting to delete a message from a bag.'
             }, cause);
             if (debug) console.error(exception.toString());
