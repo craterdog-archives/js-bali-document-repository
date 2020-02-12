@@ -124,11 +124,10 @@ const DocumentEngine = function(notary, repository, debug) {
                 const bag = this.extractCitation(parameters);
                 const authority = await repository.readDocument(bag);
                 const message = parameters.body;
-                const response = await this.encodeResponse(parameters, authority, message, true);
-                if (response.statusCode === 201) {
-                    await repository.addMessage(bag, message);
+                if (await repository.addMessage(bag, message)) {
+                    return await this.encodeResponse(parameters, authority, message, true);
                 }
-                return response;
+                return this.encodeError(409, parameters.responseType, 'Resource Conflict');
             },
 
             DELETE: async function(parameters) {

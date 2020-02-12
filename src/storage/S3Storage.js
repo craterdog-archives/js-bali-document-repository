@@ -46,14 +46,14 @@ const S3Storage = function(notary, configuration, debug) {
     const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/S3Storage', '$S3Storage', '$configuration', configuration, [
+        validator.validateType('/bali/storage/S3Storage', '$S3Storage', '$configuration', configuration, [
             '/javascript/Object'
         ]);
     }
 
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/S3Storage',
+            $module: '/bali/storage/S3Storage',
             $configuration: configuration
         });
         return catalog.toString();
@@ -84,7 +84,7 @@ const S3Storage = function(notary, configuration, debug) {
                 const matches = await notary.citationMatches(citation, document);
                 if (!matches) {
                     const exception = bali.exception({
-                        $module: '/bali/repositories/S3Storage',
+                        $module: '/bali/storage/S3Storage',
                         $procedure: '$readName',
                         $exception: '$corruptedDocument',
                         $name: name,
@@ -106,7 +106,7 @@ const S3Storage = function(notary, configuration, debug) {
         const identifier = generateNameIdentifier(name);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
+                $module: '/bali/storage/S3Storage',
                 $procedure: '$writeName',
                 $exception: '$nameExists',
                 $name: name,
@@ -144,7 +144,7 @@ const S3Storage = function(notary, configuration, debug) {
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
+                $module: '/bali/storage/S3Storage',
                 $procedure: '$writeDraft',
                 $exception: '$documentExists',
                 $location: location,
@@ -194,7 +194,7 @@ const S3Storage = function(notary, configuration, debug) {
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/S3Storage',
+                $module: '/bali/storage/S3Storage',
                 $procedure: '$writeDocument',
                 $exception: '$documentExists',
                 $location: location,
@@ -228,8 +228,20 @@ const S3Storage = function(notary, configuration, debug) {
     this.addMessage = async function(bag, message) {
         const location = generateLocation('messages');
         const tag = extractTag(message);
-        const identifier = generateMessageIdentifier(bag, 'available', tag);
-        await writeComponent(location, identifier, message, true);
+        const available = generateMessageIdentifier(bag, 'available', tag);
+        const processing = generateMessageIdentifier(bag, 'processing', tag);
+        if (await componentExists(location, processing)) {
+            const exception = bali.exception({
+                $module: '/bali/storage/S3Storage',
+                $procedure: '$addMessage',
+                $exception: '$messageExists',
+                $location: location,
+                $message: message,
+                $text: 'The message already exists in the bag.'
+            });
+            throw exception;
+        }
+        await writeComponent(location, available, message, true);
         return tag;
     };
 
@@ -272,7 +284,7 @@ const S3Storage = function(notary, configuration, debug) {
         const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
         if (! await deleteComponent(location, processingIdentifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
+                $module: '/bali/storage/S3Storage',
                 $procedure: '$returnMessage',
                 $exception: '$notProcessing',
                 $bag: bag,

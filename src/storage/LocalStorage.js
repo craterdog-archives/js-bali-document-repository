@@ -58,7 +58,7 @@ const LocalStorage = function(notary, root, debug) {
     const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/LocalStorage', '$LocalStorage', '$root', root, [
+        validator.validateType('/bali/storage/LocalStorage', '$LocalStorage', '$root', root, [
             '/javascript/Undefined',
             '/javascript/String'
         ]);
@@ -66,7 +66,7 @@ const LocalStorage = function(notary, root, debug) {
 
     this.toString = function() {
         const catalog = bali.catalog({
-            $module: '/bali/repositories/LocalStorage',
+            $module: '/bali/storage/LocalStorage',
             $root: root
         });
         return catalog.toString();
@@ -97,7 +97,7 @@ const LocalStorage = function(notary, root, debug) {
                 const matches = await notary.citationMatches(citation, document);
                 if (!matches) {
                     const exception = bali.exception({
-                        $module: '/bali/repositories/LocalStorage',
+                        $module: '/bali/storage/LocalStorage',
                         $procedure: '$readName',
                         $exception: '$corruptedDocument',
                         $name: name,
@@ -119,7 +119,7 @@ const LocalStorage = function(notary, root, debug) {
         const identifier = generateNameIdentifier(name);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
+                $module: '/bali/storage/LocalStorage',
                 $procedure: '$writeName',
                 $exception: '$nameExists',
                 $name: name,
@@ -157,7 +157,7 @@ const LocalStorage = function(notary, root, debug) {
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
+                $module: '/bali/storage/LocalStorage',
                 $procedure: '$writeDraft',
                 $exception: '$documentExists',
                 $location: location,
@@ -207,7 +207,7 @@ const LocalStorage = function(notary, root, debug) {
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
+                $module: '/bali/storage/LocalStorage',
                 $procedure: '$writeDocument',
                 $exception: '$documentExists',
                 $location: location,
@@ -241,8 +241,20 @@ const LocalStorage = function(notary, root, debug) {
     this.addMessage = async function(bag, message) {
         const location = generateLocation('messages');
         const tag = extractTag(message);
-        const identifier = generateMessageIdentifier(bag, 'available', tag);
-        await writeComponent(location, identifier, message, true);
+        const available = generateMessageIdentifier(bag, 'available', tag);
+        const processing = generateMessageIdentifier(bag, 'processing', tag);
+        if (await componentExists(location, processing)) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$addMessage',
+                $exception: '$messageExists',
+                $location: location,
+                $message: message,
+                $text: 'The message already exists in the bag.'
+            });
+            throw exception;
+        }
+        await writeComponent(location, available, message, true);
         return tag;
     };
 
@@ -285,7 +297,7 @@ const LocalStorage = function(notary, root, debug) {
         const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
         if (! await deleteComponent(location, processingIdentifier)) {
             const exception = bali.exception({
-                $module: '/bali/repositories/LocalStorage',
+                $module: '/bali/storage/LocalStorage',
                 $procedure: '$returnMessage',
                 $exception: '$notProcessing',
                 $bag: bag,
