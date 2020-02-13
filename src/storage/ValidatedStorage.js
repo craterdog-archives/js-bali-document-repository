@@ -86,7 +86,6 @@ const ValidatedStorage = function(notary, repository, debug) {
         const draft = await repository.readDraft(citation);
         if (draft) {
             await validateCitation(citation, draft);
-            await validateDocument(draft);
         }
         return draft;
     };
@@ -108,7 +107,6 @@ const ValidatedStorage = function(notary, repository, debug) {
         const document = await repository.readDocument(citation);
         if (document) {
             await validateCitation(citation, document);
-            await validateDocument(document);
         }
         return document;
     };
