@@ -22,10 +22,10 @@ const uri = 'http://localhost:3000';
 const Repositories = require('../');
 
 const configuration = {
-    names: 'craterdog-bali-names-us-west-2',
-    drafts: 'craterdog-bali-drafts-us-west-2',
-    documents: 'craterdog-bali-documents-us-west-2',
-    messages: 'craterdog-bali-messages-us-west-2'
+    names: 'bali-nebula-names-us-east-1',
+    drafts: 'bali-nebula-drafts-us-east-1',
+    documents: 'bali-nebula-documents-us-east-1',
+    messages: 'bali-nebula-messages-us-east-1'
 };
 
 const repositories = {
