@@ -1,6 +1,6 @@
 {
   "name": "bali-document-repository",
-  "version": "2.24.7",
+  "version": "2.24.8",
   "description": "This project defines the interface to, and various implementations of, the Bali Document Repository™.",
   "repository": {
     "type": "git",
@@ -35,7 +35,7 @@
   "dependencies": {
     "axios": "^0.19.2",
     "aws-sdk": "^2.648.0",
-    "bali-component-framework": "^2.7.0",
-    "bali-digital-notary": "^2.10.3"
+    "bali-component-framework": "^2.8.0",
+    "bali-digital-notary": "^2.10.4"
   }
 }
