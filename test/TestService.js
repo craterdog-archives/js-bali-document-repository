@@ -12,8 +12,8 @@ const debug = 1;  // [0..3]
 const bali = require('bali-component-framework').api(debug);
 const notary = require('bali-digital-notary').service(debug);
 const directory = 'test/config/';
-const repository = require('../').test(notary, directory, debug);
-const engine = require('../').engine(notary, repository, debug);
+const storage = require('../').test(notary, directory, debug);
+const engine = require('../').engine(notary, storage, debug);
 const express = require("express");
 const bodyParser = require('body-parser');
 

@@ -56,7 +56,7 @@ exports.cached = cached;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new validating document repository wrapper.
+ * @returns {Object} The new validating storage mechanism wrapper.
  */
 const validated = function(notary, storage, debug) {
     return new ValidatedStorage(notary, storage, debug);
@@ -68,7 +68,7 @@ exports.validated = validated;
  * around the filesystem and should ONLY be used for local testing.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
- * @param {String} directory The top level directory to be used as a local document repository.
+ * @param {String} directory The top level directory to be used as a local storage mechanism.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -85,11 +85,11 @@ const local = function(notary, directory, debug) {
 exports.local = local;
 
 /**
- * This function initializes a remote document repository proxy implementation. It accesses a
- * remote document repository service via an HTTPS interface exposed at the specified URI.
+ * This function initializes a remote storage mechanism proxy implementation. It accesses a
+ * remote storage mechanism service via an HTTPS interface exposed at the specified URI.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
- * @param {Reference} uri A reference that defines the URI for the remote repository.
+ * @param {Reference} uri A reference that defines the URI for the remote storage.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -106,7 +106,7 @@ const remote = function(notary, uri, debug) {
 exports.remote = remote;
 
 /**
- * This function initializes an AWS S3 based document repository proxy implementation. It stores
+ * This function initializes an AWS S3 based storage mechanism proxy implementation. It stores
  * the documents in S3 buckets by type.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
@@ -127,26 +127,7 @@ const s3 = function(notary, configuration, debug) {
 exports.s3 = s3;
 
 /**
- * This function initializes a document repository backed by the specified storage mechanism.
- *
- * @param {Object} storage The storage mechanism used to maintain the documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
- * debugging that occurs:
- * <pre>
- *   0 (or false): no logging
- *   1 (or true): log exceptions to console.error
- *   2: perform argument validation and log exceptions to console.error
- *   3: perform argument validation and log exceptions to console.error and debug info to console.log
- * </pre>
- * @returns {Object} The new document repository instance.
- */
-const repository = function(storage, debug) {
-    return new DocumentRepository(storage, debug);
-};
-exports.repository = repository;
-
-/**
- * This function initializes a document repository configured with a local, memory-based cache that
+ * This function initializes a storage mechanism configured with a local, memory-based cache that
  * maintains the files in the local filesystem.  It should ONLY be used for testing purposes.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
@@ -159,20 +140,20 @@ exports.repository = repository;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new document repository instance.
+ * @returns {Object} The new storage mechanism instance.
  */
 const test = function(notary, directory, debug) {
-    return repository(cached(validated(notary, local(notary, directory, debug), debug), debug), debug);
+    return cached(validated(notary, local(notary, directory, debug), debug), debug);
 };
 exports.test = test;
 
 /**
- * This function initializes a document repository configured with a local, memory based cache that
+ * This function initializes a storage mechanism configured with a local, memory based cache that
  * maintains the documents using a remote storage mechanism.  It performs validation on each document
  * before storing it and after retrieving it from the remote storage mechanism.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
- * @param {Reference} uri A reference that defines the URI for the remote repository.
+ * @param {Reference} uri A reference that defines the URI for the remote storage.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -181,15 +162,15 @@ exports.test = test;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new document repository instance.
+ * @returns {Object} The new storage mechanism instance.
  */
 const client = function(notary, uri, debug) {
-    return repository(cached(validated(notary, remote(notary, uri, debug), debug), debug), debug);
+    return cached(validated(notary, remote(notary, uri, debug), debug), debug);
 };
 exports.client = client;
 
 /**
- * This function initializes a document repository configured with an AWS S3-based storage mechanism.
+ * This function initializes a storage mechanism configured with an AWS S3-based storage mechanism.
  * It performs validation on each document before storing it and after retrieving it from the S3-based
  * storage mechanism.
  *
@@ -204,19 +185,19 @@ exports.client = client;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {Object} The new document repository instance.
+ * @returns {Object} The new storage mechanism instance.
  */
 const service = function(notary, configuration, debug) {
-    return repository(validated(notary, s3(notary, configuration, debug), debug), debug);
+    return validated(notary, s3(notary, configuration, debug), debug);
 };
 exports.service = service;
 
 /**
- * This function initializes a document engine with a digital notary and a document repository.
+ * This function initializes a document engine with a digital notary and a storage mechanism.
  * It enforces the symantics for HTTP requests involving HEAD, GET, PUT, POST, and DELETE methods.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
- * @param {DocumentRepository} repository The document repository maintaining the documents being managed
+ * @param {Object} storage The storage mechanism maintaining the documents being managed
  * through the HTTP service interface.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -228,7 +209,26 @@ exports.service = service;
  * </pre>
  * @returns {DocumentEngine} The Document engine.
  */
-const engine = function(notary, repository, debug) {
-    return new DocumentEngine(notary, repository, debug);
+const engine = function(notary, storage, debug) {
+    return new DocumentEngine(notary, storage, debug);
 };
 exports.engine = engine;
+
+/**
+ * This function initializes a document repository backed by the specified storage mechanism.
+ *
+ * @param {Object} storage The storage mechanism used to maintain the documents.
+ * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * debugging that occurs:
+ * <pre>
+ *   0 (or false): no logging
+ *   1 (or true): log exceptions to console.error
+ *   2: perform argument validation and log exceptions to console.error
+ *   3: perform argument validation and log exceptions to console.error and debug info to console.log
+ * </pre>
+ * @returns {DocumentRepository} The new document repository instance.
+ */
+const repository = function(storage, debug) {
+    return new DocumentRepository(storage, debug);
+};
+exports.repository = repository;

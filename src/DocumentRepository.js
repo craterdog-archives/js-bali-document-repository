@@ -55,10 +55,10 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not the named document exists in the document repository.
+     * This method checks to see whether or not the named citation exists in the document repository.
      *
-     * @param {Name} name The unique name for the document being checked.
-     * @returns {Boolean} Whether or not the named document exists.
+     * @param {Name} name The unique name for the citation being checked.
+     * @returns {Boolean} Whether or not the named citation exists.
      */
     this.nameExists = async function(name) {
         try {
@@ -75,7 +75,7 @@ const DocumentRepository = function(storage, debug) {
                 $procedure: '$nameExists',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a named document.'
+                $text: 'An unexpected error occurred while attempting to verify the existence of a named citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -83,10 +83,10 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method attempts to retrieve the named document from the document repository.
+     * This method attempts to retrieve the named citation from the document repository.
      *
-     * @param {Name} name The unique name for the document being retrieved.
-     * @returns {Catalog} A catalog containing the named document or nothing if it doesn't exist.
+     * @param {Name} name The unique name for the citation being retrieved.
+     * @returns {Catalog} A catalog containing the named citation or nothing if it doesn't exist.
      */
     this.readName = async function(name) {
         try {
@@ -103,7 +103,7 @@ const DocumentRepository = function(storage, debug) {
                 $procedure: '$readName',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to retrieved a named document.'
+                $text: 'An unexpected error occurred while attempting to retrieved a named citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -111,12 +111,11 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method associates a name with the cited document residing in the document repository.
-     * The document must already exist in the repository.
+     * This method associates a name with the specified citation in the document repository.
+     * The cited document must already exist in the repository.
      *
-     * @param {Name} name The unique name for the document.
+     * @param {Name} name The unique name for the citation.
      * @param {Catalog} citation A catalog containing the document citation.
-     * @returns {Catalog} A catalog containing the document citation.
      */
     this.writeName = async function(name, citation) {
         try {
@@ -129,7 +128,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.writeName(name, citation);
+            await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -137,7 +136,7 @@ const DocumentRepository = function(storage, debug) {
                 $exception: '$unexpected',
                 $name: name,
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to create a named document.'
+                $text: 'An unexpected error occurred while attempting to create a named citation.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

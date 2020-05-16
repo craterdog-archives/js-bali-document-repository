@@ -67,15 +67,14 @@ const RemoteStorage = function(notary, uri, debug) {
         const response = await sendRequest('GET', 'names', name);
         if (response.status === 200) {
             const source = response.data.toString('utf8');
-            const document = bali.component(source);
-            return document;
+            const citation = bali.component(source);
+            return citation;
         }
     };
 
     this.writeName = async function(name, citation) {
         const response = await sendRequest('PUT', 'names', name, undefined, citation);
         if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
-        return citation;
     };
 
     this.draftExists = async function(citation) {

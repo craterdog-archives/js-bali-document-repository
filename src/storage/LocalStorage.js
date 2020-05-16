@@ -80,37 +80,13 @@ const LocalStorage = function(notary, root, debug) {
 
     this.readName = async function(name) {
         // attempt to read the citation associated with the name
-        var location = generateLocation('names');
-        var identifier = generateNameIdentifier(name);
-        var bytes = await readComponent(location, identifier);
+        const location = generateLocation('names');
+        const identifier = generateNameIdentifier(name);
+        const bytes = await readComponent(location, identifier);
         if (bytes) {
-            // attempt to read the cited document
-            var source = bytes.toString('utf8');
+            const source = bytes.toString('utf8');
             const citation = bali.component(source);
-            location = generateLocation('documents');
-            identifier = generateDocumentIdentifier(citation);
-            bytes = await readComponent(location, identifier);
-            if (bytes) {
-                // validate the citation here since ValidatedStorage doesn't have access to it
-                source = bytes.toString('utf8');
-                const document = bali.component(source);
-                const matches = await notary.citationMatches(citation, document);
-                if (!matches) {
-                    const exception = bali.exception({
-                        $module: '/bali/storage/LocalStorage',
-                        $procedure: '$readName',
-                        $exception: '$corruptedDocument',
-                        $name: name,
-                        $citation: citation,
-                        $location: location,
-                        $identifier: identifier,
-                        $document: document,
-                        $text: 'The cited document was modified after it was created.'
-                    });
-                    throw exception;
-                }
-                return document;
-            }
+            return citation;
         }
     };
 
@@ -131,7 +107,6 @@ const LocalStorage = function(notary, root, debug) {
             throw exception;
         }
         await writeComponent(location, identifier, citation);
-        return citation;
     };
 
     this.draftExists = async function(citation) {

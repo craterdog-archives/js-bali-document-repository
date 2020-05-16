@@ -63,19 +63,21 @@ const CachedStorage = function(storage, debug) {
     this.readName = async function(name) {
         // check the cache first
         const key = generateKey(name);
-        var document = cache.names.read(key);
-        if (!document) {
+        var citation = cache.names.read(key);
+        if (!citation) {
             // not found so we must read from the backend storage
-            document = await storage.readName(name);
-            // add the document to the cache
-            if (document) cache.names.write(name, document);
+            citation = await storage.readName(name);
+            // add the citation to the cache
+            if (citation) cache.names.write(name, citation);
         }
-        return document;
+        return citation;
     };
 
     this.writeName = async function(name, citation) {
-        // pass-through, citations are not cached
-        return await storage.writeName(name, citation);
+        // add the name to the backend storage
+        await storage.writeName(name, citation);
+        // add the name to the cache
+        cache.names.write(name, citation);
     };
 
     this.draftExists = async function(citation) {

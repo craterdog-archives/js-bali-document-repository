@@ -19,7 +19,7 @@ const directory = 'test/config/';
 const notary = require('bali-digital-notary').test(account, directory, debug);
 //const uri = 'https://bali-nebula.net';
 const uri = 'http://localhost:3000';
-const Repositories = require('../');
+const Storage = require('../');
 
 const configuration = {
     names: 'bali-nebula-names-us-east-1',
@@ -28,18 +28,19 @@ const configuration = {
     messages: 'bali-nebula-messages-us-east-1'
 };
 
-const repositories = {
-    'Local Storage': Repositories.repository(Repositories.local(notary, directory, debug), debug),
-    'Cached Storage': Repositories.repository(Repositories.cached(Repositories.local(notary, directory, debug), debug), debug),
-    'Validated Storage': Repositories.repository(Repositories.validated(notary, Repositories.local(notary, directory, debug), debug), debug),
-    'Remote Storage': Repositories.repository(Repositories.remote(notary, uri, debug), debug),
-    'S3 Storage': Repositories.repository(Repositories.s3(notary, configuration, debug), debug)
+const mechanisms = {
+    'Local Storage': Storage.repository(Storage.local(notary, directory, debug), debug),
+    'Cached Storage': Storage.repository(Storage.cached(Storage.local(notary, directory, debug), debug), debug),
+    'Validated Storage': Storage.repository(Storage.validated(notary, Storage.local(notary, directory, debug), debug), debug),
+    'Remote Storage': Storage.repository(Storage.remote(notary, uri, debug), debug),
+    'S3 Storage': Storage.repository(Storage.s3(notary, configuration, debug), debug)
 };
 
 describe('Bali Nebula™ Document Repository', function() {
 
-    for (var key in repositories) {
-        const repository = repositories[key];
+    for (var key in mechanisms) {
+        const storage = mechanisms[key];
+        const repository = Storage.repository(storage, debug);
 
         const transaction = bali.catalog({
             $timestamp: bali.moment(),
@@ -61,10 +62,10 @@ describe('Bali Nebula™ Document Repository', function() {
             var certificate;
 
             it('should create a self-signed certificate', async function() {
-                certificate = await notary.generateKey();
-                certificate = await notary.notarizeDocument(certificate);
+                const publicKey = await notary.generateKey();
+                certificate = await notary.notarizeDocument(publicKey);
                 citation = await notary.activateKey(certificate);
-                expect(citation.isEqualTo(await repository.writeDocument(certificate))).is.true;
+                expect(citation.isEqualTo(await storage.writeDocument(certificate))).is.true;
             });
 
             it('should perform a named document lifecycle', async function() {
@@ -82,7 +83,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(await repository.nameExists(name)).is.true;
 
                 // fetch the named document from the repository
-                expect(certificate.isEqualTo(await repository.readName(name))).is.true;
+                expect(citation.isEqualTo(await repository.readName(name))).is.true;
             });
 
             it('should perform a draft document lifecycle', async function() {
