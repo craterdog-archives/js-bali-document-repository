@@ -78,6 +78,7 @@ const CachedStorage = function(storage, debug) {
         await storage.writeName(name, citation);
         // add the name to the cache
         cache.names.write(name, citation);
+        return citation;
     };
 
     this.draftExists = async function(citation) {

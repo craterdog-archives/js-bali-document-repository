@@ -77,7 +77,7 @@ describe('Bali Nebula™ Document Repository', function() {
                 expect(await repository.readName(name)).to.not.exist;
 
                 // create a new name in the repository
-                await repository.writeName(name, citation);
+                expect(citation.isEqualTo(await repository.writeName(name, citation))).to.equal(true);
 
                 // make sure the new name exists in the repository
                 expect(await repository.nameExists(name)).is.true;
@@ -167,7 +167,7 @@ describe('Bali Nebula™ Document Repository', function() {
 
                 // name the bag
                 const name = bali.component('/bali/examples/' + bag.getValue('$tag').toString().slice(1) + '/v1');
-                await repository.writeName(name, bag);
+                expect(bag.isEqualTo(await repository.writeName(name, bag))).to.equal(true);
 
                 // make sure the message bag is empty
                 expect(await repository.messageAvailable(bag)).to.equal(false);

@@ -116,6 +116,7 @@ const DocumentRepository = function(storage, debug) {
      *
      * @param {Name} name The unique name for the citation.
      * @param {Catalog} citation A catalog containing the document citation.
+     * @return {Catalog} A catalog containing the document citation.
      */
     this.writeName = async function(name, citation) {
         try {
@@ -128,7 +129,7 @@ const DocumentRepository = function(storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            await storage.writeName(name, citation);
+            return await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',

@@ -95,6 +95,7 @@ const S3Storage = function(notary, configuration, debug) {
             throw exception;
         }
         await writeComponent(location, identifier, citation);
+        return citation;
     };
 
     this.draftExists = async function(citation) {

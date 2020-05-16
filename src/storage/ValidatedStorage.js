@@ -73,7 +73,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.writeName = async function(name, citation) {
         const document = await repository.readDocument(citation);
         await validateCitation(citation, document);
-        await repository.writeName(name, citation);
+        return await repository.writeName(name, citation);
     };
 
     this.draftExists = async function(citation) {
