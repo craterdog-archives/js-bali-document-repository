@@ -29,18 +29,17 @@ const configuration = {
 };
 
 const mechanisms = {
-    'Local Storage': Storage.repository(Storage.local(notary, directory, debug), debug),
-    'Cached Storage': Storage.repository(Storage.cached(Storage.local(notary, directory, debug), debug), debug),
-    'Validated Storage': Storage.repository(Storage.validated(notary, Storage.local(notary, directory, debug), debug), debug),
-    'Remote Storage': Storage.repository(Storage.remote(notary, uri, debug), debug),
-    'S3 Storage': Storage.repository(Storage.s3(notary, configuration, debug), debug)
+    'Local Storage': Storage.local(notary, directory, debug),
+    'Cached Storage': Storage.cached(Storage.local(notary, directory, debug), debug),
+    'Validated Storage': Storage.validated(notary, Storage.local(notary, directory, debug), debug),
+    'Remote Storage': Storage.remote(notary, uri, debug),
+    'S3 Storage': Storage.s3(notary, configuration, debug)
 };
 
-describe('Bali Nebula™ Document Repository', function() {
+describe('Bali Document Repository™', function() {
 
     for (var key in mechanisms) {
         const storage = mechanisms[key];
-        const repository = Storage.repository(storage, debug);
 
         const transaction = bali.catalog({
             $timestamp: bali.moment(),
@@ -73,17 +72,17 @@ describe('Bali Nebula™ Document Repository', function() {
                 const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
 
                 // make sure the new name does not yet exist in the repository
-                expect(await repository.nameExists(name)).is.false;
-                expect(await repository.readName(name)).to.not.exist;
+                expect(await storage.nameExists(name)).is.false;
+                expect(await storage.readName(name)).to.not.exist;
 
                 // create a new name in the repository
-                expect(citation.isEqualTo(await repository.writeName(name, citation))).to.equal(true);
+                expect(citation.isEqualTo(await storage.writeName(name, citation))).to.equal(true);
 
                 // make sure the new name exists in the repository
-                expect(await repository.nameExists(name)).is.true;
+                expect(await storage.nameExists(name)).is.true;
 
                 // fetch the named document from the repository
-                expect(citation.isEqualTo(await repository.readName(name))).is.true;
+                expect(citation.isEqualTo(await storage.readName(name))).is.true;
             });
 
             it('should perform a draft document lifecycle', async function() {
@@ -91,32 +90,32 @@ describe('Bali Nebula™ Document Repository', function() {
                 citation = await notary.citeDocument(draft);
 
                 // create a new draft in the repository
-                expect(citation.isEqualTo(await repository.writeDraft(draft))).is.true;
+                expect(citation.isEqualTo(await storage.writeDraft(draft))).is.true;
 
                 // make sure the new draft exists in the repository
-                expect(await repository.draftExists(citation)).is.true;
+                expect(await storage.draftExists(citation)).is.true;
 
                 // make sure the same document does not exist in the repository
-                expect(await repository.documentExists(citation)).is.false;
+                expect(await storage.documentExists(citation)).is.false;
 
                 // fetch the new draft from the repository
-                expect(draft.isEqualTo(await repository.readDraft(citation))).is.true;
+                expect(draft.isEqualTo(await storage.readDraft(citation))).is.true;
 
                 // update the existing draft in the repository
-                expect(citation.isEqualTo(await repository.writeDraft(draft))).is.true;
+                expect(citation.isEqualTo(await storage.writeDraft(draft))).is.true;
 
                 // make sure the updated draft exists in the repository
-                expect(await repository.draftExists(citation)).is.true;
+                expect(await storage.draftExists(citation)).is.true;
 
                 // delete the draft from the repository
-                expect(draft.isEqualTo(await repository.deleteDraft(citation))).is.true;
+                expect(draft.isEqualTo(await storage.deleteDraft(citation))).is.true;
 
                 // make sure the draft no longer exists in the repository
-                expect(await repository.draftExists(citation)).is.false;
-                expect(await repository.readDraft(citation)).to.not.exist;
+                expect(await storage.draftExists(citation)).is.false;
+                expect(await storage.readDraft(citation)).to.not.exist;
 
                 // delete a non-existent draft from the repository
-                expect(await repository.deleteDraft(citation)).to.not.exist;
+                expect(await storage.deleteDraft(citation)).to.not.exist;
 
             });
 
@@ -125,28 +124,28 @@ describe('Bali Nebula™ Document Repository', function() {
                 citation = await notary.citeDocument(document);
 
                 // make sure the new document does not already exists in the repository
-                expect(await repository.documentExists(citation)).is.false;
-                expect(await repository.readDocument(citation)).to.not.exist;
+                expect(await storage.documentExists(citation)).is.false;
+                expect(await storage.readDocument(citation)).to.not.exist;
 
                 // create a new document in the repository
-                expect(citation.isEqualTo(await repository.writeDocument(document))).is.true;
+                expect(citation.isEqualTo(await storage.writeDocument(document))).is.true;
 
                 // make sure the same draft does not exist in the repository
-                expect(await repository.draftExists(citation)).is.false;
-                expect(await repository.readDraft(citation)).to.not.exist;
+                expect(await storage.draftExists(citation)).is.false;
+                expect(await storage.readDraft(citation)).to.not.exist;
 
                 // make sure the new document exists in the repository
-                expect(await repository.documentExists(citation)).is.true;
+                expect(await storage.documentExists(citation)).is.true;
 
                 // fetch the new document from the repository
-                expect(document.isEqualTo(await repository.readDocument(citation))).is.true;
+                expect(document.isEqualTo(await storage.readDocument(citation))).is.true;
 
                 // make sure the new document still exists in the repository
-                expect(await repository.documentExists(citation)).is.true;
+                expect(await storage.documentExists(citation)).is.true;
 
                 // attempt to create the same document in the repository
                 await assert.rejects(async function() {
-                    await repository.writeDocument(document);
+                    await storage.writeDocument(document);
                 });
 
             });
@@ -163,15 +162,15 @@ describe('Bali Nebula™ Document Repository', function() {
                         $previous: bali.pattern.NONE
                     })
                 );
-                const bag = await repository.writeDocument(document);
+                const bag = await storage.writeDocument(document);
 
                 // name the bag
                 const name = bali.component('/bali/examples/' + bag.getValue('$tag').toString().slice(1) + '/v1');
-                expect(bag.isEqualTo(await repository.writeName(name, bag))).to.equal(true);
+                expect(bag.isEqualTo(await storage.writeName(name, bag))).to.equal(true);
 
                 // make sure the message bag is empty
-                expect(await repository.messageAvailable(bag)).to.equal(false);
-                expect(await repository.borrowMessage(bag)).to.not.exist;
+                expect(await storage.messageAvailable(bag)).to.equal(false);
+                expect(await storage.borrowMessage(bag)).to.not.exist;
 
                 // add some messages to the bag
                 const generateMessage = async function(count) {
@@ -195,41 +194,41 @@ describe('Bali Nebula™ Document Repository', function() {
 
                 var message = await generateMessage(1);
                 var tag = extractTag(message);
-                expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
-                expect(await repository.messageAvailable(bag)).to.equal(true);
+                expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                expect(await storage.messageAvailable(bag)).to.equal(true);
 
                 message = await generateMessage(2);
                 tag = extractTag(message);
-                expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
-                expect(await repository.messageAvailable(bag)).to.equal(true);
+                expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                expect(await storage.messageAvailable(bag)).to.equal(true);
 
                 message = await generateMessage(3);
                 tag = extractTag(message);
-                expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
-                expect(await repository.messageAvailable(bag)).to.equal(true);
+                expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                expect(await storage.messageAvailable(bag)).to.equal(true);
 
                 // remove the messages from the bag
-                message = await repository.borrowMessage(bag);
+                message = await storage.borrowMessage(bag);
                 tag = extractTag(message);
-                await repository.deleteMessage(bag, tag);
-                expect(await repository.messageAvailable(bag)).to.equal(true);
+                await storage.deleteMessage(bag, tag);
+                expect(await storage.messageAvailable(bag)).to.equal(true);
 
-                message = await repository.borrowMessage(bag);
+                message = await storage.borrowMessage(bag);
                 tag = extractTag(message);
-                await repository.deleteMessage(bag, tag);
-                expect(await repository.messageAvailable(bag)).to.equal(true);
+                await storage.deleteMessage(bag, tag);
+                expect(await storage.messageAvailable(bag)).to.equal(true);
 
-                message = await repository.borrowMessage(bag);
-                await repository.returnMessage(bag, message);
-                expect(await repository.messageAvailable(bag)).to.equal(true);
+                message = await storage.borrowMessage(bag);
+                await storage.returnMessage(bag, message);
+                expect(await storage.messageAvailable(bag)).to.equal(true);
 
-                message = await repository.borrowMessage(bag);
+                message = await storage.borrowMessage(bag);
                 tag = extractTag(message);
-                await repository.deleteMessage(bag, tag);
-                expect(await repository.messageAvailable(bag)).to.equal(false);
+                await storage.deleteMessage(bag, tag);
+                expect(await storage.messageAvailable(bag)).to.equal(false);
 
                 // make sure the message bag is empty
-                expect(await repository.borrowMessage(bag)).to.not.exist;
+                expect(await storage.borrowMessage(bag)).to.not.exist;
 
             });
 
