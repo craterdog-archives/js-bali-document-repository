@@ -76,7 +76,7 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.readName(name)).to.not.exist;
 
                 // create a new name in the repository
-                expect(citation.isEqualTo(await storage.writeName(name, citation))).to.equal(true);
+                expect(citation.isEqualTo(await storage.writeName(name, citation))).is.true;
 
                 // make sure the new name exists in the repository
                 expect(await storage.nameExists(name)).is.true;
@@ -166,10 +166,10 @@ describe('Bali Document Repository™', function() {
 
                 // name the bag
                 const name = bali.component('/bali/examples/' + bag.getValue('$tag').toString().slice(1) + '/v1');
-                expect(bag.isEqualTo(await storage.writeName(name, bag))).to.equal(true);
+                expect(bag.isEqualTo(await storage.writeName(name, bag))).is.true;
 
                 // make sure the message bag is empty
-                expect(await storage.messageAvailable(bag)).to.equal(false);
+                expect(await storage.messageAvailable(bag)).is.false;
                 expect(await storage.borrowMessage(bag)).to.not.exist;
 
                 // add some messages to the bag
@@ -195,37 +195,37 @@ describe('Bali Document Repository™', function() {
                 var message = await generateMessage(1);
                 var tag = extractTag(message);
                 expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
-                expect(await storage.messageAvailable(bag)).to.equal(true);
+                expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await generateMessage(2);
                 tag = extractTag(message);
                 expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
-                expect(await storage.messageAvailable(bag)).to.equal(true);
+                expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await generateMessage(3);
                 tag = extractTag(message);
                 expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
-                expect(await storage.messageAvailable(bag)).to.equal(true);
+                expect(await storage.messageAvailable(bag)).is.true;
 
                 // remove the messages from the bag
                 message = await storage.borrowMessage(bag);
                 tag = extractTag(message);
                 await storage.deleteMessage(bag, tag);
-                expect(await storage.messageAvailable(bag)).to.equal(true);
+                expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 tag = extractTag(message);
                 await storage.deleteMessage(bag, tag);
-                expect(await storage.messageAvailable(bag)).to.equal(true);
+                expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 await storage.returnMessage(bag, message);
-                expect(await storage.messageAvailable(bag)).to.equal(true);
+                expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 tag = extractTag(message);
                 await storage.deleteMessage(bag, tag);
-                expect(await storage.messageAvailable(bag)).to.equal(false);
+                expect(await storage.messageAvailable(bag)).is.false;
 
                 // make sure the message bag is empty
                 expect(await storage.borrowMessage(bag)).to.not.exist;

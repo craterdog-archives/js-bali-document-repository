@@ -18,7 +18,8 @@ const account = bali.tag();
 const directory = 'test/config/';
 const notary = require('bali-digital-notary').test(account, directory, debug);
 const Repository = require('../');
-const repository = Repository.repository(Repository.local(notary, directory, debug), debug);
+const storage = Repository.local(notary, directory, debug);
+const repository = Repository.repository(storage, debug);
 const transaction = bali.catalog({
     $timestamp: bali.moment(),
     $product: 'Snickers Bar',
@@ -45,25 +46,10 @@ describe('Bali Document Repository™', function() {
             const publicKey = await notary.generateKey();
             certificate = await notary.notarizeDocument(publicKey);
             citation = await notary.activateKey(certificate);
-            expect(citation.isEqualTo(await repository.writeDocument(certificate))).is.true;
-        });
-
-        it('should perform a named document lifecycle', async function() {
+            expect(citation.isEqualTo(await storage.writeDocument(certificate))).is.true;
             const tag = citation.getValue('$tag');
             const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
-
-            // make sure the new name does not yet exist in the repository
-            expect(await repository.nameExists(name)).is.false;
-            expect(await repository.readName(name)).to.not.exist;
-
-            // create a new name in the repository
-            expect(citation.isEqualTo(await repository.writeName(name, citation))).to.equal(true);
-
-            // make sure the new name exists in the repository
-            expect(await repository.nameExists(name)).is.true;
-
-            // fetch the named document from the repository
-            expect(citation.isEqualTo(await repository.readName(name))).is.true;
+            expect(citation.isEqualTo(await storage.writeName(name, citation))).is.true;
         });
 
         it('should perform a draft document lifecycle', async function() {
@@ -147,10 +133,10 @@ describe('Bali Document Repository™', function() {
 
             // name the bag
             const name = bali.component('/bali/examples/' + bag.getValue('$tag').toString().slice(1) + '/v1');
-            expect(bag.isEqualTo(await repository.writeName(name, bag))).to.equal(true);
+            expect(bag.isEqualTo(await repository.writeName(name, bag))).is.true;
 
             // make sure the message bag is empty
-            expect(await repository.messageAvailable(bag)).to.equal(false);
+            expect(await repository.messageAvailable(bag)).is.false;
             expect(await repository.borrowMessage(bag)).to.not.exist;
 
             // add some messages to the bag
@@ -176,37 +162,37 @@ describe('Bali Document Repository™', function() {
             var message = await generateMessage(1);
             var tag = extractTag(message);
             expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
-            expect(await repository.messageAvailable(bag)).to.equal(true);
+            expect(await repository.messageAvailable(bag)).is.true;
 
             message = await generateMessage(2);
             tag = extractTag(message);
             expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
-            expect(await repository.messageAvailable(bag)).to.equal(true);
+            expect(await repository.messageAvailable(bag)).is.true;
 
             message = await generateMessage(3);
             tag = extractTag(message);
             expect(tag.isEqualTo(await repository.addMessage(bag, message))).is.true;
-            expect(await repository.messageAvailable(bag)).to.equal(true);
+            expect(await repository.messageAvailable(bag)).is.true;
 
             // remove the messages from the bag
             message = await repository.borrowMessage(bag);
             tag = extractTag(message);
             await repository.deleteMessage(bag, tag);
-            expect(await repository.messageAvailable(bag)).to.equal(true);
+            expect(await repository.messageAvailable(bag)).is.true;
 
             message = await repository.borrowMessage(bag);
             tag = extractTag(message);
             await repository.deleteMessage(bag, tag);
-            expect(await repository.messageAvailable(bag)).to.equal(true);
+            expect(await repository.messageAvailable(bag)).is.true;
 
             message = await repository.borrowMessage(bag);
             await repository.returnMessage(bag, message);
-            expect(await repository.messageAvailable(bag)).to.equal(true);
+            expect(await repository.messageAvailable(bag)).is.true;
 
             message = await repository.borrowMessage(bag);
             tag = extractTag(message);
             await repository.deleteMessage(bag, tag);
-            expect(await repository.messageAvailable(bag)).to.equal(false);
+            expect(await repository.messageAvailable(bag)).is.false;
 
             // make sure the message bag is empty
             expect(await repository.borrowMessage(bag)).to.not.exist;
