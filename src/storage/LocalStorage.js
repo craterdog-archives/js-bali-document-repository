@@ -178,8 +178,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.writeDocument = async function(document) {
-        var location = generateLocation('documents');
         const citation = await notary.citeDocument(document);
+        var location = generateLocation('documents');
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
@@ -301,8 +301,7 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     const generateLocation = function(type) {
-        const location = root + type;
-        return location;
+        return root + type;
     };
 
     const generateNameIdentifier = function(name) {

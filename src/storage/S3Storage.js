@@ -71,7 +71,6 @@ const S3Storage = function(notary, configuration, debug) {
         const identifier = generateNameIdentifier(name);
         const bytes = await readComponent(location, identifier);
         if (bytes) {
-            // attempt to read the cited document
             const source = bytes.toString('utf8');
             const citation = bali.component(source);
             return citation;
