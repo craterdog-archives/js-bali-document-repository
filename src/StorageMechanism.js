@@ -294,7 +294,6 @@ StorageMechanism.prototype.messageCount = async function(bag) {
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @param {Catalog} message A catalog containing the message to be added.
- * @returns {Tag} A tag identifying the newly added message.
  */
 StorageMechanism.prototype.addMessage = async function(bag, message) {
     const exception = this.bali.exception({
@@ -356,7 +355,7 @@ StorageMechanism.prototype.returnMessage = async function(bag, message) {
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @param {Tag} tag A tag identifying the message to be deleted.
- * @returns {Boolean} Whether or not the cited message still existed.
+ * @returns {Boolean} Whether or not the message still existed in the bag.
  */
 StorageMechanism.prototype.deleteMessage = async function(bag, tag) {
     const exception = this.bali.exception({

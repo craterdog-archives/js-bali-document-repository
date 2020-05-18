@@ -225,7 +225,6 @@ const S3Storage = function(notary, configuration, debug) {
             throw exception;
         }
         await writeComponent(location, available, message, true);
-        return tag;
     };
 
     this.borrowMessage = async function(bag) {

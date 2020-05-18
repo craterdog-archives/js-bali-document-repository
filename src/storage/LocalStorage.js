@@ -238,7 +238,6 @@ const LocalStorage = function(notary, root, debug) {
             throw exception;
         }
         await writeComponent(location, available, message, true);
-        return tag;
     };
 
     this.borrowMessage = async function(bag) {

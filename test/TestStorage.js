@@ -196,8 +196,7 @@ describe('Bali Document Repository™', function() {
                 };
 
                 var message = await generateMessage(1);
-                var tag = extractTag(message);
-                expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
                 await assert.rejects(async function() {
@@ -205,14 +204,12 @@ describe('Bali Document Repository™', function() {
                 });
 
                 message = await generateMessage(2);
-                tag = extractTag(message);
-                expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await generateMessage(3);
-                tag = extractTag(message);
-                expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(3);
                 expect(await storage.messageAvailable(bag)).is.true;
 
@@ -224,7 +221,7 @@ describe('Bali Document Repository™', function() {
 
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(2);
-                tag = extractTag(message);
+                var tag = extractTag(message);
                 await storage.deleteMessage(bag, tag);
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
