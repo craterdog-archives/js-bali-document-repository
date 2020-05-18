@@ -83,6 +83,11 @@ describe('Bali Document Repository™', function() {
 
                 // fetch the named document from the repository
                 expect(citation.isEqualTo(await storage.readName(name))).is.true;
+
+                // attempt to create the same name in the repository
+                await assert.rejects(async function() {
+                    await storage.writeName(name, citation);
+                });
             });
 
             it('should perform a draft document lifecycle', async function() {
@@ -116,7 +121,6 @@ describe('Bali Document Repository™', function() {
 
                 // delete a non-existent draft from the repository
                 expect(await storage.deleteDraft(citation)).to.not.exist;
-
             });
 
             it('should perform a committed document lifecycle', async function() {
@@ -147,7 +151,6 @@ describe('Bali Document Repository™', function() {
                 await assert.rejects(async function() {
                     await storage.writeDocument(document);
                 });
-
             });
 
             it('should perform a message bag lifecycle', async function() {
@@ -195,41 +198,53 @@ describe('Bali Document Repository™', function() {
                 var message = await generateMessage(1);
                 var tag = extractTag(message);
                 expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
+                await assert.rejects(async function() {
+                    await storage.addMessage(bag, message);
+                });
 
                 message = await generateMessage(2);
                 tag = extractTag(message);
                 expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await generateMessage(3);
                 tag = extractTag(message);
                 expect(tag.isEqualTo(await storage.addMessage(bag, message))).is.true;
+                expect(await storage.messageCount(bag)).to.equal(3);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 // remove the messages from the bag
                 message = await storage.borrowMessage(bag);
-                tag = extractTag(message);
-                await storage.deleteMessage(bag, tag);
-                expect(await storage.messageAvailable(bag)).is.true;
-
-                message = await storage.borrowMessage(bag);
-                tag = extractTag(message);
-                await storage.deleteMessage(bag, tag);
-                expect(await storage.messageAvailable(bag)).is.true;
-
-                message = await storage.borrowMessage(bag);
+                expect(await storage.messageCount(bag)).to.equal(2);
                 await storage.returnMessage(bag, message);
+                expect(await storage.messageCount(bag)).to.equal(3);
+
+                message = await storage.borrowMessage(bag);
+                expect(await storage.messageCount(bag)).to.equal(2);
+                tag = extractTag(message);
+                await storage.deleteMessage(bag, tag);
+                expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
+                expect(await storage.messageCount(bag)).to.equal(1);
                 tag = extractTag(message);
                 await storage.deleteMessage(bag, tag);
+                expect(await storage.messageCount(bag)).to.equal(1);
+                expect(await storage.messageAvailable(bag)).is.true;
+
+                message = await storage.borrowMessage(bag);
+                expect(await storage.messageCount(bag)).to.equal(0);
+                tag = extractTag(message);
+                await storage.deleteMessage(bag, tag);
+                expect(await storage.messageCount(bag)).to.equal(0);
                 expect(await storage.messageAvailable(bag)).is.false;
 
                 // make sure the message bag is empty
                 expect(await storage.borrowMessage(bag)).to.not.exist;
-
             });
 
             it('should reset the notary', async function() {

@@ -213,7 +213,7 @@ const S3Storage = function(notary, configuration, debug) {
         const tag = extractTag(message);
         const available = generateMessageIdentifier(bag, 'available', tag);
         const processing = generateMessageIdentifier(bag, 'processing', tag);
-        if (await componentExists(location, processing)) {
+        if (await componentExists(location, available) || await componentExists(location, processing)) {
             const exception = bali.exception({
                 $module: '/bali/storage/S3Storage',
                 $procedure: '$addMessage',
@@ -272,10 +272,8 @@ const S3Storage = function(notary, configuration, debug) {
 
     this.deleteMessage = async function(bag, tag) {
         const location = generateLocation('messages');
-        const availableIdentifier = generateMessageIdentifier(bag, 'available', tag);
         const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
-        if (await deleteComponent(location, processingIdentifier)) return true;
-        return await deleteComponent(location, availableIdentifier);
+        return await deleteComponent(location, processingIdentifier);
     };
 
     const extractTag = function(message) {

@@ -191,8 +191,6 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
                 return this.encodeError(409, resultType, 'Resource Conflict');
             case POST:
                 // post a new document to the parent resource specified by the URI
-                const tag = citation.getValue('$tag').toString().slice(1);  // remove leading '#'
-                const version = citation.getValue('$version');
                 var response = encodeSuccess(201, resultType, citation, 'no-store');
                 return response;
             case HEAD:
