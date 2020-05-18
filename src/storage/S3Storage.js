@@ -15,6 +15,7 @@
  */
 const aws = new require('aws-sdk/clients/s3');
 const s3 = new aws({apiVersion: '2006-03-01'});
+const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
 // PRIVATE CONSTANTS
@@ -41,9 +42,11 @@ const EOL = '\n';
  * @returns {Object} The new S3 storage mechanism proxy.
  */
 const S3Storage = function(notary, configuration, debug) {
+    StorageMechanism.call(this, debug);
+    debug = this.debug;
+    const bali = this.bali;
+
     // validate the arguments
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/storage/S3Storage', '$S3Storage', '$configuration', configuration, [
@@ -57,6 +60,10 @@ const S3Storage = function(notary, configuration, debug) {
             $configuration: configuration
         });
         return catalog.toString();
+    };
+
+    this.citeDocument = async function(document) {
+        return await notary.citeDocument(document);
     };
 
     this.nameExists = async function(name) {
@@ -322,6 +329,7 @@ const S3Storage = function(notary, configuration, debug) {
 
     return this;
 };
+S3Storage.prototype = Object.create(StorageMechanism.prototype);
 S3Storage.prototype.constructor = S3Storage;
 exports.S3Storage = S3Storage;
 

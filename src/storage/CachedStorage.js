@@ -14,6 +14,7 @@
  * that have been retrieved from the wrapped storage mechanism.  The documents are assumed
  * to be immutable so no cache consistency issues exist.
  */
+const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
 // DOCUMENT REPOSITORY
@@ -22,7 +23,7 @@
  * This function creates a new instance of a cached storage mechanism.  A remote storage
  * mechanism is passed in and is used as the persistent store for all documents.
  *
- * @param {Object} storage The actual storage mechanism that maintains documents.
+ * @param {StorageMechanism} storage The actual storage mechanism that maintains documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
  * <pre>
@@ -34,9 +35,11 @@
  * @returns {Object} The new cached storage mechanism.
  */
 const CachedStorage = function(storage, debug) {
+    StorageMechanism.call(this, debug);
+    debug = this.debug;
+    const bali = this.bali;
+
     // validate the arguments
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/CachedStorage', '$CachedStorage', '$storage', storage, [
@@ -50,6 +53,10 @@ const CachedStorage = function(storage, debug) {
             $storage: storage.toString()
         });
         return catalog.toString();
+    };
+
+    this.citeDocument = async function(document) {
+        return await storage.citeDocument(document);
     };
 
     this.nameExists = async function(name) {
@@ -172,6 +179,7 @@ const CachedStorage = function(storage, debug) {
 
     return this;
 };
+CachedStorage.prototype = Object.create(StorageMechanism.prototype);
 CachedStorage.prototype.constructor = CachedStorage;
 exports.CachedStorage = CachedStorage;
 

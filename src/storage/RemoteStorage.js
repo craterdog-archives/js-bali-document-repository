@@ -14,6 +14,7 @@
  * documents as UTF-8 encoded strings.
  */
 const axios = require('axios');
+const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
 // DOCUMENT REPOSITORY
@@ -35,8 +36,9 @@ const axios = require('axios');
  * @returns {Object} The new remote storage mechanism.
  */
 const RemoteStorage = function(notary, uri, debug) {
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
+    StorageMechanism.call(this, debug);
+    debug = this.debug;
+    const bali = this.bali;
     if (debug > 2) console.log('Initializing the proxy to the remote repository: ' + uri);
 
     // validate the arguments
@@ -56,6 +58,10 @@ const RemoteStorage = function(notary, uri, debug) {
             $uri: uri
         });
         return catalog.toString();
+    };
+
+    this.citeDocument = async function(document) {
+        return await notary.citeDocument(document);
     };
 
     this.nameExists = async function(name) {
@@ -278,5 +284,6 @@ const RemoteStorage = function(notary, uri, debug) {
 
     return this;
 };
+RemoteStorage.prototype = Object.create(StorageMechanism.prototype);
 RemoteStorage.prototype.constructor = RemoteStorage;
 exports.RemoteStorage = RemoteStorage;

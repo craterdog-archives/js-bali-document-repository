@@ -15,6 +15,7 @@
  * storage mechanism.  The documents are validated using the public certificate of the
  * notary key used to notarize them.
  */
+const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
 // PUBLIC FUNCTIONS
@@ -36,9 +37,11 @@
  * @returns {Object} The new validated storage mechanism.
  */
 const ValidatedStorage = function(notary, repository, debug) {
+    StorageMechanism.call(this, debug);
+    debug = this.debug;
+    const bali = this.bali;
+
     // validate the arguments
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$notary', notary, [
@@ -60,6 +63,10 @@ const ValidatedStorage = function(notary, repository, debug) {
             $repository: repository.toString()
         });
         return catalog.toString();
+    };
+
+    this.citeDocument = async function(document) {
+        return await notary.citeDocument(document);
     };
 
     this.nameExists = async function(name) {
@@ -278,6 +285,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     return this;
 };
+ValidatedStorage.prototype = Object.create(StorageMechanism.prototype);
 ValidatedStorage.prototype.constructor = ValidatedStorage;
 exports.ValidatedStorage = ValidatedStorage;
 

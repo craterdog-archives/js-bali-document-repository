@@ -24,6 +24,7 @@
  */
 const os = require('os');
 const pfs = require('fs').promises;
+const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
 // PRIVATE CONSTANTS
@@ -52,10 +53,12 @@ const EOL = '\n';
  * @returns {Object} The new local storage mechanism.
  */
 const LocalStorage = function(notary, root, debug) {
+    StorageMechanism.call(this, debug);
+    debug = this.debug;
+    const bali = this.bali;
+
     // validate the arguments
     root = root || os.homedir() + '/.bali/';
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
         const validator = bali.validator(debug);
         validator.validateType('/bali/storage/LocalStorage', '$LocalStorage', '$root', root, [
@@ -70,6 +73,10 @@ const LocalStorage = function(notary, root, debug) {
             $root: root
         });
         return catalog.toString();
+    };
+
+    this.citeDocument = async function(document) {
+        return await notary.citeDocument(document);
     };
 
     this.nameExists = async function(name) {
@@ -335,6 +342,7 @@ const LocalStorage = function(notary, root, debug) {
 
     return this;
 };
+LocalStorage.prototype = Object.create(StorageMechanism.prototype);
 LocalStorage.prototype.constructor = LocalStorage;
 exports.LocalStorage = LocalStorage;
 
