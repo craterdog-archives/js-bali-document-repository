@@ -80,14 +80,14 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
 
 
     this.extractName = function(parameters) {
-        const name = bali.component('/' + parameters.resources.join('/'));
+        const name = bali.component('/' + parameters.resource.join('/'));
         return name;
     };
 
 
     this.extractCitation = function(parameters) {
-        const tag = bali.component('#' + parameters.resources[0]);
-        const version = bali.component(parameters.resources[1]);
+        const tag = bali.component('#' + parameters.resource[0]);
+        const version = bali.component(parameters.resource[1]);
         const digest = parameters.digest;
         const citation = bali.catalog({
             $protocol: protocol,
@@ -102,7 +102,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
 
 
     this.extractTag = function(parameters) {
-        const tag = bali.component('#' + parameters.resources[2]);
+        const tag = bali.component('#' + parameters.resource[2]);
         return tag;
     };
 
@@ -230,7 +230,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
         const tokens = path.split('/');
         const service = tokens[1];
         const type = tokens[2];
-        const resources = tokens.slice(3);
+        const resource = tokens.slice(3);
         const body = (request.body && (request.body.constructor.name === 'String')) ? bali.component(request.body) : undefined;
 
         const parameters = {
@@ -239,7 +239,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
             resultType: resultType,
             service: service,
             type: type,
-            resources: resources,
+            resource: resource,
             digest: digest,
             body: body
         };
@@ -306,6 +306,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
 
     const citeComponent = async function(component) {
         if (component.isType('/bali/collections/Catalog') && component.getValue('$content')) {
+            // the component is a document so cite it (otherwise it is already a citation)
             component = await notary.citeDocument(component);
         }
         return component;

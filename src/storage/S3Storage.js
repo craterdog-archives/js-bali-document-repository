@@ -265,19 +265,9 @@ const S3Storage = function(notary, configuration, debug) {
         const tag = extractTag(message);
         const availableIdentifier = generateMessageIdentifier(bag, 'available', tag);
         const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
-        if (! await deleteComponent(location, processingIdentifier)) {
-            const exception = bali.exception({
-                $module: '/bali/storage/S3Storage',
-                $procedure: '$returnMessage',
-                $exception: '$notProcessing',
-                $bag: bag,
-                $message: message,
-                $text: 'The message is not currently being processed.'
-            });
-            throw exception;
-        }
+        if (! await deleteComponent(location, processingIdentifier)) return false;
         await writeComponent(location, availableIdentifier, message, true);
-        return tag;
+        return true;
     };
 
     this.deleteMessage = async function(bag, tag) {

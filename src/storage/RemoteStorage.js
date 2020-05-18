@@ -179,13 +179,16 @@ const RemoteStorage = function(notary, uri, debug) {
         return tag;
     };
 
-    const generatePath = function(resource) {
+    const generatePath = function(resource, identifier) {
         var path = '';
         if (resource.isComponent && resource.isType('/bali/collections/Catalog')) {
             path += resource.getValue('$tag').toString().slice(1);  // remove the leading '#'
             path += '/' + resource.getValue('$version').toString();
         } else {
             path += resource.toString().slice(1);  // remove the leading '/'
+        }
+        if (identifier) {
+            path += '/' + identifier.toString().slice(1);  // remove the leading '#'
         }
         return path;
     };
@@ -207,20 +210,20 @@ const RemoteStorage = function(notary, uri, debug) {
 
     /**
      * This function sends a RESTful web request to the remote repository with the specified, method,
-     * type, resource and tag. If a document is included it is sent as the body of the
+     * type, resource and identifier. If a document is included it is sent as the body of the
      * request. The result that is returned by the web service is returned from this function.
      *
      * @param {String} method The HTTP method type of the request.
      * @param {String} type The type of resource being acted upon.
-     * @param {Name|Catalog} resource The resource of the specific resource being acted upon.
-     * @param {Tag} tag An optional tag used to identify a subcomponent of the resource.
+     * @param {Name|Catalog} resource The resource being acted upon.
+     * @param {Tag} identifier An optional tag used to identify a subcomponent of the resource.
      * @param {Catalog} document An optional signed document to be passed to the web service.
      * @returns {Object} The response to the request.
      */
-    const sendRequest = async function(method, type, resource, tag, document) {
+    const sendRequest = async function(method, type, resource, identifier, document) {
 
         // setup the request URI and options
-        const fullURI = uri + '/repository/' + type + '/' + generatePath(resource) + (tag ? '/' + tag.toString().slice(1) : '');
+        const fullURI = uri + '/repository/' + type + '/' + generatePath(resource, identifier);
         const options = {
             url: fullURI,
             method: method,

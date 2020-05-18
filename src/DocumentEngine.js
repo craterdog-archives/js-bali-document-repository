@@ -135,11 +135,11 @@ const DocumentEngine = function(notary, repository, debug) {
                 const authority = await repository.readDocument(bag);
                 var result;
                 if (authority) {
-                    if (parameters.resources.length === 2) {
-                        // borrow a random message from the bag
+                    if (parameters.resource.length === 2) {
+                        // borrow a random message from the bag identified by the resource
                         result = await repository.borrowMessage(bag);
                     } else {
-                        // permanently delete the specified message from the bag
+                        // permanently delete the specified message identified by the resource from its bag
                         const tag = this.extractTag(parameters);
                         result = bali.probability(await repository.deleteMessage(bag, tag));
                     }
