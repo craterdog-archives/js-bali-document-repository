@@ -72,6 +72,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
                     $text: 'The processing of the HTTP request failed.'
                 }, cause);
                 console.log(exception.toString());
+                console.log(cause);
                 console.log('Response: 503 (Service Unavailable)');
             }
             return this.encodeError(503, 'Service Unavailable');

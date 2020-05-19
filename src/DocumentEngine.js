@@ -134,18 +134,18 @@ const DocumentEngine = function(notary, repository, debug) {
             DELETE: async function(parameters) {
                 const bag = this.extractCitation(parameters);
                 const authority = await repository.readDocument(bag);
-                var result;
+                var message;
                 if (authority) {
                     if (parameters.resource.length === 2) {
                         // borrow a random message from the bag identified by the resource
-                        result = await repository.borrowMessage(bag);
+                        message = await repository.borrowMessage(bag);
                     } else {
                         // permanently delete the specified message identified by the resource from its bag
                         const tag = this.extractTag(parameters);
-                        result = bali.probability(await repository.deleteMessage(bag, tag));
+                        message = await repository.deleteMessage(bag, tag);
                     }
                 }
-                return await this.encodeResponse(parameters, authority, result, true);
+                return await this.encodeResponse(parameters, authority, message, true);
             }
         }
 

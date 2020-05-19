@@ -356,7 +356,7 @@ StorageMechanism.prototype.returnMessage = async function(bag, message) {
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @param {Tag} tag A tag identifying the message to be deleted.
- * @returns {Boolean} Whether or not the message still existed in the bag.
+ * @returns {Catalog} The deleted message.
  */
 StorageMechanism.prototype.deleteMessage = async function(bag, tag) {
     const exception = this.bali.exception({

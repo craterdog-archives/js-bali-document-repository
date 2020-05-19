@@ -165,7 +165,10 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.deleteMessage = async function(bag, tag) {
         const response = await sendRequest('DELETE', 'messages', bag, tag);
-        return response.status === 200;
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
+        }
     };
 
 

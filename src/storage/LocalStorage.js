@@ -278,7 +278,13 @@ const LocalStorage = function(notary, root, debug) {
     this.deleteMessage = async function(bag, tag) {
         const location = generateLocation('messages');
         const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
-        return await deleteComponent(location, processingIdentifier);
+        const bytes = await readComponent(location, processingIdentifier);
+        if (bytes) {
+            const source = bytes.toString('utf8');
+            const message = bali.component(source);
+            await deleteComponent(location, processingIdentifier);
+            return message;
+        }
     };
 
     const extractTag = function(message) {

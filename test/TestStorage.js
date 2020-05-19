@@ -220,21 +220,21 @@ describe('Bali Document Repository™', function() {
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(2);
                 var tag = extractTag(message);
-                await storage.deleteMessage(bag, tag);
+                expect(message.isEqualTo(await storage.deleteMessage(bag, tag))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(1);
                 tag = extractTag(message);
-                await storage.deleteMessage(bag, tag);
+                expect(message.isEqualTo(await storage.deleteMessage(bag, tag))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(0);
                 tag = extractTag(message);
-                await storage.deleteMessage(bag, tag);
+                expect(message.isEqualTo(await storage.deleteMessage(bag, tag))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(0);
                 expect(await storage.messageAvailable(bag)).is.false;
 
