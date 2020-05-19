@@ -199,9 +199,7 @@ describe('Bali Document Repository™', function() {
                 await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
-                await assert.rejects(async function() {
-                    await storage.addMessage(bag, message);
-                });
+                expect(await storage.addMessage(bag, message)).is.false;
 
                 message = await generateMessage(2);
                 await storage.addMessage(bag, message);

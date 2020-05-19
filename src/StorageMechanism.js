@@ -294,6 +294,7 @@ StorageMechanism.prototype.messageCount = async function(bag) {
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @param {Catalog} message A catalog containing the message to be added.
+ * @returns {Boolean} Whether or not the message was successfully added to the bag.
  */
 StorageMechanism.prototype.addMessage = async function(bag, message) {
     const exception = this.bali.exception({

@@ -227,17 +227,10 @@ const LocalStorage = function(notary, root, debug) {
         const available = generateMessageIdentifier(bag, 'available', tag);
         const processing = generateMessageIdentifier(bag, 'processing', tag);
         if (await componentExists(location, available) || await componentExists(location, processing)) {
-            const exception = bali.exception({
-                $module: '/bali/storage/LocalStorage',
-                $procedure: '$addMessage',
-                $exception: '$messageExists',
-                $location: location,
-                $message: message,
-                $text: 'The message already exists in the bag.'
-            });
-            throw exception;
+            return false;
         }
         await writeComponent(location, available, message, true);
+        return true;
     };
 
     this.borrowMessage = async function(bag) {

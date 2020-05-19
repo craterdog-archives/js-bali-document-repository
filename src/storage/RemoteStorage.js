@@ -146,7 +146,7 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.addMessage = async function(bag, message) {
         const response = await sendRequest('POST', 'messages', bag, undefined, message);
-        if (response.status > 299) throw Error('Unable to add the message to the bag: ' + response.status);
+        return response.status === 201;
     };
 
     this.borrowMessage = async function(bag) {
