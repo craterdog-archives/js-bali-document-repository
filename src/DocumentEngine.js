@@ -11,29 +11,29 @@
 const HTTPEngine = require('./utilities/HTTPEngine').HTTPEngine;
 
 
-const DocumentEngine = function(notary, repository, debug) {
+const DocumentEngine = function(notary, storage, debug) {
     const bali = require('bali-component-framework').api(debug);
     const handlers = {
 
         names: {
             HEAD: async function(parameters) {
                 const name = this.extractName(parameters);
-                const existing = await repository.readName(name);
+                const existing = await storage.readName(name);
                 return await this.encodeResponse(parameters, existing, existing, false);  // body is stripped off
             },
 
             GET: async function(parameters) {
                 const name = this.extractName(parameters);
-                const existing = await repository.readName(name);
+                const existing = await storage.readName(name);
                 return await this.encodeResponse(parameters, existing, existing, false);
             },
 
             PUT: async function(parameters) {
                 const name = this.extractName(parameters);
                 const citation = parameters.body;
-                const existing = await repository.readName(name);
+                const existing = await storage.readName(name);
                 const response = await this.encodeResponse(parameters, existing, existing, false);
-                if (response.statusCode === 201) await repository.writeName(name, citation);
+                if (response.statusCode === 201) await storage.writeName(name, citation);
                 return response;
             }
         },
@@ -41,30 +41,30 @@ const DocumentEngine = function(notary, repository, debug) {
         drafts: {
             HEAD: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await repository.readDraft(citation);
+                const existing = await storage.readDraft(citation);
                 return await this.encodeResponse(parameters, existing, existing, true);  // body is stripped off
             },
 
             GET: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await repository.readDraft(citation);
+                const existing = await storage.readDraft(citation);
                 return await this.encodeResponse(parameters, existing, existing, true);
             },
 
             PUT: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const draft = parameters.body;
-                const existing = await repository.readDraft(citation);
+                const existing = await storage.readDraft(citation);
                 const response = await this.encodeResponse(parameters, existing, existing, true);
-                if (response.statusCode < 300) await repository.writeDraft(draft);
+                if (response.statusCode < 300) await storage.writeDraft(draft);
                 return response;
             },
 
             DELETE: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await repository.readDraft(citation);
+                const existing = await storage.readDraft(citation);
                 const response = await this.encodeResponse(parameters, existing, existing, true);
-                if (response.statusCode === 200) await repository.deleteDraft(citation);
+                if (response.statusCode === 200) await storage.deleteDraft(citation);
                 return response;
             }
         },
@@ -72,23 +72,23 @@ const DocumentEngine = function(notary, repository, debug) {
         documents: {
             HEAD: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await repository.readDocument(citation);
+                const existing = await storage.readDocument(citation);
                 return await this.encodeResponse(parameters, existing, existing, false);  // body is stripped off
             },
 
             GET: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await repository.readDocument(citation);
+                const existing = await storage.readDocument(citation);
                 return await this.encodeResponse(parameters, existing, existing, false);
             },
 
             PUT: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const document = parameters.body;
-                const existing = await repository.readDocument(citation);
+                const existing = await storage.readDocument(citation);
                 const response = await this.encodeResponse(parameters, existing, existing, false);
                 if (response.statusCode === 201) {
-                    await repository.writeDocument(document);
+                    await storage.writeDocument(document);
                 }
                 return response;
             }
@@ -97,26 +97,26 @@ const DocumentEngine = function(notary, repository, debug) {
         messages: {
             HEAD: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await repository.readDocument(bag);
-                const count = bali.number(await repository.messageCount(bag));
+                const authority = await storage.readDocument(bag);
+                const count = bali.number(await storage.messageCount(bag));
                 return await this.encodeResponse(parameters, authority, count.getMagnitude() > 0 ? count : undefined, true);  // body is stripped off
             },
 
             GET: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await repository.readDocument(bag);
-                const count = bali.number(await repository.messageCount(bag));
+                const authority = await storage.readDocument(bag);
+                const count = bali.number(await storage.messageCount(bag));
                 return await this.encodeResponse(parameters, authority, count, true);
             },
 
             PUT: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await repository.readDocument(bag);
+                const authority = await storage.readDocument(bag);
                 const message = parameters.body;
                 const response = await this.encodeResponse(parameters, authority, message, true);
                 if (response.statusCode === 200) {
                     try {
-                        await repository.returnMessage(bag, message);
+                        await storage.returnMessage(bag, message);
                     } catch (exception) {
                         return this.encodeError(409, parameters.responseType, 'Resource Conflict');
                     }
@@ -126,12 +126,12 @@ const DocumentEngine = function(notary, repository, debug) {
 
             POST: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await repository.readDocument(bag);
+                const authority = await storage.readDocument(bag);
                 const message = parameters.body;
                 const response = await this.encodeResponse(parameters, authority, message, true);
                 if (response.statusCode === 201) {
                     try {
-                        await repository.addMessage(bag, message);
+                        await storage.addMessage(bag, message);
                     } catch (exception) {
                         return this.encodeError(409, parameters.responseType, 'Resource Conflict');
                     }
@@ -141,17 +141,17 @@ const DocumentEngine = function(notary, repository, debug) {
 
             DELETE: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await repository.readDocument(bag);
+                const authority = await storage.readDocument(bag);
                 var message;
                 if (authority) {
                     if (parameters.resource.length === 2) {
                         // borrow a random message from the bag identified by the resource
-                        message = await repository.borrowMessage(bag);
+                        message = await storage.borrowMessage(bag);
                     } else {
                         // permanently delete the specified message identified by the resource from its bag
                         try {
                             const citation = this.extractSubresource(parameters);
-                            message = await repository.deleteMessage(bag, citation);
+                            message = await storage.deleteMessage(bag, citation);
                         } catch (exception) {
                             return this.encodeError(409, parameters.responseType, 'Resource Conflict');
                         }
@@ -162,7 +162,7 @@ const DocumentEngine = function(notary, repository, debug) {
         }
 
     };
-    HTTPEngine.call(this, notary, repository, handlers, debug);
+    HTTPEngine.call(this, notary, storage, handlers, debug);
     return this;
 };
 DocumentEngine.prototype = Object.create(HTTPEngine.prototype);

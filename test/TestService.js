@@ -10,19 +10,33 @@
 
 const debug = 0;  // [0..3]
 const bali = require('bali-component-framework').api(debug);
-const notary = require('bali-digital-notary').service(debug);
-const directory = 'test/config/';
+const account = bali.tag();
+const directory = 'test/config/service/';
+const notary = require('bali-digital-notary').test(account, directory, debug);
 const storage = require('../').test(notary, directory, debug);
 const engine = require('../').engine(notary, storage, debug);
 const express = require("express");
 const bodyParser = require('body-parser');
 
+var notInitialized = async function() {
+    const publicKey = await notary.generateKey();
+    const certificate = await notary.notarizeDocument(publicKey);
+    await notary.activateKey(certificate);
+    await storage.writeDocument(certificate);
+    notInitialized = undefined;
+};
+
 if (debug > 0) console.log('Loading the Test Repository Service');
 
 const processRequest = async function(request, response) {
-    const result = await engine.processRequest(request);
-    response.writeHead(result.statusCode, result.statusMessage, result.headers);
-    response.end(result.body);
+    try {
+        if (notInitialized) await notInitialized();
+        const result = await engine.processRequest(request);
+        response.writeHead(result.statusCode, result.statusMessage, result.headers);
+        response.end(result.body);
+    } catch (cause) {
+        console.log(cause);
+    }
 };
 
 const router = express.Router();

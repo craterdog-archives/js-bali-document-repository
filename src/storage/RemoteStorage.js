@@ -74,7 +74,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $name: name,
                 $text: 'Unable to access the named citation.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         return response.status === 200;
@@ -90,7 +89,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $name: name,
                 $text: 'Unable to access the named citation.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         if (response.status === 200) {
@@ -111,7 +109,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to create the named citation.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         return citation;
@@ -127,7 +124,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to access the draft document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         return response.status === 200;
@@ -143,7 +139,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to access the draft document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         if (response.status === 200) {
@@ -163,7 +158,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $draft: draft,
                 $text: 'Unable to create or update the draft document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         const source = response.data.toString('utf8');
@@ -180,7 +174,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to access the draft document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         if (response.status === 200) {
@@ -199,7 +192,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to access the document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         return response.status === 200;
@@ -215,7 +207,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to access the document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         if (response.status === 200) {
@@ -235,7 +226,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $document: document,
                 $text: 'Unable to create the document.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         const source = response.data.toString('utf8');
@@ -252,7 +242,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $bag: bag,
                 $text: 'Unable to access the message bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         return response.status === 200;
@@ -268,7 +257,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $bag: bag,
                 $text: 'Unable to access the message bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         const count = response.status === 200 ? response.data : 0;
@@ -286,7 +274,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $message: message,
                 $text: 'Unable to add the message to the bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
@@ -301,7 +288,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $bag: bag,
                 $text: 'Unable to borrow a message from the bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         if (response.status === 200) {
@@ -322,7 +308,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $message: message,
                 $text: 'Unable to return the message to the bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };
@@ -338,7 +323,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $citation: citation,
                 $text: 'Unable to delete the message from the bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         const source = response.data.toString('utf8');
@@ -444,7 +428,6 @@ const RemoteStorage = function(notary, uri, debug) {
                     $details: bali.text(cause.request.statusText),
                     $text: bali.text('The request received no response.')
                 }, cause);
-                if (debug > 0) console.error(exception.toString());
                 throw exception;
             }
             // the request could not be sent
@@ -457,7 +440,6 @@ const RemoteStorage = function(notary, uri, debug) {
                 $body: body,
                 $text: bali.text('The request was not formed correctly.')
             }, cause);
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };

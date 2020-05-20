@@ -111,7 +111,6 @@ const LocalStorage = function(notary, root, debug) {
                 $citation: citation,
                 $text: 'The named citation already exists.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         await writeComponent(location, identifier, citation);
@@ -149,7 +148,6 @@ const LocalStorage = function(notary, root, debug) {
                 $draft: draft,
                 $text: 'A committed document with the same tag and version already exists.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         location = generateLocation('drafts');
@@ -200,7 +198,6 @@ const LocalStorage = function(notary, root, debug) {
                 $document: document,
                 $text: 'The document already exists.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         await writeComponent(location, identifier, document);
@@ -237,7 +234,6 @@ const LocalStorage = function(notary, root, debug) {
                 $message: message,
                 $text: 'The message is already available in the bag.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         const processing = generateMessageIdentifier(bag, 'processing', citation);
@@ -250,7 +246,6 @@ const LocalStorage = function(notary, root, debug) {
                 $message: message,
                 $text: 'The message is already being processed.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         await writeComponent(location, available, message, true);
@@ -290,7 +285,7 @@ const LocalStorage = function(notary, root, debug) {
 
     this.returnMessage = async function(bag, message) {
         const location = generateLocation('messages');
-        const citation = await notary.citeDocument(message);
+        var citation = await notary.citeDocument(message);
         const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
         if (! await deleteComponent(location, processingIdentifier)) {
             const exception = bali.exception({
@@ -301,9 +296,13 @@ const LocalStorage = function(notary, root, debug) {
                 $message: message,
                 $text: 'The lease on the message has expired.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
+        const content = message.getValue('$content');
+        const version = bali.version.nextVersion(content.getParameter('$version'));
+        content.setParameter('$version', version);
+        message = await notary.notarizeDocument(content);
+        citation = await notary.citeDocument(message);
         const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
         await writeComponent(location, availableIdentifier, message, true);
     };
@@ -326,7 +325,6 @@ const LocalStorage = function(notary, root, debug) {
                 $citation: citation,
                 $text: 'The lease on the message has expired.'
             });
-            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };

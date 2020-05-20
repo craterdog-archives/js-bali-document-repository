@@ -11,7 +11,7 @@
 
 // PUBLIC CLASSES
 
-const HTTPEngine = function(notary, repository, handlers, debug) {
+const HTTPEngine = function(notary, storage, handlers, debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
     const bali = require('bali-component-framework').api(debug);
     const protocol = notary.getProtocols().getItem(-1);  // most recent protocol
@@ -269,7 +269,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
             if (credentials.isType('/bali/collections/Catalog')) {
                 const citation = credentials.getValue('$certificate');
                 // if the certificate doesn't yet exist, there is a self-signed certificate in the body
-                var certificate = (await repository.readDocument(citation)) || parameters.body;
+                var certificate = (await storage.readDocument(citation)) || parameters.body;
                 if (await notary.validDocument(credentials, certificate)) {
                     parameters.account = certificate.getValue('$account');
                     return true;  // the credentials are valid
