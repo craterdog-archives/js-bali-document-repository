@@ -294,7 +294,6 @@ StorageMechanism.prototype.messageCount = async function(bag) {
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @param {Catalog} message A catalog containing the message to be added.
- * @returns {Boolean} Whether or not the message was successfully added to the bag.
  */
 StorageMechanism.prototype.addMessage = async function(bag, message) {
     const exception = this.bali.exception({
@@ -337,7 +336,6 @@ StorageMechanism.prototype.borrowMessage = async function(bag) {
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @param {Catalog} message A catalog containing the message being returned.
- * @returns {Boolean} Whether or not the message was successfully returned.
  */
 StorageMechanism.prototype.returnMessage = async function(bag, message) {
     const exception = this.bali.exception({
@@ -355,10 +353,10 @@ StorageMechanism.prototype.returnMessage = async function(bag, message) {
  * It should be called once the processing of the message has successfully completed.
  *
  * @param {Catalog} bag A catalog citing the bag in the document repository.
- * @param {Tag} tag A tag identifying the message to be deleted.
+ * @param {Catalog} citation A citation for the message to be deleted.
  * @returns {Catalog} The deleted message.
  */
-StorageMechanism.prototype.deleteMessage = async function(bag, tag) {
+StorageMechanism.prototype.deleteMessage = async function(bag, citation) {
     const exception = this.bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$deleteMessage',

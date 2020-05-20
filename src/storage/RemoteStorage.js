@@ -66,11 +66,33 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.nameExists = async function(name) {
         const response = await sendRequest('HEAD', 'names', name);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$nameExists',
+                $exception: '$status' + response.status,
+                $name: name,
+                $text: 'Unable to access the named citation.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         return response.status === 200;
     };
 
     this.readName = async function(name) {
         const response = await sendRequest('GET', 'names', name);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$readName',
+                $exception: '$status' + response.status,
+                $name: name,
+                $text: 'Unable to access the named citation.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             const citation = bali.component(source);
@@ -80,17 +102,50 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.writeName = async function(name, citation) {
         const response = await sendRequest('PUT', 'names', name, undefined, citation);
-        if (response.status > 299) throw Error('Unable to create the named citation: ' + response.status);
+        if (response.status !== 201) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$writeName',
+                $exception: '$status' + response.status,
+                $name: name,
+                $citation: citation,
+                $text: 'Unable to create the named citation.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         return citation;
     };
 
     this.draftExists = async function(citation) {
         const response = await sendRequest('HEAD', 'drafts', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$draftExists',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the draft document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         return response.status === 200;
     };
 
     this.readDraft = async function(citation) {
         const response = await sendRequest('GET', 'drafts', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$readDraft',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the draft document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             return bali.component(source);
@@ -100,13 +155,34 @@ const RemoteStorage = function(notary, uri, debug) {
     this.writeDraft = async function(draft) {
         const citation = await notary.citeDocument(draft);
         const response = await sendRequest('PUT', 'drafts', citation, undefined, draft);
-        if (response.status > 299) throw Error('Unable to save the draft: ' + response.status);
+        if (response.status !== 200 && response.status !== 201) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$writeDraft',
+                $exception: '$status' + response.status,
+                $draft: draft,
+                $text: 'Unable to create or update the draft document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         const source = response.data.toString('utf8');
         return bali.component(source);  // return a citation to the new document
     };
 
     this.deleteDraft = async function(citation) {
         const response = await sendRequest('DELETE', 'drafts', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$deleteDraft',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the draft document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             return bali.component(source);
@@ -115,11 +191,33 @@ const RemoteStorage = function(notary, uri, debug) {
 
     this.documentExists = async function(citation) {
         const response = await sendRequest('HEAD', 'documents', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$documentExists',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         return response.status === 200;
     };
 
     this.readDocument = async function(citation) {
         const response = await sendRequest('GET', 'documents', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$readDocument',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             return bali.component(source);
@@ -129,28 +227,83 @@ const RemoteStorage = function(notary, uri, debug) {
     this.writeDocument = async function(document) {
         const citation = await notary.citeDocument(document);
         const response = await sendRequest('PUT', 'documents', citation, undefined, document);
-        if (response.status > 299) throw Error('Unable to create the document: ' + response.status);
+        if (response.status !== 201) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$writeDocument',
+                $exception: '$status' + response.status,
+                $document: document,
+                $text: 'Unable to create the document.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         const source = response.data.toString('utf8');
         return bali.component(source);  // return a citation to the new document
     };
 
     this.messageAvailable = async function(bag) {
         const response = await sendRequest('HEAD', 'messages', bag);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$messageAvailable',
+                $exception: '$status' + response.status,
+                $bag: bag,
+                $text: 'Unable to access the message bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         return response.status === 200;
     };
 
     this.messageCount = async function(bag) {
         const response = await sendRequest('GET', 'messages', bag);
-        return Number(response.data.toString('utf8'));
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$messageCount',
+                $exception: '$status' + response.status,
+                $bag: bag,
+                $text: 'Unable to access the message bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+        const count = response.status === 200 ? response.data : 0;
+        return Number(count.toString('utf8'));
     };
 
     this.addMessage = async function(bag, message) {
         const response = await sendRequest('POST', 'messages', bag, undefined, message);
-        return response.status === 201;
+        if (response.status !== 201) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$addMessage',
+                $exception: '$status' + response.status,
+                $bag: bag,
+                $message: message,
+                $text: 'Unable to add the message to the bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
     };
 
     this.borrowMessage = async function(bag) {
         const response = await sendRequest('DELETE', 'messages', bag);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$borrowMessage',
+                $exception: '$status' + response.status,
+                $bag: bag,
+                $text: 'Unable to borrow a message from the bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
         if (response.status === 200) {
             const source = response.data.toString('utf8');
             return bali.component(source);
@@ -158,29 +311,44 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.returnMessage = async function(bag, message) {
-        const tag = extractTag(message);
-        const response = await sendRequest('PUT', 'messages', bag, tag, message);
-        return response.status === 200;
+        const citation = await notary.citeDocument(message);
+        const response = await sendRequest('PUT', 'messages', bag, citation, message);
+        if (response.status !== 200) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$returnMessage',
+                $exception: '$status' + response.status,
+                $bag: bag,
+                $message: message,
+                $text: 'Unable to return the message to the bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
     };
 
-    this.deleteMessage = async function(bag, tag) {
-        const response = await sendRequest('DELETE', 'messages', bag, tag);
-        if (response.status === 200) {
-            const source = response.data.toString('utf8');
-            return bali.component(source);
+    this.deleteMessage = async function(bag, citation) {
+        const response = await sendRequest('DELETE', 'messages', bag, citation);
+        if (response.status !== 200) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$deleteMessage',
+                $exception: '$status' + response.status,
+                $bag: bag,
+                $citation: citation,
+                $text: 'Unable to delete the message from the bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
         }
+        const source = response.data.toString('utf8');
+        return bali.component(source);
     };
 
 
     // PRIVATE FUNCTIONS
 
-    const extractTag = function(message) {
-        const content = message.getValue('$content');
-        const tag = content.getParameter('$tag');
-        return tag;
-    };
-
-    const generatePath = function(resource, identifier) {
+    const generatePath = function(resource, subresource) {
         var path = '';
         if (resource.isComponent && resource.isType('/bali/collections/Catalog')) {
             path += resource.getValue('$tag').toString().slice(1);  // remove the leading '#'
@@ -188,8 +356,8 @@ const RemoteStorage = function(notary, uri, debug) {
         } else {
             path += resource.toString().slice(1);  // remove the leading '/'
         }
-        if (identifier) {
-            path += '/' + identifier.toString().slice(1);  // remove the leading '#'
+        if (subresource) {
+            path += '/' + subresource.toString().slice(1);  // remove the leading '#'
         }
         return path;
     };
@@ -203,28 +371,29 @@ const RemoteStorage = function(notary, uri, debug) {
 
     const generateDigest = function(resource) {
         var digest = '';
-        if (resource.isComponent && resource.isType('/bali/collections/Catalog')) {
+        if (resource && resource.isComponent && resource.isType('/bali/collections/Catalog')) {
             digest += resource.getValue('$digest').toString().slice(1, -1).replace(/\s+/g, '');
         }
         return digest;
     };
 
     /**
-     * This function sends a RESTful web request to the remote repository with the specified, method,
-     * type, resource and identifier. If a document is included it is sent as the body of the
-     * request. The result that is returned by the web service is returned from this function.
+     * This function sends a RESTful web request to the remote repository with the specified,
+     * method, type, resource and optional subresource.  An optional body of the request may be
+     * included as well.  Any result that is returned in the body of the response is returned
+     * from this function.
      *
      * @param {String} method The HTTP method type of the request.
      * @param {String} type The type of resource being acted upon.
-     * @param {Name|Catalog} resource The resource being acted upon.
-     * @param {Tag} identifier An optional tag used to identify a subcomponent of the resource.
-     * @param {Catalog} document An optional signed document to be passed to the web service.
-     * @returns {Object} The response to the request.
+     * @param {Name|Catalog} resource The name of or a citation to the resource being acted upon.
+     * @param {Catalog} subresource An optional citation to a subresource of the main resource.
+     * @param {Catalog} body An optional catalog to be passed as the body of the request.
+     * @returns {Object} An optional response to the request.
      */
-    const sendRequest = async function(method, type, resource, identifier, document) {
+    const sendRequest = async function(method, type, resource, subresource, body) {
 
         // setup the request URI and options
-        const fullURI = uri + '/repository/' + type + '/' + generatePath(resource, identifier);
+        const fullURI = uri + '/repository/' + type + '/' + generatePath(resource, subresource);
         const options = {
             url: fullURI,
             method: method,
@@ -235,19 +404,22 @@ const RemoteStorage = function(notary, uri, debug) {
             },
             headers: {
                 'user-agent': 'Bali Document Repository API/v2 (NodeJS/v12) Bali Nebula/v2',
-                'nebula-credentials': await generateCredentials(),
-                'nebula-digest': generateDigest(resource),
                 'accept': 'application/bali'
             }
         };
 
         // add headers for the data (if applicable)
-        const data = document ? document.toString() : undefined;
+        const data = body ? body.toString() : undefined;
         if (data) {
-            options.data = data;
             options.headers['content-type'] = 'application/bali';
             options.headers['content-length'] = data.length;
+            options.data = data;
         }
+
+        // add nebula specific headers
+        options.headers['nebula-credentials'] = await generateCredentials();
+        options.headers['nebula-digest'] = generateDigest(resource);
+        options.headers['nebula-subdigest'] = generateDigest(subresource);
 
         // send the request
         try {
@@ -270,6 +442,7 @@ const RemoteStorage = function(notary, uri, debug) {
                     $details: bali.text(cause.request.statusText),
                     $text: bali.text('The request received no response.')
                 }, cause);
+                if (debug > 0) console.error(exception.toString());
                 throw exception;
             }
             // the request could not be sent
@@ -279,9 +452,10 @@ const RemoteStorage = function(notary, uri, debug) {
                 $exception: '$malformedRequest',
                 $uri: bali.reference(fullURI),
                 $method: bali.text(method),
-                $document: document,
+                $body: body,
                 $text: bali.text('The request was not formed correctly.')
             }, cause);
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
     };

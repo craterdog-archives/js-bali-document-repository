@@ -55,6 +55,16 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
+     * This method returns a citation for the specified document.
+     *
+     * @param {Catalog} document The document to be cited.
+     * @returns {Catalog} A citation to the document.
+     */
+    this.citeDocument = async function(document) {
+        return await storage.citeDocument(document);
+    };
+
+    /**
      * This method checks to see whether or not the named citation exists in the document repository.
      *
      * @param {Name} name The unique name for the citation being checked.

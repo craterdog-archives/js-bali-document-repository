@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 1;  // [0..3]
+const debug = 0;  // [0..3]
 const mocha = require('mocha');
 const chai = require('chai');
 const expect = chai.expect;
@@ -189,17 +189,13 @@ describe('Bali Document Repository™', function() {
                     return await notary.notarizeDocument(content);
                 };
 
-                const extractTag = function(message) {
-                    const content = message.getValue('$content');
-                    const tag = content.getParameter('$tag');
-                    return tag;
-                };
-
                 var message = await generateMessage(1);
                 await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
-                expect(await storage.addMessage(bag, message)).is.false;
+                await assert.rejects(async function() {
+                    await storage.addMessage(bag, message);
+                });
 
                 message = await generateMessage(2);
                 await storage.addMessage(bag, message);
@@ -219,22 +215,22 @@ describe('Bali Document Repository™', function() {
 
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(2);
-                var tag = extractTag(message);
-                expect(message.isEqualTo(await storage.deleteMessage(bag, tag))).is.true;
+                var citation = await storage.citeDocument(message);
+                expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(1);
-                tag = extractTag(message);
-                expect(message.isEqualTo(await storage.deleteMessage(bag, tag))).is.true;
+                citation = await storage.citeDocument(message);
+                expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.borrowMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(0);
-                tag = extractTag(message);
-                expect(message.isEqualTo(await storage.deleteMessage(bag, tag))).is.true;
+                citation = await storage.citeDocument(message);
+                expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(0);
                 expect(await storage.messageAvailable(bag)).is.false;
 

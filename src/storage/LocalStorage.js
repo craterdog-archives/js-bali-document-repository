@@ -111,6 +111,7 @@ const LocalStorage = function(notary, root, debug) {
                 $citation: citation,
                 $text: 'The named citation already exists.'
             });
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         await writeComponent(location, identifier, citation);
@@ -135,8 +136,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.writeDraft = async function(draft) {
-        var location = generateLocation('documents');
         const citation = await notary.citeDocument(draft);
+        var location = generateLocation('documents');
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
@@ -148,6 +149,7 @@ const LocalStorage = function(notary, root, debug) {
                 $draft: draft,
                 $text: 'A committed document with the same tag and version already exists.'
             });
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         location = generateLocation('drafts');
@@ -198,6 +200,7 @@ const LocalStorage = function(notary, root, debug) {
                 $document: document,
                 $text: 'The document already exists.'
             });
+            if (debug > 0) console.error(exception.toString());
             throw exception;
         }
         await writeComponent(location, identifier, document);
@@ -223,14 +226,34 @@ const LocalStorage = function(notary, root, debug) {
 
     this.addMessage = async function(bag, message) {
         const location = generateLocation('messages');
-        const tag = extractTag(message);
-        const available = generateMessageIdentifier(bag, 'available', tag);
-        const processing = generateMessageIdentifier(bag, 'processing', tag);
-        if (await componentExists(location, available) || await componentExists(location, processing)) {
-            return false;
+        const citation = await notary.citeDocument(message);
+        const available = generateMessageIdentifier(bag, 'available', citation);
+        if (await componentExists(location, available)) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$addMessage',
+                $exception: '$messageExists',
+                $location: location,
+                $message: message,
+                $text: 'The message is already available in the bag.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+        const processing = generateMessageIdentifier(bag, 'processing', citation);
+        if (await componentExists(location, processing)) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$addMessage',
+                $exception: '$messageExists',
+                $location: location,
+                $message: message,
+                $text: 'The message is already being processed.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
         }
         await writeComponent(location, available, message, true);
-        return true;
     };
 
     this.borrowMessage = async function(bag) {
@@ -247,7 +270,6 @@ const LocalStorage = function(notary, root, debug) {
             const index = generator.generateIndex(count);
             const identifier = messages.getItem(index).getValue();
             const availableMessage = available + '/' + identifier;
-            const processingMessage = processing + '/' + identifier;
             const bytes = await readComponent(location, availableMessage);
             if (!bytes) {
                 // someone else got there first, keep trying
@@ -258,6 +280,7 @@ const LocalStorage = function(notary, root, debug) {
                 continue;
             }
             // we got there first
+            const processingMessage = processing + '/' + identifier;
             await writeComponent(location, processingMessage, bytes, true);
             const source = bytes.toString('utf8');
             const message = bali.component(source);
@@ -267,30 +290,45 @@ const LocalStorage = function(notary, root, debug) {
 
     this.returnMessage = async function(bag, message) {
         const location = generateLocation('messages');
-        const tag = extractTag(message);
-        const availableIdentifier = generateMessageIdentifier(bag, 'available', tag);
-        const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
-        if (! await deleteComponent(location, processingIdentifier)) return false;
+        const citation = await notary.citeDocument(message);
+        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
+        if (! await deleteComponent(location, processingIdentifier)) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$returnMessage',
+                $exception: '$leaseExpired',
+                $location: location,
+                $message: message,
+                $text: 'The lease on the message has expired.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
+        }
+        const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
         await writeComponent(location, availableIdentifier, message, true);
-        return true;
     };
 
-    this.deleteMessage = async function(bag, tag) {
+    this.deleteMessage = async function(bag, citation) {
         const location = generateLocation('messages');
-        const processingIdentifier = generateMessageIdentifier(bag, 'processing', tag);
+        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
         const bytes = await readComponent(location, processingIdentifier);
         if (bytes) {
             const source = bytes.toString('utf8');
             const message = bali.component(source);
             await deleteComponent(location, processingIdentifier);
             return message;
+        } else {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$deleteMessage',
+                $exception: '$leaseExpired',
+                $location: location,
+                $message: message,
+                $text: 'The lease on the message has expired.'
+            });
+            if (debug > 0) console.error(exception.toString());
+            throw exception;
         }
-    };
-
-    const extractTag = function(message) {
-        const content = message.getValue('$content');
-        const tag = content.getParameter('$tag');
-        return tag;
     };
 
     const generateLocation = function(type) {
@@ -317,11 +355,10 @@ const LocalStorage = function(notary, root, debug) {
         return identifier;
     };
 
-    const generateMessageIdentifier = function(bag, state, tag) {
-        var identifier = bag.getValue('$tag').toString().slice(1);  // remove the leading '#'
-        identifier += '/' + bag.getValue('$version');
-        identifier += '/' + state;
-        identifier += '/' + tag.toString().slice(1);  // remove the leading '#'
+    const generateMessageIdentifier = function(bag, state, citation) {
+        var identifier = generateBagIdentifier(bag, state);
+        identifier += '/' + citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + citation.getValue('$version');
         identifier += '.bali';
         return identifier;
     };
@@ -352,8 +389,14 @@ const sleep = function(milliseconds) {
 const listComponents = async function(location, identifier) {
     try {
         const path = location + '/' + identifier;
-        const files = await pfs.readdir(path, 'utf8');
-        return files;
+        const directories = await pfs.readdir(path, 'utf8');
+        const components = [];
+        for (var i = 0; i < directories.length; i++) {
+            const directory = directories[i];
+            const component = directory + '/' + await pfs.readdir(path + '/' + directory, 'utf8');
+            components.push(component);
+        }
+        return components;
     } catch (exception) {
         if (exception.code === 'ENOENT') return []; // the directory does not exist
         // something else went wrong

@@ -86,7 +86,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
     };
 
 
-    this.extractCitation = function(parameters) {
+    this.extractResource = function(parameters) {
         const tag = bali.component('#' + parameters.resource[0]);
         const version = bali.component(parameters.resource[1]);
         const digest = parameters.digest;
@@ -102,9 +102,19 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
     };
 
 
-    this.extractTag = function(parameters) {
+    this.extractSubresource = function(parameters) {
         const tag = bali.component('#' + parameters.resource[2]);
-        return tag;
+        const version = bali.component(parameters.resource[3]);
+        const digest = parameters.subdigest;
+        const citation = bali.catalog({
+            $protocol: protocol,
+            $tag: tag,
+            $version: version,
+            $digest: digest
+        }, {
+            $type: '/bali/notary/Citation/v1'
+        });
+        return citation;
     };
 
 
@@ -223,6 +233,11 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
             digest = bali.component("'" + digest + "'");
         }
 
+        var subdigest = request.headers['nebula-subdigest'] || request.headers['Nebula-Subdigest'];
+        if (subdigest) {
+            subdigest = bali.component("'" + subdigest + "'");
+        }
+
         var resultType = request.headers['accept'] || request.headers['Accept'];
         if (resultType !== 'application/bali') resultType = 'text/html';  // for a browser
 
@@ -240,6 +255,7 @@ const HTTPEngine = function(notary, repository, handlers, debug) {
             type: type,
             resource: resource,
             digest: digest,
+            subdigest: subdigest,
             body: body
         };
         if (debug > 2) console.log('Parameters: ' + bali.catalog(parameters));

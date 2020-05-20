@@ -163,9 +163,9 @@ const CachedStorage = function(storage, debug) {
         return await storage.returnMessage(bag, message);
     };
 
-    this.deleteMessage = async function(bag, tag) {
+    this.deleteMessage = async function(bag, citation) {
         // pass-through, messages are not cached
-        return await storage.deleteMessage(bag, tag);
+        return await storage.deleteMessage(bag, citation);
     };
 
     const generateKey = function(identifier) {
