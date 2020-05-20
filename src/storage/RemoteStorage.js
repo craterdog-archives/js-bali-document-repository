@@ -357,7 +357,9 @@ const RemoteStorage = function(notary, uri, debug) {
             path += resource.toString().slice(1);  // remove the leading '/'
         }
         if (subresource) {
-            path += '/' + subresource.toString().slice(1);  // remove the leading '#'
+            path += '/' + subresource.getValue('$tag').toString().slice(1);  // remove the leading '#'
+            path += '/' + subresource.getValue('$version').toString();
+        } else {
         }
         return path;
     };

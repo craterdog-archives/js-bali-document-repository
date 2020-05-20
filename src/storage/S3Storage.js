@@ -310,7 +310,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $procedure: '$deleteMessage',
                 $exception: '$leaseExpired',
                 $location: location,
-                $message: message,
+                $citation: citation,
                 $text: 'The lease on the message has expired.'
             });
             if (debug > 0) console.error(exception.toString());
