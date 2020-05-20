@@ -55,13 +55,73 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method returns a citation for the specified document.
+     * This method creates a new document of the specified type using the specified template.
      *
-     * @param {Catalog} document The document to be cited.
-     * @returns {Catalog} A citation to the document.
+     * @param {Name} type The type of the document to be created.
+     * @param {Name} permissions The permissions controlling the access to the new document.
+     * @param {Sequential} template A sequence of attribute values for the new document.
+     * @returns {Catalog} A catalog defining the content of the new document.
      */
-    this.citeDocument = async function(document) {
-        return await storage.citeDocument(document);
+    this.createDocument = async function(type, permissions, template) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$type', type, [
+                    '/bali/elements/Name'
+                ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$permissions', permissions, [
+                    '/bali/elements/Name'
+                ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$template', template, [
+                    '/javascript/Undefined',
+                    '/javascript/Array',
+                    '/javascript/Object',
+                    '/bali/interfaces/Sequential'
+                ]);
+            }
+            const document = bali.catalog({}, {
+                $type: type,
+                $tag: bali.tag(),
+                $version: bali.version(),
+                $permissions: permissions,
+                $previous: 'none'
+            });
+            const citation = await storage.readName(type);
+            if (!citation) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/DocumentRepository',
+                    $procedure: '$createDocument',
+                    $exception: '$unknownType',
+                    $type: type,
+                    $text: 'The specified document type does not exist.'
+                });
+                throw exception;
+            }
+            const content = await storage.readDocument(citation).getValue('$content');
+            const attributes = content.getValue('$attributes');
+            if (attributes) {
+                const iterator = attributes.getIterator();
+                while (iterator.hasNext()) {
+                    const attribute = iterator.getNext();
+                    const name = attribute.getKey();
+                    const value = attribute.getValue().getValue('$default');
+                    document.setValue(name, value);
+                }
+            }
+            document.addItems(template);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$createDocument',
+                $exception: '$unexpected',
+                $type: type,
+                $permissions: permissions,
+                $template: template,
+                $text: 'An unexpected error occurred while attempting to create a document of a given type.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
     };
 
     /**

@@ -20,8 +20,10 @@ const notary = require('bali-digital-notary').test(account, directory, debug);
 const Repository = require('../');
 const storage = Repository.local(notary, directory, debug);
 const repository = Repository.repository(storage, debug);
+
 const version = bali.version();
 const name = bali.name(['bali', 'examples', 'transaction', version]);
+
 const transaction = bali.catalog({
     $timestamp: bali.moment(),
     $product: 'Snickers Bar',
@@ -47,16 +49,16 @@ describe('Bali Document Repository™', function() {
             const certificate = await notary.notarizeDocument(publicKey);
             const citation = await notary.activateKey(certificate);
             expect(citation.isEqualTo(await storage.writeDocument(certificate))).is.true;
-            const tag = citation.getValue('$tag');
-            const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
-            expect(citation.isEqualTo(await storage.writeName(name, citation))).is.true;
         });
 
         it('should perform a draft document lifecycle', async function() {
             // save a new draft to the repository
-            const draft = await repository.createDocument('/bali/examples/FooBar/v1', {
-                $foo: 'bar'
-            });
+            const draft = await repository.createDocument(
+                '/bali/examples/FooBar/v1',
+                '/bali/permissions/public/v1', {
+                    $foo: 'bar'
+                }
+            );
             const citation = await repository.saveDraft(draft);
 
             // make sure the new draft exists in the repository
