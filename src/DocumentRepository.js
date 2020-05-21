@@ -125,118 +125,30 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not the named citation exists in the document repository.
+     * This method saves a draft document in the document repository. If a draft document with
+     * the same tag and version already exists in the document repository, it is overwritten with
+     * the new draft document. If not, a new draft document is created in the document repository.
      *
-     * @param {Name} name The unique name for the citation being checked.
-     * @returns {Boolean} Whether or not the named citation exists.
+     * @param {Catalog} document A catalog containing the draft document.
+     * @returns {Catalog} A catalog containing a citation to the saved draft document.
      */
-    this.nameExists = async function(name) {
+    this.saveDocument = async function(document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$nameExists', '$name', name, [
-                    '/bali/elements/Name'
-                ]);
-            }
-            return await storage.nameExists(name);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$nameExists',
-                $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a named citation.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method attempts to retrieve the named citation from the document repository.
-     *
-     * @param {Name} name The unique name for the citation being retrieved.
-     * @returns {Catalog} A catalog containing the named citation or nothing if it doesn't exist.
-     */
-    this.readName = async function(name) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$readName', '$name', name, [
-                    '/bali/elements/Name'
-                ]);
-            }
-            return await storage.readName(name);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$readName',
-                $exception: '$unexpected',
-                $name: name,
-                $text: 'An unexpected error occurred while attempting to retrieved a named citation.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method associates a name with the specified citation in the document repository.
-     * The cited document must already exist in the repository.
-     *
-     * @param {Name} name The unique name for the citation.
-     * @param {Catalog} citation A catalog containing the document citation.
-     * @return {Catalog} A catalog containing the document citation.
-     */
-    this.writeName = async function(name, citation) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$writeName', '$name', name, [
-                    '/bali/elements/Name'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$writeName', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$saveDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.writeName(name, citation);
+            const draft = await notary.notarizeDocument(document);
+            return await storage.writeDraft(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$writeName',
+                $procedure: '$saveDocument',
                 $exception: '$unexpected',
-                $name: name,
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to create a named citation.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method checks to see whether or not the cited draft document exists in the document
-     * repository.
-     *
-     * @param {Catalog} citation A catalog containing a document citation.
-     * @returns {Boolean} Whether or not the cited draft document exists.
-     */
-    this.draftExists = async function(citation) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$draftExists', '$citation', citation, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-            return await storage.draftExists(citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$draftExists',
-                $exception: '$unexpected',
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a draft.'
+                $document: document,
+                $text: 'An unexpected error occurred while attempting to save a draft document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -246,26 +158,26 @@ const DocumentRepository = function(storage, debug) {
     /**
      * This method attempts to retrieve the cited draft document from the document repository.
      *
-     * @param {Catalog} citation A catalog containing a document citation.
-     * @returns {Catalog} A catalog containing the draft document or nothing if it doesn't
-     * exist.
+     * @param {Catalog} citation A catalog containing a citation to the draft document.
+     * @returns {Catalog} A catalog containing the draft document or nothing if it doesn't exist.
      */
-    this.readDraft = async function(citation) {
+    this.retrieveDocument = async function(citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$readDraft', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.readDraft(citation);
+            const document = await storage.readDraft(citation);
+            return document.getValue('$content');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$readDraft',
+                $procedure: '$retrieveDocument',
                 $exception: '$unexpected',
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to fetch a draft.'
+                $text: 'An unexpected error occurred while attempting to retrieve a draft document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -273,58 +185,28 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method saves a draft document in the document repository. If a draft document with
-     * the same tag and version already exists in the document repository, it is overwritten with
-     * the new draft.
-     *
-     * @param {Catalog} draft A catalog containing the draft document.
-     * @returns {Catalog} A catalog containing the document citation.
-     */
-    this.writeDraft = async function(draft) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$writeDraft', '$draft', draft, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-            return await storage.writeDraft(draft);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$writeDraft',
-                $exception: '$unexpected',
-                $draft: draft,
-                $text: 'An unexpected error occurred while attempting to save a draft.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method attempts to delete from the document repository the cited draft document.
+     * This method attempts to discard from the document repository the cited draft document.
      * If the draft document does not exist, this method does nothing.
      *
      * @param {Catalog} citation A catalog containing a document citation.
-     * @returns {Component|Undefined} The deleted draft document if it existed.
+     * @returns {Boolean} Whether or not the cited draft document existed in the document repository.
      */
-    this.deleteDraft = async function(citation) {
+    this.discardDocument = async function(citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$deleteDraft', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$discardDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.deleteDraft(citation);
+            return (await storage.deleteDraft(citation) !== undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$deleteDraft',
+                $procedure: '$discardDocument',
                 $exception: '$unexpected',
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to delete a draft.'
+                $text: 'An unexpected error occurred while attempting to discard a draft document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -332,85 +214,74 @@ const DocumentRepository = function(storage, debug) {
     };
 
     /**
-     * This method checks to see whether or not the cited document exists in the document repository.
+     * This method commits a document to the document repository under the specified name.
      *
-     * @param {Catalog} citation A catalog containing a document citation.
-     * @returns {Boolean} Whether or not the document exists.
+     * @param {Name} name The name to be associated with the committed document.
+     * @param {Catalog} document A catalog containing the document to be committed.
+     * @returns {Catalog} A catalog containing a citation to the committed document.
      */
-    this.documentExists = async function(citation) {
+    this.commitDocument = async function(name, document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$documentExists', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$name', name, [
+                    '/bali/elements/Name'
+                ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.documentExists(citation);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$documentExists',
-                $exception: '$unexpected',
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to verify the existence of a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method attempts to retrieve the cited document from the document repository.
-     *
-     * @param {Catalog} citation A catalog containing a document citation.
-     * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
-     */
-    this.readDocument = async function(citation) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$readDocument', '$citation', citation, [
-                    '/bali/collections/Catalog'
-                ]);
+            if (await storage.nameExists(name)) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/DocumentRepository',
+                    $procedure: '$commitDocument',
+                    $exception: '$nameExists',
+                    $name: name,
+                    $text: 'The specified name already exists in the document repository.'
+                });
+                throw exception;
             }
-            return await storage.readDocument(citation);
+            const draft = await notary.notarizeDocument(document);
+            const citation = await storage.writeDocument(draft);
+            await storage.writeName(name, citation);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$readDocument',
-                $exception: '$unexpected',
-                $citation: citation,
-                $text: 'An unexpected error occurred while attempting to fetch a document.'
-            }, cause);
-            if (debug) console.error(exception.toString());
-            throw exception;
-        }
-    };
-
-    /**
-     * This method saves a new document in the document repository. If a document with
-     * the same tag and version already exists in the document repository, an exception is
-     * thrown.
-     *
-     * @param {Catalog} document A catalog containing the document.
-     * @returns {Catalog} A catalog containing the document citation.
-     */
-    this.writeDocument = async function(document) {
-        try {
-            if (debug > 1) {
-                const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$writeDocument', '$document', document, [
-                    '/bali/collections/Catalog'
-                ]);
-            }
-            return await storage.writeDocument(document);
-        } catch (cause) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$writeDocument',
+                $procedure: '$commitDocument',
                 $exception: '$unexpected',
                 $document: document,
-                $text: 'An unexpected error occurred while attempting to create a document.'
+                $text: 'An unexpected error occurred while attempting to commit a document.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This method attempts to retrieve the named document from the document repository.
+     *
+     * @param {Name} name The name of the document to be retrieved from the document repository.
+     * @returns {Catalog} A catalog containing the named document or nothing if it doesn't exist.
+     */
+    this.retrieveName = async function(name) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveName', '$name', name, [
+                    '/bali/elements/Name'
+                ]);
+            }
+            const citation = await storage.readName(name);
+            const document = await storage.readDocument(citation);
+            return document.getValue('$content');
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$retrieveDocument',
+                $exception: '$unexpected',
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to retrieve a named document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

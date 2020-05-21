@@ -59,41 +59,41 @@ describe('Bali Document Repository™', function() {
                     $foo: 'bar'
                 }
             );
-            const citation = await repository.saveDraft(draft);
+            const citation = await repository.saveDocument(draft);
 
             // make sure the new draft exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDraft(citation))).is.true;
+            expect(draft.isEqualTo(await repository.retrieveDocument(citation))).is.true;
 
             // discard the draft in the repository
-            expect(await repository.discardDraft(citation)).is.true;
+            expect(await repository.discardDocument(citation)).is.true;
 
             // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDraft(citation)).to.not.exist;
+            expect(await repository.retrieveDocument(citation)).to.not.exist;
 
             // delete a non-existent draft from the repository
-            expect(await repository.discardDraft(citation)).is.false;
+            expect(await repository.discardDocument(citation)).is.false;
         });
 
         it('should perform a committed document lifecycle', async function() {
             const document = transaction;
 
             // make sure the new document does not already exists in the repository
-            expect(await repository.retrieveDocument(name)).to.not.exist;
+            expect(await repository.retrieveName(name)).to.not.exist;
 
             // save a draft of the document in the repository
-            const citation = await repository.saveDraft(document);
+            const citation = await repository.saveDocument(document);
 
             // make sure the new draft exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDraft(citation))).is.true;
+            expect(document.isEqualTo(await repository.retrieveDocument(citation))).is.true;
 
             // commit the document in the repository
             expect(citation.isEqualTo(await repository.commitDocument(name, document))).is.true;
 
             // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDraft(citation)).to.not.exist;
+            expect(await repository.retrieveDocument(citation)).to.not.exist;
 
             // make sure the committed document exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDocument(name))).is.true;
+            expect(document.isEqualTo(await repository.retrieveName(name))).is.true;
 
             // attempt to commit the same version of the document in the repository
             await assert.rejects(async function() {
@@ -116,8 +116,8 @@ describe('Bali Document Repository™', function() {
             await repository.commitDocument(nextName, document);
 
             // make sure the committed document exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDocument(nextName))).is.true;
-            expect(await repository.retrieveDocument(name).isEqualTo(await repository.retrieveDocument(nextName))).is.false;
+            expect(document.isEqualTo(await repository.retrieveName(nextName))).is.true;
+            expect(await repository.retrieveName(name).isEqualTo(await repository.retrieveName(nextName))).is.false;
 
             // attempt to commit the same version of the document in the repository
             await assert.rejects(async function() {
