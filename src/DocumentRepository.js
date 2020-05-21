@@ -20,6 +20,7 @@
 /**
  * This function creates a new instance of a document repository.
  *
+ * @param {DigitalNotary} notary The digital notary to be used to notarize the documents.
  * @param {Object} storage The storage mechanism to be used to maintain the documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -31,7 +32,7 @@
  * </pre>
  * @returns {Object} The new document repository.
  */
-const DocumentRepository = function(storage, debug) {
+const DocumentRepository = function(notary, storage, debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
     const bali = require('bali-component-framework').api(debug);
     if (debug > 1) {
@@ -170,7 +171,7 @@ const DocumentRepository = function(storage, debug) {
                 ]);
             }
             const document = await storage.readDraft(citation);
-            return document.getValue('$content');
+            if (document) return document.getValue('$content');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -243,8 +244,7 @@ const DocumentRepository = function(storage, debug) {
             }
             const draft = await notary.notarizeDocument(document);
             const citation = await storage.writeDocument(draft);
-            await storage.writeName(name, citation);
-            return citation;
+            return await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -273,8 +273,10 @@ const DocumentRepository = function(storage, debug) {
                 ]);
             }
             const citation = await storage.readName(name);
-            const document = await storage.readDocument(citation);
-            return document.getValue('$content');
+            if (citation) {
+                const document = await storage.readDocument(citation);
+                return document.getValue('$content');
+            }
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -282,6 +284,56 @@ const DocumentRepository = function(storage, debug) {
                 $exception: '$unexpected',
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to retrieve a named document.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     * This method checks out a new draft version of the named document from the document repository.
+     * If a version level is specified, that level will be incremented by one, otherwise, the
+     * largest version level will be incremented.
+     *
+     * @param {Name} name The name of the document to be checked out from the document repository.
+     * @param {Number} level The version level to be incremented.
+     * @returns {Catalog} A catalog containing the new draft version of the named document.
+     */
+    this.checkoutDocument = async function(name, level) {
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$checkoutDocument', '$name', name, [
+                    '/bali/elements/Name'
+                ]);
+                validator.validateType('/bali/repositories/DocumentRepository', '$checkoutDocument', '$level', level, [
+                    '/javascript/Number'
+                ]);
+            }
+            const citation = await storage.readName(name);
+            if (!citation) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/DocumentRepository',
+                    $procedure: '$checkoutDocument',
+                    $exception: '$unknownName',
+                    $name: name,
+                    $text: 'The specified name does not exist in the document repository.'
+                });
+                throw exception;
+            }
+            const document = await storage.readDocument(citation);
+            const template = document.getValue('$content');
+            const parameters = template.getParameters();
+            parameters.setValue('$version', bali.version.nextVersion(parameters.getValue('$version'), level));
+            const draft = bali.catalog(template, parameters);
+            return draft;
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$checkoutDocument',
+                $exception: '$unexpected',
+                $name: name,
+                $text: 'An unexpected error occurred while attempting to checkout a named document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;

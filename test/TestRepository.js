@@ -19,7 +19,7 @@ const directory = 'test/config/';
 const notary = require('bali-digital-notary').test(account, directory, debug);
 const Repository = require('../');
 const storage = Repository.local(notary, directory, debug);
-const repository = Repository.repository(storage, debug);
+const repository = Repository.repository(notary, storage, debug);
 
 const version = bali.version();
 const name = bali.name(['bali', 'examples', 'transaction', version]);
@@ -47,8 +47,8 @@ describe('Bali Document Repository™', function() {
         it('should create a self-signed certificate', async function() {
             const publicKey = await notary.generateKey();
             const certificate = await notary.notarizeDocument(publicKey);
-            const citation = await notary.activateKey(certificate);
-            expect(citation.isEqualTo(await storage.writeDocument(certificate))).is.true;
+            const certificateCitation = await notary.activateKey(certificate);
+            expect(certificateCitation.isEqualTo(await storage.writeDocument(certificate))).is.true;
         });
 
         it('should perform a draft document lifecycle', async function() {
@@ -59,19 +59,19 @@ describe('Bali Document Repository™', function() {
                     $foo: 'bar'
                 }
             );
-            const citation = await repository.saveDocument(draft);
+            const draftCitation = await repository.saveDocument(draft);
 
             // make sure the new draft exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDocument(citation))).is.true;
+            expect(draft.isEqualTo(await repository.retrieveDocument(draftCitation))).is.true;
 
             // discard the draft in the repository
-            expect(await repository.discardDocument(citation)).is.true;
+            expect(await repository.discardDocument(draftCitation)).is.true;
 
             // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDocument(citation)).to.not.exist;
+            expect(await repository.retrieveDocument(draftCitation)).to.not.exist;
 
             // delete a non-existent draft from the repository
-            expect(await repository.discardDocument(citation)).is.false;
+            expect(await repository.discardDocument(draftCitation)).is.false;
         });
 
         it('should perform a committed document lifecycle', async function() {
@@ -81,16 +81,17 @@ describe('Bali Document Repository™', function() {
             expect(await repository.retrieveName(name)).to.not.exist;
 
             // save a draft of the document in the repository
-            const citation = await repository.saveDocument(document);
+            const draftCitation = await repository.saveDocument(document);
 
             // make sure the new draft exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDocument(citation))).is.true;
+            expect(document.isEqualTo(await repository.retrieveDocument(draftCitation))).is.true;
 
             // commit the document in the repository
-            expect(citation.isEqualTo(await repository.commitDocument(name, document))).is.true;
+            const documentCitation = await repository.commitDocument(name, document);
+            expect(documentCitation.isEqualTo(draftCitation)).is.false;
 
             // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDocument(citation)).to.not.exist;
+            expect(await repository.retrieveDocument(draftCitation)).to.not.exist;
 
             // make sure the committed document exists in the repository
             expect(document.isEqualTo(await repository.retrieveName(name))).is.true;
@@ -117,7 +118,7 @@ describe('Bali Document Repository™', function() {
 
             // make sure the committed document exists in the repository
             expect(document.isEqualTo(await repository.retrieveName(nextName))).is.true;
-            expect(await repository.retrieveName(name).isEqualTo(await repository.retrieveName(nextName))).is.false;
+            expect((await repository.retrieveName(name)).isEqualTo(await repository.retrieveName(nextName))).is.false;
 
             // attempt to commit the same version of the document in the repository
             await assert.rejects(async function() {

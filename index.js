@@ -217,6 +217,7 @@ exports.engine = engine;
 /**
  * This function initializes a document repository backed by the specified storage mechanism.
  *
+ * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} storage The storage mechanism used to maintain the documents.
  * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
  * debugging that occurs:
@@ -228,7 +229,7 @@ exports.engine = engine;
  * </pre>
  * @returns {DocumentRepository} The new document repository instance.
  */
-const repository = function(storage, debug) {
-    return new DocumentRepository(storage, debug);
+const repository = function(notary, storage, debug) {
+    return new DocumentRepository(notary, storage, debug);
 };
 exports.repository = repository;
