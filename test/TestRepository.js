@@ -53,52 +53,52 @@ describe('Bali Document Repository™', function() {
 
         it('should perform a draft document lifecycle', async function() {
             // save a new draft to the repository
-            const draft = await repository.createDocument(
+            const draft = await repository.createDraft(
                 '/bali/examples/FooBar/v1',
                 '/bali/permissions/public/v1', {
                     $foo: 'bar'
                 }
             );
-            const draftCitation = await repository.saveDocument(draft);
+            const draftCitation = await repository.saveDraft(draft);
 
             // make sure the new draft exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDocument(draftCitation))).is.true;
+            expect(draft.isEqualTo(await repository.retrieveDraft(draftCitation))).is.true;
 
             // discard the draft in the repository
             expect(await repository.discardDocument(draftCitation)).is.true;
 
             // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDocument(draftCitation)).to.not.exist;
+            expect(await repository.retrieveDraft(draftCitation)).to.not.exist;
 
             // delete a non-existent draft from the repository
             expect(await repository.discardDocument(draftCitation)).is.false;
         });
 
         it('should perform a committed document lifecycle', async function() {
-            const document = transaction;
+            const draft = transaction;
 
             // make sure the new document does not already exists in the repository
-            expect(await repository.retrieveName(name)).to.not.exist;
+            expect(await repository.retrieveDocument(name)).to.not.exist;
 
             // save a draft of the document in the repository
-            const draftCitation = await repository.saveDocument(document);
+            const draftCitation = await repository.saveDraft(draft);
 
             // make sure the new draft exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDocument(draftCitation))).is.true;
+            expect(draft.isEqualTo(await repository.retrieveDraft(draftCitation))).is.true;
 
             // commit the document in the repository
-            const documentCitation = await repository.commitDocument(name, document);
+            const documentCitation = await repository.commitDocument(name, draft);
             expect(documentCitation.isEqualTo(draftCitation)).is.false;
 
             // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDocument(draftCitation)).to.not.exist;
+            expect(await repository.retrieveDraft(draftCitation)).to.not.exist;
 
             // make sure the committed document exists in the repository
-            expect(document.isEqualTo(await repository.retrieveName(name))).is.true;
+            expect(draft.isEqualTo(await repository.retrieveDocument(name))).is.true;
 
             // attempt to commit the same version of the document in the repository
             await assert.rejects(async function() {
-                await repository.commitDocument(name, document);
+                await repository.commitDocument(name, draft);
             });
         });
 
@@ -107,22 +107,22 @@ describe('Bali Document Repository™', function() {
             const nextVersion = bali.version.nextVersion(version, level);
             const nextName = bali.name(['bali', 'examples', 'transaction', nextVersion]);
 
-            // checkout the next version of the document
-            const document = await repository.checkoutDocument(name, level);
-            expect(document.getParameter('$version').isEqualTo(nextVersion)).is.true;
+            // checkout a draft of the next version of the document
+            const draft = await repository.checkoutDocument(name, level);
+            expect(draft.getParameter('$version').isEqualTo(nextVersion)).is.true;
 
             // update and commit the next version of the document in the repository
-            document.setValue('$quantity', 20);
-            document.setValue('$total', '26.07($currency: $USD)');
-            await repository.commitDocument(nextName, document);
+            draft.setValue('$quantity', 20);
+            draft.setValue('$total', '26.07($currency: $USD)');
+            await repository.commitDocument(nextName, draft);
 
             // make sure the committed document exists in the repository
-            expect(document.isEqualTo(await repository.retrieveName(nextName))).is.true;
-            expect((await repository.retrieveName(name)).isEqualTo(await repository.retrieveName(nextName))).is.false;
+            expect(draft.isEqualTo(await repository.retrieveDocument(nextName))).is.true;
+            expect((await repository.retrieveDocument(name)).isEqualTo(await repository.retrieveDocument(nextName))).is.false;
 
             // attempt to commit the same version of the document in the repository
             await assert.rejects(async function() {
-                await repository.commitDocument(nextName, document);
+                await repository.commitDocument(nextName, draft);
             });
         });
 
@@ -138,20 +138,17 @@ describe('Bali Document Repository™', function() {
             expect(await repository.borrowMessage(bag)).to.not.exist;
 
             // add some messages to the bag
-            var message = await repository.createMessage();
+            var message = bali.catalog();
             await repository.addMessage(bag, message);
             expect(await repository.messageCount(bag)).to.equal(1);
 
-            message = await repository.createMessage();
             await repository.addMessage(bag, message);
             expect(await repository.messageCount(bag)).to.equal(2);
 
-            message = await repository.createMessage();
             await repository.addMessage(bag, message);
             expect(await repository.messageCount(bag)).to.equal(3);
 
             // attempt to add a message that puts the bag beyond its capacity
-            message = await repository.createMessage();
             await assert.rejects(async function() {
                 await repository.addMessage(bag, message);
             });
