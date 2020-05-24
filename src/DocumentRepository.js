@@ -437,7 +437,6 @@ const DocumentRepository = function(notary, storage, debug) {
      *
      * @param {Name} bag The name of the bag in the document repository.
      * @param {Catalog} message A catalog containing the message to be added.
-     * @returns {Tag} A tag identifying the newly added message.
      */
     this.addMessage = async function(bag, message) {
         try {
@@ -451,6 +450,16 @@ const DocumentRepository = function(notary, storage, debug) {
                 ]);
             }
             const citation = await storage.readName(bag);
+            if (!citation) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/DocumentRepository',
+                    $procedure: '$addMessage',
+                    $exception: '$unknownBag',
+                    $bag: bag,
+                    $text: 'The specified bag does not exist in the document repository.'
+                });
+                throw exception;
+            }
             const catalog = bali.catalog(message, {
                 $type: '/bali/repositories/Message/v1',
                 $tag: bali.tag(),
@@ -459,7 +468,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $previous: 'none'
             });
             const document = await notary.notarizeDocument(catalog);
-            return await storage.addMessage(citation, document);
+            await storage.addMessage(citation, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -566,9 +575,9 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            const citation = await storage.readName(bag);
-            const tag = message.getParameter('$tag');
-            return await storage.deleteMessage(citation, tag);
+            bag = await storage.readName(bag);
+            const citation = await notary.citeDocument(await notary.notarizeDocument(message));
+            return await storage.deleteMessage(bag, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',

@@ -86,7 +86,6 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.readName = async function(name) {
-        // attempt to read the citation associated with the name
         const location = generateLocation('names');
         const identifier = generateNameIdentifier(name);
         const bytes = await readComponent(location, identifier);
@@ -135,8 +134,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.writeDraft = async function(draft) {
-        const citation = await notary.citeDocument(draft);
         var location = generateLocation('documents');
+        const citation = await notary.citeDocument(draft);
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
@@ -185,8 +184,8 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.writeDocument = async function(document) {
-        const citation = await notary.citeDocument(document);
         var location = generateLocation('documents');
+        const citation = await notary.citeDocument(document);
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
@@ -201,7 +200,6 @@ const LocalStorage = function(notary, root, debug) {
             throw exception;
         }
         await writeComponent(location, identifier, document);
-        // delete any existing draft of this document
         location = generateLocation('drafts');
         await deleteComponent(location, identifier);
         return citation;
@@ -222,6 +220,20 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.addMessage = async function(bag, message) {
+        const capacity = (await this.readDocument(bag)).getValue('$content').getValue('$capacity');
+        const current = await this.messageCount(bag);
+        if (current >= capacity) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$addMessage',
+                $exception: '$bagFull',
+                $bag: bag,
+                $capacity: capacity,
+                $message: message,
+                $text: 'The message is already available in the bag.'
+            });
+            throw exception;
+        }
         const location = generateLocation('messages');
         const citation = await notary.citeDocument(message);
         const available = generateMessageIdentifier(bag, 'available', citation);
@@ -231,6 +243,7 @@ const LocalStorage = function(notary, root, debug) {
                 $procedure: '$addMessage',
                 $exception: '$messageExists',
                 $location: location,
+                $identifier: available,
                 $message: message,
                 $text: 'The message is already available in the bag.'
             });
@@ -243,6 +256,7 @@ const LocalStorage = function(notary, root, debug) {
                 $procedure: '$addMessage',
                 $exception: '$messageExists',
                 $location: location,
+                $identifier: processing,
                 $message: message,
                 $text: 'The message is already being processed.'
             });
@@ -286,13 +300,14 @@ const LocalStorage = function(notary, root, debug) {
     this.returnMessage = async function(bag, message) {
         const location = generateLocation('messages');
         var citation = await notary.citeDocument(message);
-        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
-        if (! await deleteComponent(location, processingIdentifier)) {
+        const processing = generateMessageIdentifier(bag, 'processing', citation);
+        if (! await deleteComponent(location, processing)) {
             const exception = bali.exception({
                 $module: '/bali/storage/LocalStorage',
                 $procedure: '$returnMessage',
                 $exception: '$leaseExpired',
                 $location: location,
+                $identifier: processing,
                 $message: message,
                 $text: 'The lease on the message has expired.'
             });
@@ -303,18 +318,18 @@ const LocalStorage = function(notary, root, debug) {
         content.setParameter('$version', version);
         message = await notary.notarizeDocument(content);
         citation = await notary.citeDocument(message);
-        const availableIdentifier = generateMessageIdentifier(bag, 'available', citation);
-        await writeComponent(location, availableIdentifier, message, true);
+        const available = generateMessageIdentifier(bag, 'available', citation);
+        await writeComponent(location, available, message, true);
     };
 
     this.deleteMessage = async function(bag, citation) {
         const location = generateLocation('messages');
-        const processingIdentifier = generateMessageIdentifier(bag, 'processing', citation);
-        const bytes = await readComponent(location, processingIdentifier);
+        const identifier = generateMessageIdentifier(bag, 'processing', citation);
+        const bytes = await readComponent(location, identifier);
         if (bytes) {
             const source = bytes.toString('utf8');
             const message = bali.component(source);
-            await deleteComponent(location, processingIdentifier);
+            await deleteComponent(location, identifier);
             return message;
         } else {
             const exception = bali.exception({
@@ -322,6 +337,7 @@ const LocalStorage = function(notary, root, debug) {
                 $procedure: '$deleteMessage',
                 $exception: '$leaseExpired',
                 $location: location,
+                $identifier: identifier,
                 $citation: citation,
                 $text: 'The lease on the message has expired.'
             });
