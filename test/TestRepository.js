@@ -187,12 +187,22 @@ describe('Bali Document Repository™', function() {
         });
 
         it('should perform an event publication', async function() {
+            // create the event bag
+            const bag = '/bali/events/bag/v1';
+            const permissions = '/bali/permissions/public/v1';
+            const capacity = 3;
+            const lease = 60;  // seconds
+            await repository.createBag(bag, permissions, capacity, lease);
+
             const tag = bali.tag();
             const now = bali.moment();
-            const event = await repository.createEvent({
-                $tag: tag,
-                $timestamp: now
-            });
+            const event = await repository.createDraft(
+                '/bali/examples/Event/v1',
+                '/bali/permissions/public/v1', {
+                    $tag: tag,
+                    $timestamp: now
+                }
+            );
             await repository.publishEvent(event);
         });
 

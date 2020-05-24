@@ -87,29 +87,8 @@ const DocumentRepository = function(notary, storage, debug) {
                 $permissions: permissions,
                 $previous: 'none'
             });
-            const citation = await storage.readName(type);
-            if (!citation) {
-                const exception = bali.exception({
-                    $module: '/bali/repositories/DocumentRepository',
-                    $procedure: '$createDraft',
-                    $exception: '$unknownType',
-                    $type: type,
-                    $text: 'The specified document type does not exist.'
-                });
-                throw exception;
-            }
-            const content = await storage.readDocument(citation).getValue('$content');
-            const attributes = content.getValue('$attributes');
-            if (attributes) {
-                const iterator = attributes.getIterator();
-                while (iterator.hasNext()) {
-                    const attribute = iterator.getNext();
-                    const name = attribute.getKey();
-                    const value = attribute.getValue().getValue('$default');
-                    document.setValue(name, value);
-                }
-            }
             document.addItems(template);
+            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -586,6 +565,45 @@ const DocumentRepository = function(notary, storage, debug) {
                 $bag: bag,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to delete a message from a bag.'
+            }, cause);
+            if (debug) console.error(exception.toString());
+            throw exception;
+        }
+    };
+
+    /**
+     *
+     * This method publishes the specified event to the notification bag in the document repository.
+     *
+     * @param {Catalog} event A catalog containing the message to be added.
+     */
+    this.publishEvent = async function(event) {
+        const bag = bali.name(['bali', 'events', 'bag', 'v1']);
+        try {
+            if (debug > 1) {
+                const validator = bali.validator(debug);
+                validator.validateType('/bali/repositories/DocumentRepository', '$publishEvent', '$event', event, [
+                    '/bali/collections/Catalog'
+                ]);
+            }
+            const citation = await storage.readName(bag);
+            const catalog = bali.catalog(event, {
+                $type: '/bali/repositories/Event/v1',
+                $tag: bali.tag(),
+                $version: bali.version(),
+                $permissions: '/bali/permissions/public/v1',
+                $previous: 'none'
+            });
+            const document = await notary.notarizeDocument(catalog);
+            await storage.addMessage(citation, document);
+        } catch (cause) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/DocumentRepository',
+                $procedure: '$publishEvent',
+                $exception: '$unexpected',
+                $bag: bag,
+                $event: event,
+                $text: 'An unexpected error occurred while attempting to publish an event.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
