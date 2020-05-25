@@ -230,7 +230,7 @@ const LocalStorage = function(notary, root, debug) {
                 $bag: bag,
                 $capacity: capacity,
                 $message: message,
-                $text: 'The message is already available in the bag.'
+                $text: 'The message bag is already at full capacity.'
             });
             throw exception;
         }

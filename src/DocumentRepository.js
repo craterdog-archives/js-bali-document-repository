@@ -68,9 +68,11 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createDraft', '$type', type, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createDraft', '$permissions', permissions, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createDraft', '$template', template, [
@@ -116,7 +118,7 @@ const DocumentRepository = function(notary, storage, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$document', document, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$draft', draft, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -205,9 +207,10 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$name', name, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$document', document, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$draft', draft, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -248,6 +251,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$name', name, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
             }
@@ -283,6 +287,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$checkoutDocument', '$name', name, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$checkoutDocument', '$level', level, [
@@ -336,9 +341,11 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createBag', '$name', name, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createBag', '$permissions', permissions, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$createBag', '$capacity', capacity, [
@@ -368,7 +375,7 @@ const DocumentRepository = function(notary, storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$createDocument',
+                $procedure: '$createBag',
                 $exception: '$unexpected',
                 $name: name,
                 $permissions: permissions,
@@ -393,6 +400,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$borrowMessage', '$bag', bag, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
             }
@@ -422,6 +430,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$bag', bag, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$message', message, [
@@ -477,6 +486,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$borrowMessage', '$bag', bag, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
             }
@@ -512,6 +522,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$returnMessage', '$bag', bag, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$returnMessage', '$message', message, [
@@ -548,6 +559,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (debug > 1) {
                 const validator = bali.validator(debug);
                 validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$bag', bag, [
+                    '/javascript/String',
                     '/bali/elements/Name'
                 ]);
                 validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$message', message, [
