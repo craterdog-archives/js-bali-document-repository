@@ -173,11 +173,11 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Catalog} citation A catalog containing a document citation.
      * @returns {Boolean} Whether or not the cited draft document existed in the document repository.
      */
-    this.discardDocument = async function(citation) {
+    this.discardDraft = async function(citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$discardDocument', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$discardDraft', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -185,7 +185,7 @@ const DocumentRepository = function(notary, storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$discardDocument',
+                $procedure: '$discardDraft',
                 $exception: '$unexpected',
                 $citation: citation,
                 $text: 'An unexpected error occurred while attempting to discard a draft document.'

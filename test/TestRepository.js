@@ -65,13 +65,13 @@ describe('Bali Document Repository™', function() {
             expect(draft.isEqualTo(await repository.retrieveDraft(draftCitation))).is.true;
 
             // discard the draft in the repository
-            expect(await repository.discardDocument(draftCitation)).is.true;
+            expect(await repository.discardDraft(draftCitation)).is.true;
 
             // make sure the draft no longer exists in the repository
             expect(await repository.retrieveDraft(draftCitation)).to.not.exist;
 
             // delete a non-existent draft from the repository
-            expect(await repository.discardDocument(draftCitation)).is.false;
+            expect(await repository.discardDraft(draftCitation)).is.false;
         });
 
         it('should perform a committed document lifecycle', async function() {
