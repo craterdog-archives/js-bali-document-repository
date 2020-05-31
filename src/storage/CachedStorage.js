@@ -10,8 +10,8 @@
 'use strict';
 
 /*
- * This class implements a storage mechanism wrapper that caches (in memory) all documents
- * that have been retrieved from the wrapped storage mechanism.  The documents are assumed
+ * This class implements a storage mechanism wrapper that caches (in memory) all contracts
+ * that have been retrieved from the wrapped storage mechanism.  The contracts are assumed
  * to be immutable so no cache consistency issues exist.
  */
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
@@ -84,53 +84,53 @@ const CachedStorage = function(storage, debug) {
         return citation;
     };
 
-    this.draftExists = async function(citation) {
-        // pass-through, drafts are not cached
-        return await storage.draftExists(citation);
-    };
-
-    this.readDraft = async function(citation) {
-        // pass-through, drafts are not cached
-        return await storage.readDraft(citation);
-    };
-
-    this.writeDraft = async function(draft) {
-        // pass-through, drafts are not cached
-        return await storage.writeDraft(draft);
-    };
-
-    this.deleteDraft = async function(citation) {
-        // pass-through, drafts are not cached
-        return await storage.deleteDraft(citation);
-    };
-
     this.documentExists = async function(citation) {
-        // check the cache
-        const key = generateKey(citation);
-        if (cache.documents.read(key)) return true;
-        // not found so we must check the backend storage
+        // pass-through, documents are not cached
         return await storage.documentExists(citation);
     };
 
     this.readDocument = async function(citation) {
-        // check the cache
-        const key = generateKey(citation);
-        var document = cache.documents.read(key);
-        if (!document) {
-            // not found so we must read from the backend storage
-            document = await storage.readDocument(citation);
-            // add the document to the cache
-            if (document) cache.documents.write(key, document);
-        }
-        return document;
+        // pass-through, documents are not cached
+        return await storage.readDocument(citation);
     };
 
     this.writeDocument = async function(document) {
-        // add the document to the backend storage
-        const citation = await storage.writeDocument(document);
-        // cache the document
+        // pass-through, documents are not cached
+        return await storage.writeDocument(document);
+    };
+
+    this.deleteDocument = async function(citation) {
+        // pass-through, documents are not cached
+        return await storage.deleteDocument(citation);
+    };
+
+    this.contractExists = async function(citation) {
+        // check the cache
         const key = generateKey(citation);
-        cache.documents.write(key, document);
+        if (cache.contracts.read(key)) return true;
+        // not found so we must check the backend storage
+        return await storage.contractExists(citation);
+    };
+
+    this.readContract = async function(citation) {
+        // check the cache
+        const key = generateKey(citation);
+        var contract = cache.contracts.read(key);
+        if (!contract) {
+            // not found so we must read from the backend storage
+            contract = await storage.readContract(citation);
+            // add the contract to the cache
+            if (contract) cache.contracts.write(key, contract);
+        }
+        return contract;
+    };
+
+    this.writeContract = async function(contract) {
+        // add the contract to the backend storage
+        const citation = await storage.writeContract(contract);
+        // cache the contract
+        const key = generateKey(citation);
+        cache.contracts.write(key, contract);
         return citation;
     };
 
@@ -184,22 +184,22 @@ exports.CachedStorage = CachedStorage;
 
 const Cache = function(capacity) {
 
-    const documents = new Map();
+    const contracts = new Map();
 
     this.read = function(name) {
-        return documents.get(name);
+        return contracts.get(name);
     };
 
-    this.write = function(name, document) {
-        if (documents.size > capacity) {
-            const oldest = documents.keys().next().getValue();
-            documents.delete(oldest);
+    this.write = function(name, contract) {
+        if (contracts.size > capacity) {
+            const oldest = contracts.keys().next().getValue();
+            contracts.delete(oldest);
         }
-        documents.set(name, document);
+        contracts.set(name, contract);
     };
 
     this.delete = function(name) {
-        documents.delete(name);
+        contracts.delete(name);
     };
 
     return this;
@@ -209,8 +209,8 @@ Cache.prototype.constructor = Cache;
 // the maximum cache size
 const CACHE_SIZE = 256;
 
-// the actual cache for immutable document types only
+// the actual cache for immutable contract types only
 const cache = {
     names: new Cache(CACHE_SIZE),
-    documents: new Cache(CACHE_SIZE)
+    contracts: new Cache(CACHE_SIZE)
 };
