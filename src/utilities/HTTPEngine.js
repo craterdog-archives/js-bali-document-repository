@@ -322,7 +322,8 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
     const citeComponent = async function(component) {
         if (component.isType('/bali/collections/Catalog') && component.getValue('$content')) {
             // the component is a document so cite it (otherwise it is already a citation)
-            component = await notary.citeDocument(component);
+            const content = component.getValue('$content');
+            component = await notary.citeDocument(content);
         }
         return component;
     };

@@ -55,10 +55,6 @@ const CachedStorage = function(storage, debug) {
         return catalog.toString();
     };
 
-    this.citeDocument = async function(document) {
-        return await storage.citeDocument(document);
-    };
-
     this.nameExists = async function(name) {
         // check the cache first
         const key = generateKey(name);
@@ -153,9 +149,9 @@ const CachedStorage = function(storage, debug) {
         return await storage.addMessage(bag, message);
     };
 
-    this.borrowMessage = async function(bag) {
+    this.removeMessage = async function(bag) {
         // pass-through, messages are not cached
-        return await storage.borrowMessage(bag);
+        return await storage.removeMessage(bag);
     };
 
     this.returnMessage = async function(bag, message) {

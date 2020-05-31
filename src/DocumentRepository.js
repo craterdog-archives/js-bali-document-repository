@@ -82,14 +82,8 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/interfaces/Sequential'
                 ]);
             }
-            const document = bali.catalog({}, {
-                $type: type,
-                $tag: bali.tag(),
-                $version: bali.version(),
-                $permissions: permissions,
-                $previous: 'none'
-            });
-            document.addItems(template);
+            const document = bali.instance(type, template);
+            document.setParameter('$permissions', permissions);
             return document;
         } catch (cause) {
             const exception = bali.exception({
@@ -122,8 +116,7 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            const document = await notary.notarizeDocument(draft);
-            return await storage.writeDraft(document);
+            return await storage.writeDraft(draft);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -331,7 +324,7 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Name} name The name of the message bag to be created.
      * @param {Name} permissions The permissions controlling the access to the new message bag.
      * @param {Number} capacity The maximum number of messages allowed in the message bag.
-     * @param {Number} lease The number of seconds a borrowed message's lease expires and it is
+     * @param {Number} lease The number of seconds a received message's lease expires and it is
      * once again made available for processing by another process. Note: to avoid possible
      * collisions by multiple processes, the version number of a message whose lease has expired
      * will be incremented by one.
@@ -359,18 +352,11 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             capacity = capacity || 10;  // default capacity
             lease = lease || 60;  // default to one minute
-            const bag = bali.catalog({
+            const bag = bali.instance('/bali/repositories/Bag/v1', {
                 $capacity: capacity,
                 $lease: lease
-            }, {
-                $type: '/bali/repositories/Bag/v1',
-                $tag: bali.tag(),
-                $version: bali.version(),
-                $permissions: permissions,
-                $previous: 'none'
             });
-            const document = await notary.notarizeDocument(bag);
-            const citation = await storage.writeDocument(document);
+            const citation = await storage.writeDocument(bag);
             await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
@@ -399,7 +385,7 @@ const DocumentRepository = function(notary, storage, debug) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$borrowMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$messageCount', '$bag', bag, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
@@ -420,20 +406,20 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method adds a new message into the specified bag in the document repository.
+     * This method posts a new message into the specified bag in the document repository.
      *
      * @param {Name} bag The name of the bag in the document repository.
-     * @param {Catalog} message A catalog containing the message to be added.
+     * @param {Catalog} message A catalog containing the message to be posted.
      */
-    this.addMessage = async function(bag, message) {
+    this.postMessage = async function(bag, message) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$postMessage', '$bag', bag, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$addMessage', '$message', message, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$postMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -441,30 +427,24 @@ const DocumentRepository = function(notary, storage, debug) {
             if (!citation) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/DocumentRepository',
-                    $procedure: '$addMessage',
+                    $procedure: '$postMessage',
                     $exception: '$unknownBag',
                     $bag: bag,
                     $text: 'The specified bag does not exist in the document repository.'
                 });
                 throw exception;
             }
-            const catalog = bali.catalog(message, {
-                $type: '/bali/repositories/Message/v1',
-                $tag: bali.tag(),
-                $version: bali.version(),
-                $permissions: '/bali/permissions/public/v1',
-                $previous: 'none'
-            });
-            const document = await notary.notarizeDocument(catalog);
+            const document = bali.instance('/bali/repositories/Message/v1', message);
+            document.setValue('$bag', bag);
             await storage.addMessage(citation, document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$addMessage',
+                $procedure: '$postMessage',
                 $exception: '$unexpected',
                 $bag: bag,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to bag a message.'
+                $text: 'An unexpected error occurred while attempting to post a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -472,34 +452,34 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method removes a randomly chosen message from the specified bag in the
-     * document repository. The removed message will not be available to other clients for one
-     * minute. If the client that borrowed the message does not call <code>deleteMessage()</code>
-     * within that time, the message is automatically added back into the bag for other clients
-     * to process. If the bag is empty, nothing is returned.
+     * This method randomly selects a message from the specified bag in the document repository.
+     * The selected message will not be available to other clients for the lease time specified
+     * in the bag definition. If the client that received the message does not call
+     * <code>acceptMessage()</code> within that time, the message is automatically added back
+     * into the bag for other clients to receive. If the bag is empty, nothing is returned.
      *
      * @param {Name} bag The name of the bag in the document repository.
      * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
      */
-    this.borrowMessage = async function(bag) {
+    this.receiveMessage = async function(bag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$borrowMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$receiveMessage', '$bag', bag, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
             }
             const citation = await storage.readName(bag);
-            const message = await storage.borrowMessage(citation);
+            const message = await storage.removeMessage(citation);
             if (message) return message.getValue('$content');
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$borrowMessage',
+                $procedure: '$receiveMessage',
                 $exception: '$unexpected',
                 $bag: bag,
-                $text: 'An unexpected error occurred while attempting to remove a message.'
+                $text: 'An unexpected error occurred while attempting to receive a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -507,39 +487,34 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method returns an existing message to the specified bag in the document repository.
-     * It should be called when the client that removed the message determines that it cannot
-     * successfully process the message. The returned message is then available to other clients
+     * This method returns a previously received message to its original bag in the document
+     * repository.  It should be called when the client that received the message determines that
+     * it cannot successfully process it. The rejected message is then available to other clients
      * for processing. Any changes to the state of the message will be reflected in the updated
      * message.
      *
-     * @param {Name} bag The name of the bag in the document repository.
      * @param {Catalog} message A catalog containing the message being returned.
      * @returns {Boolean} Whether or not the message was successfully returned.
      */
-    this.returnMessage = async function(bag, message) {
+    this.rejectMessage = async function(message) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$returnMessage', '$bag', bag, [
-                    '/javascript/String',
-                    '/bali/elements/Name'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$returnMessage', '$message', message, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$rejectMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
+            const bag = message.getValue('$bag');
             const citation = await storage.readName(bag);
-            const document = await notary.notarizeDocument(message);
-            return await storage.returnMessage(citation, document);
+            return await storage.returnMessage(citation, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$returnMessage',
+                $procedure: '$rejectMessage',
                 $exception: '$unexpected',
                 $bag: bag,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to return a message to a bag.'
+                $text: 'An unexpected error occurred while attempting to reject a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -547,36 +522,32 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method permanently deletes a message from the specified bag in the document repository.
-     * It should be called once the processing of the message has successfully completed.
+     * This method permanently removes a previously received message from its original bag in the
+     * document repository.  It should be called once the processing of the message has completed
+     * successfully.
      *
-     * @param {Name} bag The name of the bag in the document repository.
-     * @param {Catalog} message A catalog containing the message being returned.
-     * @returns {Boolean} Whether or not the specified message still existed.
+     * @param {Catalog} message A catalog containing the message being accepted.
+     * @returns {Boolean} Whether or not the specified message still existed in the bag.
      */
-    this.deleteMessage = async function(bag, message) {
+    this.acceptMessage = async function(message) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$bag', bag, [
-                    '/javascript/String',
-                    '/bali/elements/Name'
-                ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$deleteMessage', '$message', message, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$acceptMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            bag = await storage.readName(bag);
-            const citation = await notary.citeDocument(await notary.notarizeDocument(message));
+            const bag = message.getValue('$bag');
+            const citation = await notary.citeDocument(message);
             return await storage.deleteMessage(bag, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$deleteMessage',
+                $procedure: '$acceptMessage',
                 $exception: '$unexpected',
                 $bag: bag,
                 $message: message,
-                $text: 'An unexpected error occurred while attempting to delete a message from a bag.'
+                $text: 'An unexpected error occurred while attempting to accept a message.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -587,7 +558,7 @@ const DocumentRepository = function(notary, storage, debug) {
      *
      * This method publishes the specified event to the notification bag in the document repository.
      *
-     * @param {Catalog} event A catalog containing the message to be added.
+     * @param {Catalog} event A catalog containing the event to be added.
      */
     this.publishEvent = async function(event) {
         const bag = bali.name(['bali', 'events', 'bag', 'v1']);
@@ -599,15 +570,8 @@ const DocumentRepository = function(notary, storage, debug) {
                 ]);
             }
             const citation = await storage.readName(bag);
-            const catalog = bali.catalog(event, {
-                $type: '/bali/repositories/Event/v1',
-                $tag: bali.tag(),
-                $version: bali.version(),
-                $permissions: '/bali/permissions/public/v1',
-                $previous: 'none'
-            });
-            const document = await notary.notarizeDocument(catalog);
-            await storage.addMessage(citation, document);
+            const message = bali.instance('/bali/repositories/Event/v1', event);
+            await storage.addMessage(citation, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',

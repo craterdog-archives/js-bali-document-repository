@@ -75,10 +75,6 @@ const LocalStorage = function(notary, root, debug) {
         return catalog.toString();
     };
 
-    this.citeDocument = async function(document) {
-        return await notary.citeDocument(document);
-    };
-
     this.nameExists = async function(name) {
         const location = generateLocation('names');
         const identifier = generateNameIdentifier(name);
@@ -185,7 +181,8 @@ const LocalStorage = function(notary, root, debug) {
 
     this.writeDocument = async function(document) {
         var location = generateLocation('documents');
-        const citation = await notary.citeDocument(document);
+        const content = document.getValue('$content');
+        const citation = await notary.citeDocument(content);
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
@@ -265,7 +262,7 @@ const LocalStorage = function(notary, root, debug) {
         await writeComponent(location, available, message, true);
     };
 
-    this.borrowMessage = async function(bag) {
+    this.removeMessage = async function(bag) {
         const location = generateLocation('messages');
         const available = generateBagIdentifier(bag, 'available');
         const processing = generateBagIdentifier(bag, 'processing');
@@ -313,10 +310,8 @@ const LocalStorage = function(notary, root, debug) {
             });
             throw exception;
         }
-        const content = message.getValue('$content');
-        const version = bali.version.nextVersion(content.getParameter('$version'));
-        content.setParameter('$version', version);
-        message = await notary.notarizeDocument(content);
+        const version = bali.version.nextVersion(message.getParameter('$version'));
+        message.setParameter('$version', version);
         citation = await notary.citeDocument(message);
         const available = generateMessageIdentifier(bag, 'available', citation);
         await writeComponent(location, available, message, true);

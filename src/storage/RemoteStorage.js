@@ -60,10 +60,6 @@ const RemoteStorage = function(notary, uri, debug) {
         return catalog.toString();
     };
 
-    this.citeDocument = async function(document) {
-        return await notary.citeDocument(document);
-    };
-
     this.nameExists = async function(name) {
         const response = await sendRequest('HEAD', 'names', name);
         if (response.status !== 200 && response.status !== 404) {
@@ -216,7 +212,8 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.writeDocument = async function(document) {
-        const citation = await notary.citeDocument(document);
+        const content = document.getValue('$content');
+        const citation = await notary.citeDocument(content);
         const response = await sendRequest('PUT', 'documents', citation, undefined, document);
         if (response.status !== 201) {
             const exception = bali.exception({
@@ -278,12 +275,12 @@ const RemoteStorage = function(notary, uri, debug) {
         }
     };
 
-    this.borrowMessage = async function(bag) {
+    this.removeMessage = async function(bag) {
         const response = await sendRequest('DELETE', 'messages', bag);
         if (response.status !== 200 && response.status !== 404) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$borrowMessage',
+                $procedure: '$removeMessage',
                 $exception: '$status' + response.status,
                 $bag: bag,
                 $text: 'Unable to borrow a message from the bag.'

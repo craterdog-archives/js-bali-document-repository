@@ -58,23 +58,6 @@ StorageMechanism.prototype.toString = function() {
 };
 
 /**
- * This method returns a citation for the specified document.
- *
- * @param {Catalog} document The document to be cited.
- * @returns {Catalog} A citation to the document.
- */
-StorageMechanism.prototype.citeDocument = async function(document) {
-    const exception = this.bali.exception({
-        $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$citeDocument',
-        $exception: '$abstractMethod',
-        $text: 'This method must be implemented by a concrete subclass.'
-    });
-    if (this.debug) console.error(exception.toString());
-    throw exception;
-};
-
-/**
  * This method checks to see whether or not the named citation exists in the document repository.
  *
  * @param {Name} name The unique name for the citation being checked.
@@ -316,10 +299,10 @@ StorageMechanism.prototype.addMessage = async function(bag, message) {
  * @param {Catalog} bag A catalog citing the bag in the document repository.
  * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
  */
-StorageMechanism.prototype.borrowMessage = async function(bag) {
+StorageMechanism.prototype.removeMessage = async function(bag) {
     const exception = this.bali.exception({
         $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$borrowMessage',
+        $procedure: '$removeMessage',
         $exception: '$abstractMethod',
         $text: 'This method must be implemented by a concrete subclass.'
     });

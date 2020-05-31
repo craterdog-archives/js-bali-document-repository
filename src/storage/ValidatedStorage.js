@@ -65,10 +65,6 @@ const ValidatedStorage = function(notary, repository, debug) {
         return catalog.toString();
     };
 
-    this.citeDocument = async function(document) {
-        return await notary.citeDocument(document);
-    };
-
     this.nameExists = async function(name) {
         return await repository.nameExists(name);
     };
@@ -96,7 +92,6 @@ const ValidatedStorage = function(notary, repository, debug) {
     };
 
     this.writeDraft = async function(draft) {
-        await validateDocument(draft);
         return await repository.writeDraft(draft);
     };
 
@@ -112,6 +107,7 @@ const ValidatedStorage = function(notary, repository, debug) {
         const document = await repository.readDocument(citation);
         if (document) {
             await validateCitation(citation, document);
+            await validateDocument(document);
         }
         return document;
     };
@@ -134,8 +130,8 @@ const ValidatedStorage = function(notary, repository, debug) {
         return await repository.addMessage(bag, message);
     };
 
-    this.borrowMessage = async function(bag) {
-        const message = await repository.borrowMessage(bag);
+    this.removeMessage = async function(bag) {
+        const message = await repository.removeMessage(bag);
         if (message) await validateMessage(message);
         return message;
     };
@@ -172,7 +168,6 @@ const ValidatedStorage = function(notary, repository, debug) {
             });
             throw exception;
         }
-        if (debug > 1) await validateDocument(document);  // recursive call
         const matches = await notary.citationMatches(citation, document);
         if (!matches) {
             const exception = bali.exception({
@@ -241,47 +236,6 @@ const ValidatedStorage = function(notary, repository, debug) {
         }
     };
 
-
-    /**
-     * This function validates a notarized message. It makes sure that all notary seals
-     * attached to the message are valid. If any seal is not valid an exception is thrown.
-     *
-     * @param {Catalog} message The notarized message to be validated.
-     * @throws {Exception} The message is not valid.
-     */
-    const validateMessage = async function(message) {
-        // make sure it really is a notarized message
-        const content = message.getValue('$content');
-        const certificateCitation = message.getValue('$certificate');
-        const signature = message.getValue('$signature');
-        if (!content || !certificateCitation || !signature) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$validateMessage',
-                $exception: '$messageInvalid',
-                $message: message,
-                $text: 'The message is not notarized.'
-            });
-            throw exception;
-        }
-
-        // validate the certificate
-        const certificate = await repository.readDocument(certificateCitation);
-        await validateCitation(certificateCitation, certificate);
-
-        // validate the message using its certificate
-        const valid = await notary.validDocument(message, certificate);
-        if (!valid) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/ValidatedStorage',
-                $procedure: '$validateMessage',
-                $exception: '$messageInvalid',
-                $message: message,
-                $text: 'The signature on the message is invalid.'
-            });
-            throw exception;
-        }
-    };
 
     return this;
 };

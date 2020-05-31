@@ -146,7 +146,7 @@ const DocumentEngine = function(notary, storage, debug) {
                 if (authority) {
                     if (parameters.resource.length === 2) {
                         // borrow a random message from the bag identified by the resource
-                        message = await storage.borrowMessage(bag);
+                        message = await storage.removeMessage(bag);
                     } else {
                         // permanently delete the specified message identified by the resource from its bag
                         try {

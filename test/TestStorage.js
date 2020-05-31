@@ -91,8 +91,8 @@ describe('Bali Document Repository™', function() {
             });
 
             it('should perform a draft document lifecycle', async function() {
+                citation = await notary.citeDocument(transaction);
                 const draft = await notary.notarizeDocument(transaction);
-                citation = await notary.citeDocument(draft);
 
                 // create a new draft in the repository
                 expect(citation.isEqualTo(await storage.writeDraft(draft))).is.true;
@@ -124,8 +124,8 @@ describe('Bali Document Repository™', function() {
             });
 
             it('should perform a committed document lifecycle', async function() {
+                citation = await notary.citeDocument(transaction);
                 const document = await notary.notarizeDocument(transaction);
-                citation = await notary.citeDocument(document);
 
                 // make sure the new document does not already exists in the repository
                 expect(await storage.documentExists(citation)).is.false;
@@ -173,7 +173,7 @@ describe('Bali Document Repository™', function() {
 
                 // make sure the message bag is empty
                 expect(await storage.messageAvailable(bag)).is.false;
-                expect(await storage.borrowMessage(bag)).to.not.exist;
+                expect(await storage.removeMessage(bag)).to.not.exist;
 
                 // add some messages to the bag
                 const generateMessage = async function(count) {
@@ -208,34 +208,34 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 // remove the messages from the bag
-                message = await storage.borrowMessage(bag);
+                message = await storage.removeMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(2);
                 await storage.returnMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(3);
 
-                message = await storage.borrowMessage(bag);
+                message = await storage.removeMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(2);
-                var citation = await storage.citeDocument(message);
+                var citation = await notary.citeDocument(message);
                 expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
-                message = await storage.borrowMessage(bag);
+                message = await storage.removeMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(1);
-                citation = await storage.citeDocument(message);
+                citation = await notary.citeDocument(message);
                 expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
 
-                message = await storage.borrowMessage(bag);
+                message = await storage.removeMessage(bag);
                 expect(await storage.messageCount(bag)).to.equal(0);
-                citation = await storage.citeDocument(message);
+                citation = await notary.citeDocument(message);
                 expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(0);
                 expect(await storage.messageAvailable(bag)).is.false;
 
                 // make sure the message bag is empty
-                expect(await storage.borrowMessage(bag)).to.not.exist;
+                expect(await storage.removeMessage(bag)).to.not.exist;
             });
 
             it('should reset the notary', async function() {
