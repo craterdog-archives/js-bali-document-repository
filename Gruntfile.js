@@ -40,7 +40,7 @@ module.exports = function(grunt) {
           timeout: 90000
         },
         src: [
-          'test/TestRepository.js'
+          'test/**/*.js'
         ]
       }
     },

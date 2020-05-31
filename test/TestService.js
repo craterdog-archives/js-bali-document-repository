@@ -22,7 +22,7 @@ var notInitialized = async function() {
     const publicKey = await notary.generateKey();
     const certificate = await notary.notarizeDocument(publicKey);
     await notary.activateKey(certificate);
-    await storage.writeDocument(certificate);
+    await storage.writeContract(certificate);
     notInitialized = undefined;
 };
 

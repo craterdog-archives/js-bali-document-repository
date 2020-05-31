@@ -24,19 +24,13 @@ const repository = Repository.repository(notary, storage, debug);
 const version = bali.version();
 const name = bali.name(['bali', 'examples', 'transaction', version]);
 
-const transaction = bali.catalog({
+const transaction = bali.instance('/bali/examples/Transaction/v1', {
     $timestamp: bali.moment(),
     $product: 'Snickers Bar',
     $quantity: 10,
     $price: '1.25($currency: $USD)',
     $tax: '1.07($currency: $USD)',
     $total: '13.57($currency: $USD)'
-}, {
-    $type: '/bali/examples/Transaction/v1',
-    $tag: bali.tag(),
-    $version: version,
-    $permissions: '/bali/permissions/public/v1',
-    $previous: bali.pattern.NONE
 });
 
 
@@ -48,84 +42,80 @@ describe('Bali Document Repository™', function() {
             const publicKey = await notary.generateKey();
             const certificate = await notary.notarizeDocument(publicKey);
             const certificateCitation = await notary.activateKey(certificate);
-            console.log('certificate citation: ' + certificateCitation);
-            //expect(certificateCitation.isEqualTo(await storage.writeDocument(certificate))).is.true;
-            console.log('write citation: ' + (await storage.writeDocument(certificate)));
+            expect(certificateCitation.isEqualTo(await storage.writeContract(certificate))).is.true;
         });
 
-        it('should perform a draft document lifecycle', async function() {
-            // save a new draft to the repository
-            const draft = await repository.createDraft(
+        it('should perform a document lifecycle', async function() {
+            // save a new document to the repository
+            const document = repository.createDocument(
                 '/bali/examples/FooBar/v1',
                 '/bali/permissions/public/v1', {
                     $foo: 'bar'
                 }
             );
-            console.log('draft: ' + draft);
-            const draftCitation = await repository.saveDraft(draft);
+            const documentCitation = await repository.saveDocument(document);
 
-            // make sure the new draft exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDraft(draftCitation))).is.true;
+            // make sure the new document exists in the repository
+            expect(document.isEqualTo(await repository.retrieveDocument(documentCitation))).is.true;
 
-            // discard the draft in the repository
-            expect(await repository.discardDraft(draftCitation)).is.true;
+            // discard the document in the repository
+            expect(await repository.discardDocument(documentCitation)).is.true;
 
-            // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDraft(draftCitation)).to.not.exist;
+            // make sure the document no longer exists in the repository
+            expect(await repository.retrieveDocument(documentCitation)).to.not.exist;
 
-            // delete a non-existent draft from the repository
-            expect(await repository.discardDraft(draftCitation)).is.false;
+            // delete a non-existent document from the repository
+            expect(await repository.discardDocument(documentCitation)).is.false;
         });
 
-        it('should perform a committed document lifecycle', async function() {
-            const draft = transaction;
+        it('should perform a contract lifecycle', async function() {
+            const document = transaction;
 
-            // make sure the new document does not already exists in the repository
-            expect(await repository.retrieveDocument(name)).to.not.exist;
+            // make sure the new contract does not already exist in the repository
+            expect(await repository.retrieveContract(name)).to.not.exist;
 
-            // save a draft of the document in the repository
-            const draftCitation = await repository.saveDraft(draft);
+            // save the document in the repository
+            const documentCitation = await repository.saveDocument(document);
 
-            // make sure the new draft exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDraft(draftCitation))).is.true;
+            // make sure the new document exists in the repository
+            expect(document.isEqualTo(await repository.retrieveDocument(documentCitation))).is.true;
 
-            // commit the document in the repository
-            const documentCitation = await repository.commitDocument(name, draft);
-            expect(documentCitation.isEqualTo(draftCitation)).is.false;
+            // commit the document to the repository
+            expect(documentCitation.isEqualTo(await repository.commitDocument(name, document))).is.true;
 
-            // make sure the draft no longer exists in the repository
-            expect(await repository.retrieveDraft(draftCitation)).to.not.exist;
+            // make sure the document no longer exists in the repository
+            expect(await repository.retrieveDocument(documentCitation)).to.not.exist;
 
-            // make sure the committed document exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDocument(name))).is.true;
+            // make sure the committed contract exists in the repository
+            expect(document.isEqualTo(await repository.retrieveContract(name))).is.true;
 
-            // attempt to commit the same version of the document in the repository
+            // attempt to commit the same version of the contract to the repository
             await assert.rejects(async function() {
-                await repository.commitDocument(name, draft);
+                await repository.commitDocument(name, document);
             });
         });
 
-        it('should perform a versioned document lifecycle', async function() {
+        it('should perform a versioned contract lifecycle', async function() {
             const level = 2;
             const nextVersion = bali.version.nextVersion(version, level);
             const nextName = bali.name(['bali', 'examples', 'transaction', nextVersion]);
 
-            // checkout a draft of the next version of the document
-            const draft = await repository.checkoutDocument(name, level);
-            expect(draft.getParameter('$version').isEqualTo(nextVersion)).is.true;
+            // checkout a document of the next version of the contract
+            const document = await repository.checkoutDocument(name, level);
+            expect(document.getParameter('$version').isEqualTo(nextVersion)).is.true;
 
-            // update and commit the next version of the document in the repository
-            draft.setValue('$quantity', 20);
-            draft.setValue('$total', '26.07($currency: $USD)');
-            await repository.commitDocument(nextName, draft);
+            // update and commit the next version of the contract in the repository
+            document.setValue('$quantity', 20);
+            document.setValue('$total', '26.07($currency: $USD)');
+            await repository.commitDocument(nextName, document);
 
-            // make sure the committed document exists in the repository
-            expect(draft.isEqualTo(await repository.retrieveDocument(nextName))).is.true;
-            expect((await repository.retrieveDocument(name)).isEqualTo(await repository.retrieveDocument(nextName))).is.false;
+            // make sure the committed contract exists in the repository
+            expect(document.isEqualTo(await repository.retrieveContract(nextName))).is.true;
+            expect((await repository.retrieveContract(name)).isEqualTo(await repository.retrieveContract(nextName))).is.false;
 
-            // attempt to commit the same version of the document in the repository
+            // attempt to commit the same version of the contract in the repository
             await assert.rejects(async function() {
-                await repository.commitDocument(nextName, draft);
+                await repository.commitDocument(nextName, document);
             });
         });
 
@@ -138,7 +128,7 @@ describe('Bali Document Repository™', function() {
             await repository.createBag(bag, permissions, capacity, lease);
 
             // make sure the message bag is empty
-            expect(await repository.receiveMessage(bag)).to.not.exist;
+            expect(await repository.retrieveMessage(bag)).to.not.exist;
 
             // add some messages to the bag
             var message = bali.catalog();
@@ -158,27 +148,27 @@ describe('Bali Document Repository™', function() {
             expect(await repository.messageCount(bag)).to.equal(3);
 
             // remove the messages from the bag
-            message = await repository.receiveMessage(bag);
+            message = await repository.retrieveMessage(bag);
             expect(await repository.messageCount(bag)).to.equal(2);
             await repository.rejectMessage(message);
             expect(await repository.messageCount(bag)).to.equal(3);
-            message = await repository.receiveMessage(bag);
+            message = await repository.retrieveMessage(bag);
             await repository.acceptMessage(message);
             expect(await repository.messageCount(bag)).to.equal(2);
 
-            message = await repository.receiveMessage(bag);
+            message = await repository.retrieveMessage(bag);
             expect(await repository.messageCount(bag)).to.equal(1);
             await repository.rejectMessage(message);
             expect(await repository.messageCount(bag)).to.equal(2);
-            message = await repository.receiveMessage(bag);
+            message = await repository.retrieveMessage(bag);
             await repository.acceptMessage(message);
             expect(await repository.messageCount(bag)).to.equal(1);
 
-            message = await repository.receiveMessage(bag);
+            message = await repository.retrieveMessage(bag);
             expect(await repository.messageCount(bag)).to.equal(0);
             await repository.rejectMessage(message);
             expect(await repository.messageCount(bag)).to.equal(1);
-            message = await repository.receiveMessage(bag);
+            message = await repository.retrieveMessage(bag);
             await repository.acceptMessage(message);
             expect(await repository.messageCount(bag)).to.equal(0);
 
@@ -186,20 +176,18 @@ describe('Bali Document Repository™', function() {
             await assert.rejects(async function() {
                 await repository.acceptMessage(message);
             });
-            expect(await repository.receiveMessage(bag)).to.not.exist;
+            expect(await repository.retrieveMessage(bag)).to.not.exist;
         });
 
         it('should perform an event publication', async function() {
             // create the event bag
             const bag = '/bali/events/bag/v1';
             const permissions = '/bali/permissions/public/v1';
-            const capacity = 3;
-            const lease = 60;  // seconds
-            await repository.createBag(bag, permissions, capacity, lease);
+            await repository.createBag(bag, permissions);
 
             const tag = bali.tag();
             const now = bali.moment();
-            const event = await repository.createDraft(
+            const event = repository.createDocument(
                 '/bali/examples/Event/v1',
                 '/bali/permissions/public/v1', {
                     $tag: tag,

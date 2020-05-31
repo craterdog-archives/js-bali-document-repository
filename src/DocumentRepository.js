@@ -61,21 +61,21 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Name} type The type of the document to be created.
      * @param {Name} permissions The permissions controlling the access to the new document.
      * @param {Sequential} template A sequence of attribute values for the new document.
-     * @returns {Catalog} A catalog defining the content of the new document.
+     * @returns {Catalog} A catalog containing the new document.
      */
-    this.createDraft = async function(type, permissions, template) {
+    this.createDocument = function(type, permissions, template) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createDraft', '$type', type, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$type', type, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createDraft', '$permissions', permissions, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$permissions', permissions, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$createDraft', '$template', template, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$createDocument', '$template', template, [
                     '/javascript/Undefined',
                     '/javascript/Array',
                     '/javascript/Object',
@@ -88,7 +88,7 @@ const DocumentRepository = function(notary, storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$createDraft',
+                $procedure: '$createDocument',
                 $exception: '$unexpected',
                 $type: type,
                 $permissions: permissions,
@@ -101,29 +101,29 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method saves a draft document in the document repository. If a draft document with
+     * This method saves a document in the document repository. If a document with
      * the same tag and version already exists in the document repository, it is overwritten with
-     * the new draft document. If not, a new draft document is created in the document repository.
+     * the new document. If not, a new document is created in the document repository.
      *
-     * @param {Catalog} draft A catalog containing the draft document.
-     * @returns {Catalog} A catalog containing a citation to the saved draft document.
+     * @param {Catalog} document A catalog containing the document.
+     * @returns {Catalog} A catalog containing a citation to the saved document.
      */
-    this.saveDraft = async function(draft) {
+    this.saveDocument = async function(document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$saveDraft', '$draft', draft, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$saveDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.writeDraft(draft);
+            return await storage.writeDocument(document);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$saveDraft',
+                $procedure: '$saveDocument',
                 $exception: '$unexpected',
-                $draft: draft,
-                $text: 'An unexpected error occurred while attempting to save a draft document.'
+                $document: document,
+                $text: 'An unexpected error occurred while attempting to save a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -131,28 +131,28 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method attempts to retrieve the cited draft document from the document repository.
+     * This method attempts to retrieve the cited document from the document repository.
      *
-     * @param {Catalog} citation A catalog containing a citation to the draft document.
-     * @returns {Catalog} A catalog containing the draft document or nothing if it doesn't exist.
+     * @param {Catalog} citation A catalog containing a citation to the document.
+     * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
      */
-    this.retrieveDraft = async function(citation) {
+    this.retrieveDocument = async function(citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDraft', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            const document = await storage.readDraft(citation);
-            if (document) return document.getValue('$content');
+            const document = await storage.readDocument(citation);
+            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$retrieveDraft',
+                $procedure: '$retrieveDocument',
                 $exception: '$unexpected',
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to retrieve a draft document.'
+                $text: 'An unexpected error occurred while attempting to retrieve a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -160,28 +160,28 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method attempts to discard from the document repository the cited draft document.
-     * If the draft document does not exist, this method does nothing.
+     * This method attempts to discard from the document repository the cited document.
+     * If the document does not exist, this method does nothing.
      *
      * @param {Catalog} citation A catalog containing a document citation.
-     * @returns {Boolean} Whether or not the cited draft document existed in the document repository.
+     * @returns {Boolean} Whether or not the cited document existed in the document repository.
      */
-    this.discardDraft = async function(citation) {
+    this.discardDocument = async function(citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$discardDraft', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$discardDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            return (await storage.deleteDraft(citation) !== undefined);
+            return (await storage.deleteDocument(citation) !== undefined);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$discardDraft',
+                $procedure: '$discardDocument',
                 $exception: '$unexpected',
                 $citation: citation,
-                $text: 'An unexpected error occurred while attempting to discard a draft document.'
+                $text: 'An unexpected error occurred while attempting to discard a document.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -192,10 +192,10 @@ const DocumentRepository = function(notary, storage, debug) {
      * This method commits a document to the document repository under the specified name.
      *
      * @param {Name} name The name to be associated with the committed document.
-     * @param {Catalog} draft A catalog containing the document to be committed.
+     * @param {Catalog} document A catalog containing the document to be committed.
      * @returns {Catalog} A catalog containing a citation to the committed document.
      */
-    this.commitDocument = async function(name, draft) {
+    this.commitDocument = async function(name, document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -203,7 +203,7 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$draft', draft, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
@@ -217,15 +217,15 @@ const DocumentRepository = function(notary, storage, debug) {
                 });
                 throw exception;
             }
-            const document = await notary.notarizeDocument(draft);
-            const citation = await storage.writeDocument(document);
+            const contract = await notary.notarizeDocument(document);
+            const citation = await storage.writeContract(contract);
             return await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$commitDocument',
                 $exception: '$unexpected',
-                $draft: draft,
+                $document: document,
                 $text: 'An unexpected error occurred while attempting to commit a document.'
             }, cause);
             if (debug) console.error(exception.toString());
@@ -234,32 +234,32 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method attempts to retrieve the named document from the document repository.
+     * This method attempts to retrieve the named contract from the document repository.
      *
-     * @param {Name} name The name of the document to be retrieved from the document repository.
-     * @returns {Catalog} A catalog containing the named document or nothing if it doesn't exist.
+     * @param {Name} name The name of the contract to be retrieved from the document repository.
+     * @returns {Catalog} A catalog containing the named contract or nothing if it doesn't exist.
      */
-    this.retrieveDocument = async function(name) {
+    this.retrieveContract = async function(name) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveContract', '$name', name, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
             }
             const citation = await storage.readName(name);
             if (citation) {
-                const document = await storage.readDocument(citation);
-                return document.getValue('$content');
+                const contract = await storage.readContract(citation);
+                return contract.getValue('$document');
             }
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$retrieveDocument',
+                $procedure: '$retrieveContract',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to retrieve a named document.'
+                $text: 'An unexpected error occurred while attempting to retrieve a named contract.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -267,13 +267,13 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method checks out a new draft version of the named document from the document repository.
+     * This method checks out a new draft version of the named contract from the document repository.
      * If a version level is specified, that level will be incremented by one, otherwise, the
      * largest version level will be incremented.
      *
-     * @param {Name} name The name of the document to be checked out from the document repository.
+     * @param {Name} name The name of the contract to be checked out from the document repository.
      * @param {Number} level The version level to be incremented.
-     * @returns {Catalog} A catalog containing the new draft version of the named document.
+     * @returns {Catalog} A catalog containing the new draft version of the named contract.
      */
     this.checkoutDocument = async function(name, level) {
         try {
@@ -298,19 +298,19 @@ const DocumentRepository = function(notary, storage, debug) {
                 });
                 throw exception;
             }
-            const document = await storage.readDocument(citation);
-            const template = document.getValue('$content');
+            const contract = await storage.readContract(citation);
+            const template = contract.getValue('$document');
             const parameters = template.getParameters();
             parameters.setValue('$version', bali.version.nextVersion(parameters.getValue('$version'), level));
-            const draft = bali.catalog(template, parameters);
-            return draft;
+            const document = bali.catalog(template, parameters);
+            return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$checkoutDocument',
                 $exception: '$unexpected',
                 $name: name,
-                $text: 'An unexpected error occurred while attempting to checkout a named document.'
+                $text: 'An unexpected error occurred while attempting to checkout a named contract.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -352,11 +352,12 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             capacity = capacity || 10;  // default capacity
             lease = lease || 60;  // default to one minute
-            const bag = bali.instance('/bali/repositories/Bag/v1', {
+            const document = this.createDocument('/bali/repositories/Bag/v1', permissions, {
                 $capacity: capacity,
                 $lease: lease
             });
-            const citation = await storage.writeDocument(bag);
+            const contract = await notary.notarizeDocument(document);
+            const citation = await storage.writeContract(contract);
             await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
@@ -434,6 +435,19 @@ const DocumentRepository = function(notary, storage, debug) {
                 });
                 throw exception;
             }
+            const contract = await storage.readContract(citation);
+            const capacity = contract.getValue('$document').getValue('$capacity');
+            const size = await storage.messageCount(citation);
+            if (size >= capacity) {
+                const exception = bali.exception({
+                    $module: '/bali/repositories/DocumentRepository',
+                    $procedure: '$postMessage',
+                    $exception: '$atCapacity',
+                    $bag: bag,
+                    $text: 'The specified bag is at full capacity and cannot handle any more messages.'
+                });
+                throw exception;
+            }
             const document = bali.instance('/bali/repositories/Message/v1', message);
             document.setValue('$bag', bag);
             await storage.addMessage(citation, document);
@@ -461,22 +475,22 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Name} bag The name of the bag in the document repository.
      * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
      */
-    this.receiveMessage = async function(bag) {
+    this.retrieveMessage = async function(bag) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$receiveMessage', '$bag', bag, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveMessage', '$bag', bag, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
             }
             const citation = await storage.readName(bag);
             const message = await storage.removeMessage(citation);
-            if (message) return message.getValue('$content');
+            return message;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$receiveMessage',
+                $procedure: '$retrieveMessage',
                 $exception: '$unexpected',
                 $bag: bag,
                 $text: 'An unexpected error occurred while attempting to receive a message.'
@@ -537,7 +551,7 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            const bag = message.getValue('$bag');
+            const bag = await storage.readName(message.getValue('$bag'));
             const citation = await notary.citeDocument(message);
             return await storage.deleteMessage(bag, citation);
         } catch (cause) {
@@ -545,7 +559,6 @@ const DocumentRepository = function(notary, storage, debug) {
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$acceptMessage',
                 $exception: '$unexpected',
-                $bag: bag,
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to accept a message.'
             }, cause);

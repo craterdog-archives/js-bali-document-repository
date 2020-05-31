@@ -112,56 +112,6 @@ const LocalStorage = function(notary, root, debug) {
         return citation;
     };
 
-    this.draftExists = async function(citation) {
-        const location = generateLocation('drafts');
-        const identifier = generateDocumentIdentifier(citation);
-        return await componentExists(location, identifier);
-    };
-
-    this.readDraft = async function(citation) {
-        const location = generateLocation('drafts');
-        const identifier = generateDocumentIdentifier(citation);
-        const bytes = await readComponent(location, identifier);
-        if (bytes) {
-            const source = bytes.toString('utf8');
-            const draft = bali.component(source);
-            return draft;
-        }
-    };
-
-    this.writeDraft = async function(draft) {
-        var location = generateLocation('documents');
-        const citation = await notary.citeDocument(draft);
-        const identifier = generateDocumentIdentifier(citation);
-        if (await componentExists(location, identifier)) {
-            const exception = bali.exception({
-                $module: '/bali/storage/LocalStorage',
-                $procedure: '$writeDraft',
-                $exception: '$documentExists',
-                $location: location,
-                $identifier: identifier,
-                $draft: draft,
-                $text: 'A committed document with the same tag and version already exists.'
-            });
-            throw exception;
-        }
-        location = generateLocation('drafts');
-        await writeComponent(location, identifier, draft, true);
-        return citation;
-    };
-
-    this.deleteDraft = async function(citation) {
-        const location = generateLocation('drafts');
-        const identifier = generateDocumentIdentifier(citation);
-        const bytes = await readComponent(location, identifier);
-        if (bytes) {
-            const source = bytes.toString('utf8');
-            const draft = bali.component(source);
-            await deleteComponent(location, identifier);
-            return draft;
-        }
-    };
-
     this.documentExists = async function(citation) {
         const location = generateLocation('documents');
         const identifier = generateDocumentIdentifier(citation);
@@ -180,24 +130,74 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.writeDocument = async function(document) {
-        var location = generateLocation('documents');
-        const content = document.getValue('$content');
-        const citation = await notary.citeDocument(content);
+        var location = generateLocation('contracts');
+        const citation = await notary.citeDocument(document);
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
             const exception = bali.exception({
                 $module: '/bali/storage/LocalStorage',
                 $procedure: '$writeDocument',
-                $exception: '$documentExists',
+                $exception: '$contractExists',
                 $location: location,
                 $identifier: identifier,
                 $document: document,
-                $text: 'The document already exists.'
+                $text: 'A committed contract with the same tag and version already exists.'
             });
             throw exception;
         }
-        await writeComponent(location, identifier, document);
-        location = generateLocation('drafts');
+        location = generateLocation('documents');
+        await writeComponent(location, identifier, document, true);
+        return citation;
+    };
+
+    this.deleteDocument = async function(citation) {
+        const location = generateLocation('documents');
+        const identifier = generateDocumentIdentifier(citation);
+        const bytes = await readComponent(location, identifier);
+        if (bytes) {
+            const source = bytes.toString('utf8');
+            const document = bali.component(source);
+            await deleteComponent(location, identifier);
+            return document;
+        }
+    };
+
+    this.contractExists = async function(citation) {
+        const location = generateLocation('contracts');
+        const identifier = generateDocumentIdentifier(citation);
+        return await componentExists(location, identifier);
+    };
+
+    this.readContract = async function(citation) {
+        const location = generateLocation('contracts');
+        const identifier = generateDocumentIdentifier(citation);
+        const bytes = await readComponent(location, identifier);
+        if (bytes) {
+            const source = bytes.toString('utf8');
+            const contract = bali.component(source);
+            return contract;
+        }
+    };
+
+    this.writeContract = async function(contract) {
+        var location = generateLocation('contracts');
+        const document = contract.getValue('$document');
+        const citation = await notary.citeDocument(document);
+        const identifier = generateDocumentIdentifier(citation);
+        if (await componentExists(location, identifier)) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$writeContract',
+                $exception: '$contractExists',
+                $location: location,
+                $identifier: identifier,
+                $contract: contract,
+                $text: 'The contract already exists.'
+            });
+            throw exception;
+        }
+        await writeComponent(location, identifier, contract);
+        location = generateLocation('documents');
         await deleteComponent(location, identifier);
         return citation;
     };
@@ -217,7 +217,7 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.addMessage = async function(bag, message) {
-        const capacity = (await this.readDocument(bag)).getValue('$content').getValue('$capacity');
+        const capacity = (await this.readContract(bag)).getValue('$document').getValue('$capacity');
         const current = await this.messageCount(bag);
         if (current >= capacity) {
             const exception = bali.exception({

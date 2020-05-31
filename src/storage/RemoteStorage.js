@@ -110,74 +110,6 @@ const RemoteStorage = function(notary, uri, debug) {
         return citation;
     };
 
-    this.draftExists = async function(citation) {
-        const response = await sendRequest('HEAD', 'drafts', citation);
-        if (response.status !== 200 && response.status !== 404) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$draftExists',
-                $exception: '$status' + response.status,
-                $citation: citation,
-                $text: 'Unable to access the draft document.'
-            });
-            throw exception;
-        }
-        return response.status === 200;
-    };
-
-    this.readDraft = async function(citation) {
-        const response = await sendRequest('GET', 'drafts', citation);
-        if (response.status !== 200 && response.status !== 404) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$readDraft',
-                $exception: '$status' + response.status,
-                $citation: citation,
-                $text: 'Unable to access the draft document.'
-            });
-            throw exception;
-        }
-        if (response.status === 200) {
-            const source = response.data.toString('utf8');
-            return bali.component(source);
-        }
-    };
-
-    this.writeDraft = async function(draft) {
-        const citation = await notary.citeDocument(draft);
-        const response = await sendRequest('PUT', 'drafts', citation, undefined, draft);
-        if (response.status !== 200 && response.status !== 201) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$writeDraft',
-                $exception: '$status' + response.status,
-                $draft: draft,
-                $text: 'Unable to create or update the draft document.'
-            });
-            throw exception;
-        }
-        const source = response.data.toString('utf8');
-        return bali.component(source);  // return a citation to the new document
-    };
-
-    this.deleteDraft = async function(citation) {
-        const response = await sendRequest('DELETE', 'drafts', citation);
-        if (response.status !== 200 && response.status !== 404) {
-            const exception = bali.exception({
-                $module: '/bali/repositories/RemoteStorage',
-                $procedure: '$deleteDraft',
-                $exception: '$status' + response.status,
-                $citation: citation,
-                $text: 'Unable to access the draft document.'
-            });
-            throw exception;
-        }
-        if (response.status === 200) {
-            const source = response.data.toString('utf8');
-            return bali.component(source);
-        }
-    };
-
     this.documentExists = async function(citation) {
         const response = await sendRequest('HEAD', 'documents', citation);
         if (response.status !== 200 && response.status !== 404) {
@@ -212,16 +144,84 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.writeDocument = async function(document) {
-        const content = document.getValue('$content');
-        const citation = await notary.citeDocument(content);
+        const citation = await notary.citeDocument(document);
         const response = await sendRequest('PUT', 'documents', citation, undefined, document);
-        if (response.status !== 201) {
+        if (response.status !== 200 && response.status !== 201) {
             const exception = bali.exception({
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$writeDocument',
                 $exception: '$status' + response.status,
                 $document: document,
-                $text: 'Unable to create the document.'
+                $text: 'Unable to create or update the document.'
+            });
+            throw exception;
+        }
+        const source = response.data.toString('utf8');
+        return bali.component(source);  // return a citation to the new document
+    };
+
+    this.deleteDocument = async function(citation) {
+        const response = await sendRequest('DELETE', 'documents', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$deleteDocument',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the document.'
+            });
+            throw exception;
+        }
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
+        }
+    };
+
+    this.contractExists = async function(citation) {
+        const response = await sendRequest('HEAD', 'contracts', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$contractExists',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the contract.'
+            });
+            throw exception;
+        }
+        return response.status === 200;
+    };
+
+    this.readContract = async function(citation) {
+        const response = await sendRequest('GET', 'contracts', citation);
+        if (response.status !== 200 && response.status !== 404) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$readContract',
+                $exception: '$status' + response.status,
+                $citation: citation,
+                $text: 'Unable to access the contract.'
+            });
+            throw exception;
+        }
+        if (response.status === 200) {
+            const source = response.data.toString('utf8');
+            return bali.component(source);
+        }
+    };
+
+    this.writeContract = async function(contract) {
+        const document = contract.getValue('$document');
+        const citation = await notary.citeDocument(document);
+        const response = await sendRequest('PUT', 'contracts', citation, undefined, contract);
+        if (response.status !== 201) {
+            const exception = bali.exception({
+                $module: '/bali/repositories/RemoteStorage',
+                $procedure: '$writeContract',
+                $exception: '$status' + response.status,
+                $contract: contract,
+                $text: 'Unable to create the contract.'
             });
             throw exception;
         }

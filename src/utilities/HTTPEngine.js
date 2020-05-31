@@ -270,7 +270,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
                 const citation = credentials.getValue('$certificate');
                 // if the certificate doesn't yet exist, there is a self-signed certificate in the body
                 var certificate = (await storage.readDocument(citation)) || parameters.body;
-                if (await notary.validDocument(credentials, certificate)) {
+                if (await notary.validContract(credentials, certificate)) {
                     parameters.account = certificate.getValue('$account');
                     return true;  // the credentials are valid
                 }
@@ -293,11 +293,11 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             if (account && account.isEqualTo(parameters.account)) return true;  // the authority is always authorized
 
             // check for a citation rather than a notarized document
-            const content = authority.getValue('$content');
-            if (!content) return true;  // all citations are public by default
+            const document = authority.getValue('$document');
+            if (!document) return true;  // all citations are public by default
 
             // check the permissions on the notarized document
-            const permissions = content.getParameter('$permissions');
+            const permissions = document.getParameter('$permissions');
             if (permissions.toString() === '/bali/permissions/public/v1') return true;  // publicly available
             // TODO: load in the real permissions and check them
         }
@@ -320,10 +320,10 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
 
 
     const citeComponent = async function(component) {
-        if (component.isType('/bali/collections/Catalog') && component.getValue('$content')) {
+        if (component.isType('/bali/collections/Catalog') && component.getValue('$document')) {
             // the component is a document so cite it (otherwise it is already a citation)
-            const content = component.getValue('$content');
-            component = await notary.citeDocument(content);
+            const document = component.getValue('$document');
+            component = await notary.citeDocument(document);
         }
         return component;
     };

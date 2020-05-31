@@ -36,6 +36,6 @@
     "axios": "^0.19.2",
     "aws-sdk": "^2.686.0",
     "bali-component-framework": "^2.22.0",
-    "bali-digital-notary": "^2.11.0"
+    "bali-digital-notary": "^2.12.0"
   }
 }
