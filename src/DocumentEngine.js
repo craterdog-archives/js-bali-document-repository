@@ -38,57 +38,57 @@ const DocumentEngine = function(notary, storage, debug) {
             }
         },
 
-        drafts: {
+        documents: {
             HEAD: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await storage.readDraft(citation);
+                const existing = await storage.readDocument(citation);
                 return await this.encodeResponse(parameters, existing, existing, true);  // body is stripped off
             },
 
             GET: async function(parameters) {
                 const citation = this.extractResource(parameters);
-                const existing = await storage.readDraft(citation);
+                const existing = await storage.readDocument(citation);
                 return await this.encodeResponse(parameters, existing, existing, true);
-            },
-
-            PUT: async function(parameters) {
-                const citation = this.extractResource(parameters);
-                const draft = parameters.body;
-                const existing = await storage.readDraft(citation);
-                const response = await this.encodeResponse(parameters, existing, existing, true);
-                if (response.statusCode < 300) await storage.writeDraft(draft);
-                return response;
-            },
-
-            DELETE: async function(parameters) {
-                const citation = this.extractResource(parameters);
-                const existing = await storage.readDraft(citation);
-                const response = await this.encodeResponse(parameters, existing, existing, true);
-                if (response.statusCode === 200) await storage.deleteDraft(citation);
-                return response;
-            }
-        },
-
-        documents: {
-            HEAD: async function(parameters) {
-                const citation = this.extractResource(parameters);
-                const existing = await storage.readDocument(citation);
-                return await this.encodeResponse(parameters, existing, existing, false);  // body is stripped off
-            },
-
-            GET: async function(parameters) {
-                const citation = this.extractResource(parameters);
-                const existing = await storage.readDocument(citation);
-                return await this.encodeResponse(parameters, existing, existing, false);
             },
 
             PUT: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const document = parameters.body;
                 const existing = await storage.readDocument(citation);
+                const response = await this.encodeResponse(parameters, existing, existing, true);
+                if (response.statusCode < 300) await storage.writeDocument(document);
+                return response;
+            },
+
+            DELETE: async function(parameters) {
+                const citation = this.extractResource(parameters);
+                const existing = await storage.readDocument(citation);
+                const response = await this.encodeResponse(parameters, existing, existing, true);
+                if (response.statusCode === 200) await storage.deleteDocument(citation);
+                return response;
+            }
+        },
+
+        contracts: {
+            HEAD: async function(parameters) {
+                const citation = this.extractResource(parameters);
+                const existing = await storage.readContract(citation);
+                return await this.encodeResponse(parameters, existing, existing, false);  // body is stripped off
+            },
+
+            GET: async function(parameters) {
+                const citation = this.extractResource(parameters);
+                const existing = await storage.readContract(citation);
+                return await this.encodeResponse(parameters, existing, existing, false);
+            },
+
+            PUT: async function(parameters) {
+                const citation = this.extractResource(parameters);
+                const document = parameters.body;
+                const existing = await storage.readContract(citation);
                 const response = await this.encodeResponse(parameters, existing, existing, false);
                 if (response.statusCode === 201) {
-                    await storage.writeDocument(document);
+                    await storage.writeContract(document);
                 }
                 return response;
             }
@@ -97,21 +97,21 @@ const DocumentEngine = function(notary, storage, debug) {
         messages: {
             HEAD: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await storage.readDocument(bag);
+                const authority = await storage.readContract(bag);
                 const count = bali.number(await storage.messageCount(bag));
                 return await this.encodeResponse(parameters, authority, count.getMagnitude() > 0 ? count : undefined, true);  // body is stripped off
             },
 
             GET: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await storage.readDocument(bag);
+                const authority = await storage.readContract(bag);
                 const count = bali.number(await storage.messageCount(bag));
                 return await this.encodeResponse(parameters, authority, count, true);
             },
 
             PUT: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await storage.readDocument(bag);
+                const authority = await storage.readContract(bag);
                 const message = parameters.body;
                 const response = await this.encodeResponse(parameters, authority, message, true);
                 if (response.statusCode === 200) {
@@ -126,7 +126,7 @@ const DocumentEngine = function(notary, storage, debug) {
 
             POST: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await storage.readDocument(bag);
+                const authority = await storage.readContract(bag);
                 const message = parameters.body;
                 const response = await this.encodeResponse(parameters, authority, message, true);
                 if (response.statusCode === 201) {
@@ -141,7 +141,7 @@ const DocumentEngine = function(notary, storage, debug) {
 
             DELETE: async function(parameters) {
                 const bag = this.extractResource(parameters);
-                const authority = await storage.readDocument(bag);
+                const authority = await storage.readContract(bag);
                 var message;
                 if (authority) {
                     if (parameters.resource.length === 2) {

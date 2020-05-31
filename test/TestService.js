@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 0;  // [0..3]
+const debug = 1;  // [0..3]
 const bali = require('bali-component-framework').api(debug);
 const account = bali.tag();
 const directory = 'test/config/service/';
@@ -35,7 +35,7 @@ const processRequest = async function(request, response) {
         response.writeHead(result.statusCode, result.statusMessage, result.headers);
         response.end(result.body);
     } catch (cause) {
-        console.log(cause);
+        console.error(cause);
     }
 };
 

@@ -269,7 +269,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             if (credentials.isType('/bali/collections/Catalog')) {
                 const citation = credentials.getValue('$certificate');
                 // if the certificate doesn't yet exist, there is a self-signed certificate in the body
-                var certificate = (await storage.readDocument(citation)) || parameters.body;
+                var certificate = (await storage.readContract(citation)) || parameters.body;
                 if (await notary.validContract(credentials, certificate)) {
                     parameters.account = certificate.getValue('$account');
                     return true;  // the credentials are valid
@@ -288,17 +288,25 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
 
     const isAuthorized = async function(parameters, authority) {
         if (authority && authority.isComponent && authority.isType('/bali/collections/Catalog')) {
+            // check for a citation rather than a document
+            const type = authority.getParameter('$type');
+            if (type.toString() === '/bali/notary/Citation/v1') {
+                return true;  // all citations are public by default
+            }
+
             // check the account of the authority
             const account = authority.getValue('$account');
-            if (account && account.isEqualTo(parameters.account)) return true;  // the authority is always authorized
-
-            // check for a citation rather than a notarized document
-            const document = authority.getValue('$document');
-            if (!document) return true;  // all citations are public by default
+            if (account && account.isEqualTo(parameters.account)) {
+                return true;  // the authority is always authorized
+            }
 
             // check the permissions on the notarized document
-            const permissions = document.getParameter('$permissions');
-            if (permissions.toString() === '/bali/permissions/public/v1') return true;  // publicly available
+            const document = authority.getValue('$document');
+            if (document) authority = document;
+            const permissions = authority.getParameter('$permissions');
+            if (permissions.toString() === '/bali/permissions/public/v1') {
+                return true;  // publicly available
+            }
             // TODO: load in the real permissions and check them
         }
         return false;  // otherwise the account is not authorized to perform the request
@@ -320,10 +328,13 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
 
 
     const citeComponent = async function(component) {
-        if (component.isType('/bali/collections/Catalog') && component.getValue('$document')) {
-            // the component is a document so cite it (otherwise it is already a citation)
-            const document = component.getValue('$document');
-            component = await notary.citeDocument(document);
+        const document = component.getValue('$document');
+        if (document) {
+            component = document;
+        }
+        const type = component.getParameter('$type');
+        if (type.toString() !== '/bali/notary/Citation/v1') {
+            component = await notary.citeDocument(component);
         }
         return component;
     };

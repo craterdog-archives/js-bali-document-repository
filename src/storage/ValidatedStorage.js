@@ -75,28 +75,29 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.writeName = async function(name, citation) {
         const contract = await repository.readContract(citation);
-        await validateCitation(citation, contract);
+        const document = contract.getValue('$document');
+        await validateCitation(citation, document);
         return await repository.writeName(name, citation);
     };
 
-    this.draftExists = async function(citation) {
-        return await repository.draftExists(citation);
+    this.documentExists = async function(citation) {
+        return await repository.documentExists(citation);
     };
 
-    this.readDraft = async function(citation) {
-        const draft = await repository.readDraft(citation);
-        if (draft) {
-            await validateCitation(citation, draft);
+    this.readDocument = async function(citation) {
+        const document = await repository.readDocument(citation);
+        if (document) {
+            await validateCitation(citation, document);
         }
-        return draft;
+        return document;
     };
 
-    this.writeDraft = async function(draft) {
-        return await repository.writeDraft(draft);
+    this.writeDocument = async function(document) {
+        return await repository.writeDocument(document);
     };
 
-    this.deleteDraft = async function(citation) {
-        return await repository.deleteDraft(citation);
+    this.deleteDocument = async function(citation) {
+        return await repository.deleteDocument(citation);
     };
 
     this.contractExists = async function(citation) {
@@ -106,7 +107,8 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.readContract = async function(citation) {
         const contract = await repository.readContract(citation);
         if (contract) {
-            await validateCitation(citation, contract);
+            const document = contract.getValue('$document');
+            await validateCitation(citation, document);
             await validateContract(contract);
         }
         return contract;
@@ -126,18 +128,15 @@ const ValidatedStorage = function(notary, repository, debug) {
     };
 
     this.addMessage = async function(bag, message) {
-        await validateMessage(message);
         return await repository.addMessage(bag, message);
     };
 
     this.removeMessage = async function(bag) {
         const message = await repository.removeMessage(bag);
-        if (message) await validateMessage(message);
         return message;
     };
 
     this.returnMessage = async function(bag, message) {
-        await validateMessage(message);
         return await repository.returnMessage(bag, message);
     };
 
@@ -210,14 +209,16 @@ const ValidatedStorage = function(notary, repository, debug) {
         const previousCitation = document.getParameter('$previous');
         if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
             const previousContract = await repository.readContract(previousCitation);
-            await validateCitation(previousCitation, previousContract);
+            const previousDocument = previousContract.getValue('$document');
+            await validateCitation(previousCitation, previousDocument);
         }
 
         // validate the certificate if one exists
         var certificate;
         if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
             certificate = await repository.readContract(certificateCitation);
-            await validateCitation(certificateCitation, certificate);
+            const certificateDocument = certificate.getValue('$document');
+            await validateCitation(certificateCitation, certificateDocument);
         } else {
             certificate = contract;  // the contract is a self-signed certificate
         }

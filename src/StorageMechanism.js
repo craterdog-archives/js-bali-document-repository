@@ -93,7 +93,7 @@ StorageMechanism.prototype.readName = async function(name) {
 
 /**
  * This method associates a name with the specified citation in the document repository.
- * The cited document must already exist in the repository.
+ * The cited contract must already exist in the repository.
  *
  * @param {Name} name The unique name for the citation.
  * @param {Catalog} citation A catalog containing the document citation.
@@ -111,88 +111,16 @@ StorageMechanism.prototype.writeName = async function(name, citation) {
 };
 
 /**
- * This method checks to see whether or not the cited draft document exists in the document
+ * This method checks to see whether or not the cited document exists in the document
  * repository.
  *
  * @param {Catalog} citation A catalog containing a document citation.
- * @returns {Boolean} Whether or not the cited draft document exists.
- */
-StorageMechanism.prototype.draftExists = async function(citation) {
-    const exception = this.bali.exception({
-        $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$draftExists',
-        $exception: '$abstractMethod',
-        $text: 'This method must be implemented by a concrete subclass.'
-    });
-    if (this.debug) console.error(exception.toString());
-    throw exception;
-};
-
-/**
- * This method attempts to retrieve the cited draft document from the document repository.
- *
- * @param {Catalog} citation A catalog containing a document citation.
- * @returns {Catalog} A catalog containing the draft document or nothing if it doesn't
- * exist.
- */
-StorageMechanism.prototype.readDraft = async function(citation) {
-    const exception = this.bali.exception({
-        $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$readDraft',
-        $exception: '$abstractMethod',
-        $text: 'This method must be implemented by a concrete subclass.'
-    });
-    if (this.debug) console.error(exception.toString());
-    throw exception;
-};
-
-/**
- * This method saves a draft document in the document repository. If a draft document with
- * the same tag and version already exists in the document repository, it is overwritten with
- * the new draft.
- *
- * @param {Catalog} draft A catalog containing the draft document.
- * @returns {Catalog} A catalog containing the document citation.
- */
-StorageMechanism.prototype.writeDraft = async function(draft) {
-    const exception = this.bali.exception({
-        $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$writeDraft',
-        $exception: '$abstractMethod',
-        $text: 'This method must be implemented by a concrete subclass.'
-    });
-    if (this.debug) console.error(exception.toString());
-    throw exception;
-};
-
-/**
- * This method attempts to delete from the document repository the cited draft document.
- * If the draft document does not exist, this method does nothing.
- *
- * @param {Catalog} citation A catalog containing a document citation.
- * @returns {Component|Undefined} The deleted draft document if it existed.
- */
-StorageMechanism.prototype.deleteDraft = async function(citation) {
-    const exception = this.bali.exception({
-        $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$deleteDraft',
-        $exception: '$abstractMethod',
-        $text: 'This method must be implemented by a concrete subclass.'
-    });
-    if (this.debug) console.error(exception.toString());
-    throw exception;
-};
-
-/**
- * This method checks to see whether or not the cited document exists in the document repository.
- *
- * @param {Catalog} citation A catalog containing a document citation.
- * @returns {Boolean} Whether or not the document exists.
+ * @returns {Boolean} Whether or not the cited document exists.
  */
 StorageMechanism.prototype.documentExists = async function(citation) {
     const exception = this.bali.exception({
         $module: '/bali/repositories/StorageMechanism',
-        $procedure: '$documentExist',
+        $procedure: '$documentExists',
         $exception: '$abstractMethod',
         $text: 'This method must be implemented by a concrete subclass.'
     });
@@ -204,7 +132,8 @@ StorageMechanism.prototype.documentExists = async function(citation) {
  * This method attempts to retrieve the cited document from the document repository.
  *
  * @param {Catalog} citation A catalog containing a document citation.
- * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
+ * @returns {Catalog} A catalog containing the document or nothing if it doesn't
+ * exist.
  */
 StorageMechanism.prototype.readDocument = async function(citation) {
     const exception = this.bali.exception({
@@ -218,9 +147,9 @@ StorageMechanism.prototype.readDocument = async function(citation) {
 };
 
 /**
- * This method saves a new document in the document repository. If a document with
- * the same tag and version already exists in the document repository, an exception is
- * thrown.
+ * This method saves a document in the document repository. If a document with
+ * the same tag and version already exists in the document repository, it is overwritten with
+ * the new document.
  *
  * @param {Catalog} document A catalog containing the document.
  * @returns {Catalog} A catalog containing the document citation.
@@ -229,6 +158,77 @@ StorageMechanism.prototype.writeDocument = async function(document) {
     const exception = this.bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$writeDocument',
+        $exception: '$abstractMethod',
+        $text: 'This method must be implemented by a concrete subclass.'
+    });
+    if (this.debug) console.error(exception.toString());
+    throw exception;
+};
+
+/**
+ * This method attempts to delete from the document repository the cited document.
+ * If the document does not exist, this method does nothing.
+ *
+ * @param {Catalog} citation A catalog containing a document citation.
+ * @returns {Component|Undefined} The deleted document if it existed.
+ */
+StorageMechanism.prototype.deleteDocument = async function(citation) {
+    const exception = this.bali.exception({
+        $module: '/bali/repositories/StorageMechanism',
+        $procedure: '$deleteDocument',
+        $exception: '$abstractMethod',
+        $text: 'This method must be implemented by a concrete subclass.'
+    });
+    if (this.debug) console.error(exception.toString());
+    throw exception;
+};
+
+/**
+ * This method checks to see whether or not the cited contract exists in the document repository.
+ *
+ * @param {Catalog} citation A catalog containing a document citation.
+ * @returns {Boolean} Whether or not the contract exists.
+ */
+StorageMechanism.prototype.contractExists = async function(citation) {
+    const exception = this.bali.exception({
+        $module: '/bali/repositories/StorageMechanism',
+        $procedure: '$contractExist',
+        $exception: '$abstractMethod',
+        $text: 'This method must be implemented by a concrete subclass.'
+    });
+    if (this.debug) console.error(exception.toString());
+    throw exception;
+};
+
+/**
+ * This method attempts to retrieve the cited contract from the document repository.
+ *
+ * @param {Catalog} citation A catalog containing a document citation.
+ * @returns {Catalog} A catalog containing the contract or nothing if it doesn't exist.
+ */
+StorageMechanism.prototype.readContract = async function(citation) {
+    const exception = this.bali.exception({
+        $module: '/bali/repositories/StorageMechanism',
+        $procedure: '$readContract',
+        $exception: '$abstractMethod',
+        $text: 'This method must be implemented by a concrete subclass.'
+    });
+    if (this.debug) console.error(exception.toString());
+    throw exception;
+};
+
+/**
+ * This method saves a new contract in the document repository. If a contract with
+ * the same tag and version already exists in the document repository, an exception is
+ * thrown.
+ *
+ * @param {Catalog} contract A catalog containing the contract.
+ * @returns {Catalog} A catalog containing the document citation.
+ */
+StorageMechanism.prototype.writeContract = async function(contract) {
+    const exception = this.bali.exception({
+        $module: '/bali/repositories/StorageMechanism',
+        $procedure: '$writeContract',
         $exception: '$abstractMethod',
         $text: 'This method must be implemented by a concrete subclass.'
     });
