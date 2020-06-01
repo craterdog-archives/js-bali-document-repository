@@ -193,7 +193,6 @@ const DocumentRepository = function(notary, storage, debug) {
      *
      * @param {Name} name The name to be associated with the committed document.
      * @param {Catalog} document A catalog containing the document to be committed.
-     * @returns {Catalog} A catalog containing a citation to the committed document.
      */
     this.commitDocument = async function(name, document) {
         try {
@@ -219,7 +218,7 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             const contract = await notary.notarizeDocument(document);
             const citation = await storage.writeContract(contract);
-            return await storage.writeName(name, citation);
+            await storage.writeName(name, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -508,7 +507,6 @@ const DocumentRepository = function(notary, storage, debug) {
      * message.
      *
      * @param {Catalog} message A catalog containing the message being returned.
-     * @returns {Boolean} Whether or not the message was successfully returned.
      */
     this.rejectMessage = async function(message) {
         try {
@@ -520,7 +518,7 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             const bag = message.getValue('$bag');
             const citation = await storage.readName(bag);
-            return await storage.returnMessage(citation, message);
+            await storage.returnMessage(citation, message);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -541,7 +539,6 @@ const DocumentRepository = function(notary, storage, debug) {
      * successfully.
      *
      * @param {Catalog} message A catalog containing the message being accepted.
-     * @returns {Boolean} Whether or not the specified message still existed in the bag.
      */
     this.acceptMessage = async function(message) {
         try {
@@ -553,7 +550,7 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             const bag = await storage.readName(message.getValue('$bag'));
             const citation = await notary.citeDocument(message);
-            return await storage.deleteMessage(bag, citation);
+            await storage.deleteMessage(bag, citation);
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',

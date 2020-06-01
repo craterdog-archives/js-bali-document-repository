@@ -81,7 +81,7 @@ describe('Bali Document Repository™', function() {
             expect(document.isEqualTo(await repository.retrieveDocument(documentCitation))).is.true;
 
             // commit the document to the repository
-            expect(documentCitation.isEqualTo(await repository.commitDocument(name, document))).is.true;
+            await repository.commitDocument(name, document);
 
             // make sure the document no longer exists in the repository
             expect(await repository.retrieveDocument(documentCitation)).to.not.exist;
