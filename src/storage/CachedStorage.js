@@ -180,7 +180,7 @@ CachedStorage.prototype.constructor = CachedStorage;
 exports.CachedStorage = CachedStorage;
 
 
-// DOCUMENT CACHE
+// CONTRACT CACHE
 
 const Cache = function(capacity) {
 

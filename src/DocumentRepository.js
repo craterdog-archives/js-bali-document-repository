@@ -267,13 +267,13 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method checks out a new draft version of the named contract from the document repository.
+     * This method checks out a new version of the named contract from the document repository.
      * If a version level is specified, that level will be incremented by one, otherwise, the
      * largest version level will be incremented.
      *
      * @param {Name} name The name of the contract to be checked out from the document repository.
      * @param {Number} level The version level to be incremented.
-     * @returns {Catalog} A catalog containing the new draft version of the named contract.
+     * @returns {Catalog} A catalog containing the new version of the named contract.
      */
     this.checkoutDocument = async function(name, level) {
         try {

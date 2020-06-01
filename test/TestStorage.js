@@ -23,8 +23,8 @@ const Storage = require('../');
 
 const configuration = {
     names: 'bali-nebula-names-us-east-1',
-    documents: 'bali-nebula-drafts-us-east-1',
-    contracts: 'bali-nebula-documents-us-east-1',
+    documents: 'bali-nebula-documents-us-east-1',
+    contracts: 'bali-nebula-contracts-us-east-1',
     messages: 'bali-nebula-messages-us-east-1'
 };
 
