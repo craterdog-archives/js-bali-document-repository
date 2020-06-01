@@ -16,7 +16,19 @@ npm install bali-document-repository
 Then add the following line to your NodeJS modules:
 ```
 const debug = 1;  // debugging level: [0..3]
-const repository = require('bali-document-repository').repository(storage, debug);
+const bali = require('bali-component-framework').api(debug);
+const account = bali.tag();
+const hsm = <your hardware security module proxy>
+const notary = require('bali-digital-notary').notary(hsm, account);
+const Repository = require('bali-document-repository');
+const configuration = {
+    names: '<your bucket name>',
+    documents: '<your bucket name>',
+    contracts: '<your bucket name>',
+    messages: '<your bucket name>'
+};
+const storage = Repository.service(notary, configuration, debug);
+const repository = Repository.repository(notary, storage, debug);
 ```
 
 ### Contributing
