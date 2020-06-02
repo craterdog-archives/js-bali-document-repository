@@ -217,7 +217,20 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     this.addMessage = async function(bag, message) {
-        const capacity = (await this.readContract(bag)).getValue('$document').getValue('$capacity');
+        const contract = await this.readContract(bag);
+        if (!contract) {
+            const exception = bali.exception({
+                $module: '/bali/storage/LocalStorage',
+                $procedure: '$addMessage',
+                $exception: '$noBag',
+                $location: location,
+                $identifier: available,
+                $message: message,
+                $text: 'The bag does not exist.'
+            });
+            throw exception;
+        }
+        const capacity = contract.getValue('$document').getValue('$capacity');
         const current = await this.messageCount(bag);
         if (current >= capacity) {
             const exception = bali.exception({

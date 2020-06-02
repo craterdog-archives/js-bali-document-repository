@@ -131,27 +131,38 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method attempts to retrieve the cited document from the document repository.
+     * This method attempts to retrieve a document from the document repository.
      *
-     * @param {Catalog} citation A catalog containing a citation to the document.
+     * @param {Name|Catalog} identifier A catalog containing a citation to the document.
      * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
      */
-    this.retrieveDocument = async function(citation) {
+    this.retrieveDocument = async function(identifier) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$citation', citation, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$identifier', identifier, [
+                    '/javascript/String',
+                    '/bali/elements/Name',
                     '/bali/collections/Catalog'
                 ]);
             }
-            const document = await storage.readDocument(citation);
+            var document;
+            if (!identifier.isComponent || identifier.isType('/bali/elements/Name')) {
+                const citation = await storage.readName(identifier);
+                if (citation) {
+                    const contract = await storage.readContract(citation);
+                    document = contract.getValue('$document');
+                }
+            } else {
+                document = await storage.readDocument(identifier);
+            }
             return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$retrieveDocument',
                 $exception: '$unexpected',
-                $citation: citation,
+                $identifier: identifier,
                 $text: 'An unexpected error occurred while attempting to retrieve a document.'
             }, cause);
             if (debug) console.error(exception.toString());
@@ -249,8 +260,7 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             const citation = await storage.readName(name);
             if (citation) {
-                const contract = await storage.readContract(citation);
-                return contract.getValue('$document');
+                return await storage.readContract(citation);
             }
         } catch (cause) {
             const exception = bali.exception({

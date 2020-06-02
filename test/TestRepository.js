@@ -86,8 +86,8 @@ describe('Bali Document Repository™', function() {
             // make sure the document no longer exists in the repository
             expect(await repository.retrieveDocument(documentCitation)).to.not.exist;
 
-            // make sure the committed contract exists in the repository
-            expect(document.isEqualTo(await repository.retrieveContract(name))).is.true;
+            // make sure the named contract exists in the repository
+            expect(document.isEqualTo(await repository.retrieveDocument(name))).is.true;
 
             // attempt to commit the same version of the contract to the repository
             await assert.rejects(async function() {
@@ -110,7 +110,7 @@ describe('Bali Document Repository™', function() {
             await repository.commitDocument(nextName, document);
 
             // make sure the committed contract exists in the repository
-            expect(document.isEqualTo(await repository.retrieveContract(nextName))).is.true;
+            expect(document.isEqualTo(await repository.retrieveDocument(nextName))).is.true;
             expect((await repository.retrieveContract(name)).isEqualTo(await repository.retrieveContract(nextName))).is.false;
 
             // attempt to commit the same version of the contract in the repository
