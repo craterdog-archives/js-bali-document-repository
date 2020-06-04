@@ -311,6 +311,7 @@ const DocumentRepository = function(notary, storage, debug) {
             const template = contract.getValue('$document');
             const parameters = template.getParameters();
             parameters.setValue('$version', bali.version.nextVersion(parameters.getValue('$version'), level));
+            parameters.setValue('$previous', citation);
             const document = bali.catalog(template, parameters);
             return document;
         } catch (cause) {
