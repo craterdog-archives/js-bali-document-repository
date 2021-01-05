@@ -33,7 +33,7 @@
     "webpack": "^4.43.0"
   },
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "aws-sdk": "^2.686.0",
     "bali-component-framework": "^2.22.2",
     "bali-digital-notary": "^2.12.2"
