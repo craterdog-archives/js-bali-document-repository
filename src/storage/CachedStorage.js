@@ -57,7 +57,7 @@ const CachedStorage = function(storage, debug) {
 
     this.nameExists = async function(name) {
         // check the cache first
-        const key = generateKey(name);
+        const key = generateNameKey(name);
         if (cache.names.read(key)) return true;
         // not found so we must check the backend storage
         return await storage.nameExists(name);
@@ -65,7 +65,7 @@ const CachedStorage = function(storage, debug) {
 
     this.readName = async function(name) {
         // check the cache first
-        const key = generateKey(name);
+        const key = generateNameKey(name);
         var citation = cache.names.read(key);
         if (!citation) {
             // not found so we must read from the backend storage
@@ -106,7 +106,7 @@ const CachedStorage = function(storage, debug) {
 
     this.contractExists = async function(citation) {
         // check the cache
-        const key = generateKey(citation);
+        const key = generateCitationKey(citation);
         if (cache.contracts.read(key)) return true;
         // not found so we must check the backend storage
         return await storage.contractExists(citation);
@@ -114,7 +114,7 @@ const CachedStorage = function(storage, debug) {
 
     this.readContract = async function(citation) {
         // check the cache
-        const key = generateKey(citation);
+        const key = generateCitationKey(citation);
         var contract = cache.contracts.read(key);
         if (!contract) {
             // not found so we must read from the backend storage
@@ -129,7 +129,7 @@ const CachedStorage = function(storage, debug) {
         // add the contract to the backend storage
         const citation = await storage.writeContract(contract);
         // cache the contract
-        const key = generateKey(citation);
+        const key = generateCitationKey(citation);
         cache.contracts.write(key, contract);
         return citation;
     };
@@ -164,13 +164,16 @@ const CachedStorage = function(storage, debug) {
         return await storage.deleteMessage(bag, citation);
     };
 
-    const generateKey = function(identifier) {
-        if (identifier.isComponent) {
-            const tag = identifier.getValue('$tag');
-            const version = identifier.getValue('$version');
-            return tag.toString().slice(1) + '/' + version;
-        }
-        return identifier.toString().slice(1);
+    const generateNameKey = function(name) {
+        const key = name.toString().slice(1);
+        return key;
+    };
+
+    const generateCitationKey = function(citation) {
+        const tag = citation.getAttribute('$tag');
+        const version = citation.getAttribute('$version');
+        const key = tag.toString().slice(1) + '/' + version;
+        return key;
     };
 
     return this;

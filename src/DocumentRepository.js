@@ -151,7 +151,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 const citation = await storage.readName(identifier);
                 if (citation) {
                     const contract = await storage.readContract(citation);
-                    document = contract.getValue('$document');
+                    document = contract.getAttribute('$document');
                 }
             } else {
                 document = await storage.readDocument(identifier);
@@ -308,10 +308,10 @@ const DocumentRepository = function(notary, storage, debug) {
                 throw exception;
             }
             const contract = await storage.readContract(citation);
-            const template = contract.getValue('$document');
+            const template = contract.getAttribute('$document');
             const parameters = template.getParameters();
-            parameters.setValue('$version', bali.version.nextVersion(parameters.getValue('$version'), level));
-            parameters.setValue('$previous', citation);
+            parameters.setAttribute('$version', bali.version.nextVersion(parameters.getAttribute('$version'), level));
+            parameters.setAttribute('$previous', citation);
             const document = bali.catalog(template, parameters);
             return document;
         } catch (cause) {
@@ -446,7 +446,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 throw exception;
             }
             const contract = await storage.readContract(citation);
-            const capacity = contract.getValue('$document').getValue('$capacity');
+            const capacity = contract.getAttribute('$document').getAttribute('$capacity');
             const size = await storage.messageCount(citation);
             if (size >= capacity) {
                 const exception = bali.exception({
@@ -459,7 +459,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 throw exception;
             }
             const document = bali.instance('/bali/repositories/Message/v1', message);
-            document.setValue('$bag', bag);
+            document.setAttribute('$bag', bag);
             await storage.addMessage(citation, document);
         } catch (cause) {
             const exception = bali.exception({
@@ -527,7 +527,7 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            const bag = message.getValue('$bag');
+            const bag = message.getAttribute('$bag');
             const citation = await storage.readName(bag);
             await storage.returnMessage(citation, message);
         } catch (cause) {
@@ -559,7 +559,7 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            const bag = await storage.readName(message.getValue('$bag'));
+            const bag = await storage.readName(message.getAttribute('$bag'));
             const citation = await notary.citeDocument(message);
             await storage.deleteMessage(bag, citation);
         } catch (cause) {

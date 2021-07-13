@@ -105,8 +105,8 @@ describe('Bali Document Repository™', function() {
             expect(document.getParameter('$version').isEqualTo(nextVersion)).is.true;
 
             // update and commit the next version of the contract in the repository
-            document.setValue('$quantity', 20);
-            document.setValue('$total', '26.07($currency: $USD)');
+            document.setAttribute('$quantity', 20);
+            document.setAttribute('$total', '26.07($currency: $USD)');
             await repository.commitDocument(nextName, document);
 
             // make sure the committed contract exists in the repository

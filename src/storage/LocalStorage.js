@@ -181,7 +181,7 @@ const LocalStorage = function(notary, root, debug) {
 
     this.writeContract = async function(contract) {
         var location = generateLocation('contracts');
-        const document = contract.getValue('$document');
+        const document = contract.getAttribute('$document');
         const citation = await notary.citeDocument(document);
         const identifier = generateDocumentIdentifier(citation);
         if (await componentExists(location, identifier)) {
@@ -230,7 +230,7 @@ const LocalStorage = function(notary, root, debug) {
             });
             throw exception;
         }
-        const capacity = contract.getValue('$document').getValue('$capacity');
+        const capacity = contract.getAttribute('$document').getAttribute('$capacity');
         const current = await this.messageCount(bag);
         if (current >= capacity) {
             const exception = bali.exception({
@@ -364,23 +364,23 @@ const LocalStorage = function(notary, root, debug) {
     };
 
     const generateDocumentIdentifier = function(citation) {
-        var identifier = citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
-        identifier += '/' + citation.getValue('$version');
+        var identifier = citation.getAttribute('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + citation.getAttribute('$version');
         identifier += '.bali';
         return identifier;
     };
 
     const generateBagIdentifier = function(bag, state) {
-        var identifier = bag.getValue('$tag').toString().slice(1);  // remove the leading '#'
-        identifier += '/' + bag.getValue('$version');
+        var identifier = bag.getAttribute('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + bag.getAttribute('$version');
         identifier += '/' + state;
         return identifier;
     };
 
     const generateMessageIdentifier = function(bag, state, citation) {
         var identifier = generateBagIdentifier(bag, state);
-        identifier += '/' + citation.getValue('$tag').toString().slice(1);  // remove the leading '#'
-        identifier += '/' + citation.getValue('$version');
+        identifier += '/' + citation.getAttribute('$tag').toString().slice(1);  // remove the leading '#'
+        identifier += '/' + citation.getAttribute('$version');
         identifier += '.bali';
         return identifier;
     };

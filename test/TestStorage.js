@@ -62,7 +62,7 @@ describe('Bali Document Repository™', function() {
             });
 
             it('should perform a named contract lifecycle', async function() {
-                const tag = citation.getValue('$tag');
+                const tag = citation.getAttribute('$tag');
                 const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
 
                 // make sure the new name does not yet exist in the repository
@@ -156,7 +156,7 @@ describe('Bali Document Repository™', function() {
                 const bag = await storage.writeContract(contract);
 
                 // name the bag
-                const name = bali.component('/bali/examples/' + bag.getValue('$tag').toString().slice(1) + '/v1');
+                const name = bali.component('/bali/examples/' + bag.getAttribute('$tag').toString().slice(1) + '/v1');
                 expect(bag.isEqualTo(await storage.writeName(name, bag))).is.true;
 
                 // make sure the message bag is empty

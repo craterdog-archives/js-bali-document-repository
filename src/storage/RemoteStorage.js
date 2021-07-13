@@ -212,7 +212,7 @@ const RemoteStorage = function(notary, uri, debug) {
     };
 
     this.writeContract = async function(contract) {
-        const document = contract.getValue('$document');
+        const document = contract.getAttribute('$document');
         const citation = await notary.citeDocument(document);
         const response = await sendRequest('PUT', 'contracts', citation, undefined, contract);
         if (response.status !== 201) {
@@ -332,14 +332,14 @@ const RemoteStorage = function(notary, uri, debug) {
     const generatePath = function(resource, subresource) {
         var path = '';
         if (resource.isComponent && resource.isType('/bali/collections/Catalog')) {
-            path += resource.getValue('$tag').toString().slice(1);  // remove the leading '#'
-            path += '/' + resource.getValue('$version').toString();
+            path += resource.getAttribute('$tag').toString().slice(1);  // remove the leading '#'
+            path += '/' + resource.getAttribute('$version').toString();
         } else {
             path += resource.toString().slice(1);  // remove the leading '/'
         }
         if (subresource) {
-            path += '/' + subresource.getValue('$tag').toString().slice(1);  // remove the leading '#'
-            path += '/' + subresource.getValue('$version').toString();
+            path += '/' + subresource.getAttribute('$tag').toString().slice(1);  // remove the leading '#'
+            path += '/' + subresource.getAttribute('$version').toString();
         } else {
         }
         return path;
@@ -355,7 +355,7 @@ const RemoteStorage = function(notary, uri, debug) {
     const generateDigest = function(resource) {
         var digest = '';
         if (resource && resource.isComponent && resource.isType('/bali/collections/Catalog')) {
-            digest += resource.getValue('$digest').toString().slice(1, -1).replace(/\s+/g, '');
+            digest += resource.getAttribute('$digest').toString().slice(1, -1).replace(/\s+/g, '');
         }
         return digest;
     };

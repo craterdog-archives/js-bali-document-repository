@@ -180,8 +180,8 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             switch (method) {
                 // Authenticated and no Existing Resource
                 case PUT:
-                    const tag = citation.getValue('$tag').toString().slice(1);  // remove leading '#'
-                    const version = citation.getValue('$version');
+                    const tag = citation.getAttribute('$tag').toString().slice(1);  // remove leading '#'
+                    const version = citation.getAttribute('$version');
                     const response = encodeSuccess(201, resultType, citation, 'no-store');
                     return response;
                 default:
@@ -267,11 +267,11 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
         const credentials = parameters.credentials;
         if (credentials) {
             if (credentials.isType('/bali/collections/Catalog')) {
-                const citation = credentials.getValue('$certificate');
+                const citation = credentials.getAttribute('$certificate');
                 // if the certificate doesn't yet exist, there is a self-signed certificate in the body
                 var certificate = (await storage.readContract(citation)) || parameters.body;
                 if (await notary.validContract(credentials, certificate)) {
-                    parameters.account = certificate.getValue('$account');
+                    parameters.account = certificate.getAttribute('$account');
                     return true;  // the credentials are valid
                 }
             }
@@ -295,13 +295,13 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             }
 
             // check the account of the authority
-            const account = authority.getValue('$account');
+            const account = authority.getAttribute('$account');
             if (account && account.isEqualTo(parameters.account)) {
                 return true;  // the authority is always authorized
             }
 
             // check the permissions on the notarized document
-            const document = authority.getValue('$document');
+            const document = authority.getAttribute('$document');
             if (document) authority = document;
             const permissions = authority.getParameter('$permissions');
             if (permissions.toString() === '/bali/permissions/public/v1') {
@@ -328,7 +328,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
 
 
     const citeComponent = async function(component) {
-        const document = component.getValue('$document');
+        const document = component.getAttribute('$document');
         if (document) {
             component = document;
         }

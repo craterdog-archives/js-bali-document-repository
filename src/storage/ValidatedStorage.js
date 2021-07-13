@@ -75,7 +75,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
     this.writeName = async function(name, citation) {
         const contract = await repository.readContract(citation);
-        const document = contract.getValue('$document');
+        const document = contract.getAttribute('$document');
         await validateCitation(citation, document);
         return await repository.writeName(name, citation);
     };
@@ -107,7 +107,7 @@ const ValidatedStorage = function(notary, repository, debug) {
     this.readContract = async function(citation) {
         const contract = await repository.readContract(citation);
         if (contract) {
-            const document = contract.getValue('$document');
+            const document = contract.getAttribute('$document');
             await validateCitation(citation, document);
             await validateContract(contract);
         }
@@ -191,9 +191,9 @@ const ValidatedStorage = function(notary, repository, debug) {
      */
     const validateContract = async function(contract) {
         // make sure it really is a contract
-        const document = contract.getValue('$document');
-        const certificateCitation = contract.getValue('$certificate');
-        const signature = contract.getValue('$signature');
+        const document = contract.getAttribute('$document');
+        const certificateCitation = contract.getAttribute('$certificate');
+        const signature = contract.getAttribute('$signature');
         if (!document || !certificateCitation || !signature) {
             const exception = bali.exception({
                 $module: '/bali/repositories/ValidatedStorage',
@@ -209,7 +209,7 @@ const ValidatedStorage = function(notary, repository, debug) {
         const previousCitation = document.getParameter('$previous');
         if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
             const previousContract = await repository.readContract(previousCitation);
-            const previousDocument = previousContract.getValue('$document');
+            const previousDocument = previousContract.getAttribute('$document');
             await validateCitation(previousCitation, previousDocument);
         }
 
@@ -217,7 +217,7 @@ const ValidatedStorage = function(notary, repository, debug) {
         var certificate;
         if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
             certificate = await repository.readContract(certificateCitation);
-            const certificateDocument = certificate.getValue('$document');
+            const certificateDocument = certificate.getAttribute('$document');
             await validateCitation(certificateCitation, certificateDocument);
         } else {
             certificate = contract;  // the contract is a self-signed certificate
