@@ -13,8 +13,16 @@
  * This class implements an AWS S3 bucket based storage mechanism.  It treats
  * documents as UTF-8 encoded strings.
  */
-const aws = new require('aws-sdk/clients/s3');
-const s3 = new aws({apiVersion: '2006-03-01'});
+const {
+    S3Client,
+    ListObjectsCommand,
+    HeadObjectCommand,
+    GetObjectCommand,
+    PutObjectCommand,
+    DeleteObjectCommand
+} = require('@aws-sdk/client-s3');
+
+const s3 = new S3Client();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
@@ -372,6 +380,88 @@ const S3Storage = function(notary, configuration, debug) {
         return identifier;
     };
 
+
+    // AWS S3 Encapsulation
+
+    const listComponents = async function(location, prefix) {
+        const list = [];
+        try {
+            // the resulting list contains objects with metadata, we only want the keys
+            const command = new ListObjectsCommand({Bucket: location, Prefix: prefix, MaxKeys: 64});
+            const response = await s3.send(command);
+            if (response.Contents) {
+                response.Contents.forEach(function(object) {
+                    list.push(object.Key.replace(prefix + '/', ''));
+                });
+            }
+            return list;
+        } catch (cause) {
+            if (debug) console.error('Unable to list the components in the S3 bucket:\n  ' + location + '/' + prefix);
+            return list;
+        }
+    };
+
+    const componentExists = async function(location, identifier) {
+        try {
+            // the result is an object containing metadata about the object or an error if it never existed
+            const command = new HeadObjectCommand({Bucket: location, Key: identifier});
+            const response = await s3.send(command);
+            // must check for the delete marker for versioned buckets
+            if (!response.DeleteMarker && response.ContentLength) {
+                return true;
+            }
+            return false;
+        } catch (cause) {
+            if (debug) console.error('Unable to see if the component exists in the S3 bucket:\n  ' + location + '/' + identifier);
+            return false
+        }
+    };
+
+    const readComponent = async function(location, identifier) {
+        try {
+            const streamToString = (stream) => new Promise((resolve, reject) => {
+                const chunks = [];
+                stream.on("data", (chunk) => chunks.push(chunk));
+                stream.on("error", reject);
+                stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+            });
+
+            // the resulting object is always a Buffer (may contain utf8 encoded string)
+            const command = new GetObjectCommand({Bucket: location, Key: identifier});
+            const response = await s3.send(command);
+            // must check for the delete marker for versioned buckets
+            if (!response.DeleteMarker && response.ContentLength) {
+                const component = await streamToString(response.Body);
+                return component;
+            }
+        } catch (cause) {
+            if (debug) console.error('Unable to read the component from the S3 bucket:\n  ' + location + '/' + identifier);
+        }
+    };
+
+    const writeComponent = async function(location, identifier, component, isMutable) {
+        try {
+            const source = component.toString() + EOL;  // add POSIX compliant <EOL>
+            const command = new PutObjectCommand({Bucket: location, Key: identifier, Body: source});
+            const response = await s3.send(command);
+        } catch (cause) {
+            if (debug) console.error('Unable to write the component to the S3 bucket:\n  ' + location + '/' + identifier);
+        }
+    };
+
+    const deleteComponent = async function(location, identifier) {
+        try {
+            // NOTE: for non-versioned buckets, deleteObject returns an empty object so
+            // there is no way to know whether or not the object even existed.
+            const command = new DeleteObjectCommand({Bucket: location, Key: identifier});
+            const response = await s3.send(command);
+            return true;
+        } catch (cause) {
+            if (debug) console.error('Unable to delete the component from the S3 bucket:\n  ' + location + '/' + identifier);
+            return false
+        }
+    };
+
     return this;
 };
 S3Storage.prototype = Object.create(StorageMechanism.prototype);
@@ -392,98 +482,3 @@ const sleep = function(milliseconds) {
     });
 };
 
-
-// AWS S3 PROMISIFICATION
-
-const listComponents = function(location, prefix) {
-    return new Promise(function(resolve, reject) {
-        try {
-            // the resulting list contains objects with metadata, we only want the keys
-            s3.listObjectsV2({Bucket: location, Prefix: prefix, MaxKeys: 64}, function(error, data) {
-                if (error) {
-                    reject(error);
-                } else {
-                    const list = [];
-                    data.Contents.forEach(function(object) {
-                        list.push(object.Key.replace(prefix + '/', ''));
-                    });
-                    resolve(list);
-                }
-            });
-        } catch (cause) {
-            reject(cause);
-        }
-    });
-};
-
-const componentExists = function(location, identifier) {
-    return new Promise(function(resolve, reject) {
-        try {
-            // the result is an object containing metadata about the object or an error
-            // if it never existed
-            s3.headObject({Bucket: location, Key: identifier}, function(error, data) {
-                // must check for the delete marker for versioned buckets
-                if (error || data.DeleteMarker || !data.ContentLength) {
-                    resolve(false);
-                } else {
-                    resolve(true);
-                }
-            });
-        } catch (cause) {
-            reject(cause);
-        }
-    });
-};
-
-const readComponent = function(location, identifier) {
-    return new Promise(function(resolve, reject) {
-        try {
-            // the resulting object is always a Buffer (may contain utf8 encoded string)
-            s3.getObject({Bucket: location, Key: identifier}, function(error, data) {
-                // must check for the delete marker for versioned buckets
-                if (error || data.DeleteMarker || !data.ContentLength) {
-                    resolve(undefined);
-                } else {
-                    resolve(data.Body);
-                }
-            });
-        } catch (cause) {
-            reject(cause);
-        }
-    });
-};
-
-const writeComponent = function(location, identifier, component, isMutable) {
-    return new Promise(function(resolve, reject) {
-        try {
-            const source = component.toString() + EOL;  // add POSIX compliant <EOL>
-            s3.putObject({Bucket: location, Key: identifier, Body: source}, function(error) {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve();
-                }
-            });
-        } catch (cause) {
-            reject(cause);
-        }
-    });
-};
-
-const deleteComponent = function(location, identifier) {
-    return new Promise(function(resolve, reject) {
-        try {
-            // NOTE: for non-versioned buckets, deleteObject returns an empty object so
-            // there is no way to know whether or not the object even existed.
-            s3.deleteObject({Bucket: location, Key: identifier}, function(error) {
-                if (error) {
-                    resolve(false);
-                } else {
-                    resolve(true);
-                }
-            });
-        } catch (cause) {
-            reject(cause);
-        }
-    });
-};
