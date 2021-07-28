@@ -25,7 +25,7 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
  * @param {DigitalNotary} notary The digital notary to be used to notarize the request credentials.
  * @param {String} uri A string containing the URI for the remote storage mechanism with no
  * trailing slash.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging

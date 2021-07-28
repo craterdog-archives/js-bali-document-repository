@@ -24,7 +24,7 @@ const ValidatedStorage = require('./src/storage/ValidatedStorage').ValidatedStor
  * issues to worry about.
  *
  * @param {Object} storage The storage mechanism used to maintain the documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -48,7 +48,7 @@ exports.cached = cached;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} storage The storage mechanism used to maintain the documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -69,7 +69,7 @@ exports.validated = validated;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {String} directory The top level directory to be used as a local storage mechanism.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -90,7 +90,7 @@ exports.local = local;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Reference} uri A reference that defines the URI for the remote storage.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -111,7 +111,7 @@ exports.remote = remote;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} configuration An object containing the configuration for the S3 buckets
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -132,7 +132,7 @@ exports.s3 = s3;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {String} directory The top level directory to be used as a local storage mechanism.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -154,7 +154,7 @@ exports.test = test;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Reference} uri A reference that defines the URI for the remote storage.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -177,7 +177,7 @@ exports.client = client;
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} configuration An object containing the configuration for the S3-based storage
  * mechanism.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -199,7 +199,7 @@ exports.service = service;
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} storage The storage mechanism maintaining the documents being managed
  * through the HTTP service interface.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
@@ -219,7 +219,7 @@ exports.engine = engine;
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
  * @param {Object} storage The storage mechanism used to maintain the documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging

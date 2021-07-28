@@ -26,7 +26,7 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
  *
  * @param {DigitalNotary} notary The digital notary to be used to validate the contracts.
  * @param {Object} repository The backend repository that maintains documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging

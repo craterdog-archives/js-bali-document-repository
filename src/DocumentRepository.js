@@ -22,7 +22,7 @@
  *
  * @param {DigitalNotary} notary The digital notary to be used to notarize the documents.
  * @param {Object} storage The storage mechanism to be used to maintain the documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging

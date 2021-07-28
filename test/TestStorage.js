@@ -8,7 +8,7 @@
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
 
-const debug = 1;  // [0..3]
+const debug = 0;  // [0..3]
 const mocha = require('mocha');
 const chai = require('chai');
 const expect = chai.expect;

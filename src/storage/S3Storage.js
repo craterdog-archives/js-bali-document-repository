@@ -39,7 +39,7 @@ const EOL = '\n';
  *
  * @param {DigitalNotary} notary The digital notary to be used to cite the documents.
  * @param {Object} configuration An object containing the S3 configuration information.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging

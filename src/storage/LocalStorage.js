@@ -42,7 +42,7 @@ const EOL = '\n';
  * @param {DigitalNotary} notary The digital notary to be used to cite the documents.
  * @param {String} root An optional root directory to be used for local configuration storage. If
  * no directory is specified, a directory called '.bali/' is created in the home directory.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging

@@ -24,7 +24,7 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
  * mechanism is passed in and is used as the persistent store for all documents.
  *
  * @param {StorageMechanism} storage The actual storage mechanism that maintains documents.
- * @param {Boolean|Number} debug An optional number in the range [0..3] that controls the level of
+ * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
  *   0 (or false): no logging
