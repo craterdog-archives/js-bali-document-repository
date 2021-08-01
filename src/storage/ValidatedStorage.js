@@ -175,7 +175,7 @@ const ValidatedStorage = function(notary, repository, debug) {
                 $exception: '$modifiedDocument',
                 $citation: citation,
                 $document: document,
-                $text: 'The cited document was modified after it was committed.'
+                $text: 'The cited contract was modified after it was signed.'
             });
             throw exception;
         }

@@ -80,8 +80,8 @@ describe('Bali Document Repository™', function() {
             // make sure the new document exists in the repository
             expect(document.isEqualTo(await repository.retrieveDocument(documentCitation))).is.true;
 
-            // commit the document to the repository
-            await repository.commitDocument(name, document);
+            // sign a contract and save it to the repository
+            await repository.signContract(name, document);
 
             // make sure the document no longer exists in the repository
             expect(await repository.retrieveDocument(documentCitation)).to.not.exist;
@@ -89,9 +89,9 @@ describe('Bali Document Repository™', function() {
             // make sure the named contract exists in the repository
             expect(document.isEqualTo(await repository.retrieveDocument(name))).is.true;
 
-            // attempt to commit the same version of the contract to the repository
+            // attempt to sign the same version of the contract in the repository
             await assert.rejects(async function() {
-                await repository.commitDocument(name, document);
+                await repository.signContract(name, document);
             });
         });
 
@@ -100,22 +100,22 @@ describe('Bali Document Repository™', function() {
             const nextVersion = bali.version.nextVersion(version, level);
             const nextName = bali.name(['bali', 'examples', 'transaction', nextVersion]);
 
-            // checkout a document of the next version of the contract
-            const document = await repository.checkoutDocument(name, level);
+            // checkout the next version of the contract
+            const document = await repository.checkoutContract(name, level);
             expect(document.getParameter('$version').isEqualTo(nextVersion)).is.true;
 
-            // update and commit the next version of the contract in the repository
+            // update and sign the next version of the contract in the repository
             document.setAttribute('$quantity', 20);
             document.setAttribute('$total', '26.07($currency: $USD)');
-            await repository.commitDocument(nextName, document);
+            await repository.signContract(nextName, document);
 
-            // make sure the committed contract exists in the repository
+            // make sure the signed contract exists in the repository
             expect(document.isEqualTo(await repository.retrieveDocument(nextName))).is.true;
             expect((await repository.retrieveContract(name)).isEqualTo(await repository.retrieveContract(nextName))).is.false;
 
-            // attempt to commit the same version of the contract in the repository
+            // attempt to sign the same version of the contract in the repository
             await assert.rejects(async function() {
-                await repository.commitDocument(nextName, document);
+                await repository.signContract(nextName, document);
             });
         });
 

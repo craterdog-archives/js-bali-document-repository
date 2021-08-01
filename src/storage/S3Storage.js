@@ -130,7 +130,7 @@ const S3Storage = function(notary, configuration, debug) {
                 $location: location,
                 $identifier: identifier,
                 $document: document,
-                $text: 'A committed contract with the same tag and version already exists.'
+                $text: 'A signed contract with the same tag and version already exists.'
             });
             throw exception;
         }

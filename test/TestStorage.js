@@ -117,7 +117,7 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.deleteDocument(citation)).to.not.exist;
             });
 
-            it('should perform a committed contract lifecycle', async function() {
+            it('should perform a signed contract lifecycle', async function() {
                 const document = transaction;
                 citation = await notary.citeDocument(document);
                 const contract = await notary.notarizeDocument(document);

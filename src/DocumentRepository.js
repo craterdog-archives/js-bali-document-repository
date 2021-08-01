@@ -200,27 +200,30 @@ const DocumentRepository = function(notary, storage, debug) {
     };
 
     /**
-     * This method commits a document to the document repository under the specified name.
+     * This method notarizes the specified document and saves it as a new contract in the
+     * document repository under the specified name. Any draft of the document is removed
+     * from the document repository. If the named contract already exists and exception
+     * is thrown since contracts are immutable.
      *
-     * @param {Name} name The name to be associated with the committed document.
-     * @param {Catalog} document A catalog containing the document to be committed.
+     * @param {Name} name The name to be associated with the new contract.
+     * @param {Catalog} document A catalog containing the document to be notarized.
      */
-    this.commitDocument = async function(name, document) {
+    this.signContract = async function(name, document) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$signContract', '$name', name, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$commitDocument', '$document', document, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$signContract', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
             }
             if (await storage.nameExists(name)) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/DocumentRepository',
-                    $procedure: '$commitDocument',
+                    $procedure: '$signContract',
                     $exception: '$nameExists',
                     $name: name,
                     $text: 'The specified name already exists in the document repository.'
@@ -233,10 +236,10 @@ const DocumentRepository = function(notary, storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$commitDocument',
+                $procedure: '$signContract',
                 $exception: '$unexpected',
                 $document: document,
-                $text: 'An unexpected error occurred while attempting to commit a document.'
+                $text: 'An unexpected error occurred while attempting to sign a contract.'
             }, cause);
             if (debug) console.error(exception.toString());
             throw exception;
@@ -284,15 +287,15 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Number} level The version level to be incremented.
      * @returns {Catalog} A catalog containing the new version of the named contract.
      */
-    this.checkoutDocument = async function(name, level) {
+    this.checkoutContract = async function(name, level) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$checkoutDocument', '$name', name, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$checkoutContract', '$name', name, [
                     '/javascript/String',
                     '/bali/elements/Name'
                 ]);
-                validator.validateType('/bali/repositories/DocumentRepository', '$checkoutDocument', '$level', level, [
+                validator.validateType('/bali/repositories/DocumentRepository', '$checkoutContract', '$level', level, [
                     '/javascript/Number'
                 ]);
             }
@@ -300,7 +303,7 @@ const DocumentRepository = function(notary, storage, debug) {
             if (!citation) {
                 const exception = bali.exception({
                     $module: '/bali/repositories/DocumentRepository',
-                    $procedure: '$checkoutDocument',
+                    $procedure: '$checkoutContract',
                     $exception: '$unknownName',
                     $name: name,
                     $text: 'The specified name does not exist in the document repository.'
@@ -317,7 +320,7 @@ const DocumentRepository = function(notary, storage, debug) {
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
-                $procedure: '$checkoutDocument',
+                $procedure: '$checkoutContract',
                 $exception: '$unexpected',
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to checkout a named contract.'
