@@ -26,12 +26,6 @@ const s3 = new S3Client();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
-// PRIVATE CONSTANTS
-
-// the POSIX end of line character
-const EOL = '\n';
-
-
 // DOCUMENT REPOSITORY
 
 /**
@@ -274,7 +268,8 @@ const S3Storage = function(notary, configuration, debug) {
         const location = generateLocation('messages');
         const available = generateBagIdentifier(bag, 'available');
         const processing = generateBagIdentifier(bag, 'processing');
-        while (true) {
+        var limit = 5;
+        while (limit--) {
             const list = await listComponents(location, available);
             const count = list.length;
             if (count === 0) break;  // no more messages
@@ -282,8 +277,8 @@ const S3Storage = function(notary, configuration, debug) {
             // select a message at random since a distributed bag cannot guarantee FIFO
             const generator = bali.generator();
             const index = generator.generateIndex(count);
-            const identifier = messages.getItem(index).getValue();
-            const availableMessage = available + '/' + identifier;
+            const identifier = messages.getItem(index);
+            const availableMessage = available + identifier;
             const bytes = await readComponent(location, availableMessage);
             if (!bytes) {
                 // someone else got there first, keep trying
@@ -294,10 +289,10 @@ const S3Storage = function(notary, configuration, debug) {
                 continue;
             }
             // we got there first
-            const processingMessage = processing + '/' + identifier;
-            await writeComponent(location, processingMessage, bytes, true);
+            const processingMessage = processing + identifier;
             const source = bytes.toString('utf8');
             const message = bali.component(source);
+            await writeComponent(location, processingMessage, message, true);
             return message;
         }
     };
@@ -391,7 +386,7 @@ const S3Storage = function(notary, configuration, debug) {
             const response = await s3.send(command);
             if (response.Contents) {
                 response.Contents.forEach(function(object) {
-                    list.push(object.Key.replace(prefix + '/', ''));
+                    list.push(object.Key.replace(prefix, ''));
                 });
             }
             return list;
@@ -441,7 +436,7 @@ const S3Storage = function(notary, configuration, debug) {
 
     const writeComponent = async function(location, identifier, component, isMutable) {
         try {
-            const source = component.toString() + EOL;  // add POSIX compliant <EOL>
+            const source = component.toDocument();
             const command = new PutObjectCommand({Bucket: location, Key: identifier, Body: source});
             const response = await s3.send(command);
         } catch (cause) {

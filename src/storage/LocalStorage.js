@@ -27,12 +27,6 @@ const pfs = require('fs').promises;
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
-// PRIVATE CONSTANTS
-
-// the POSIX end of line character
-const EOL = '\n';
-
-
 // DOCUMENT REPOSITORY
 
 /**
@@ -155,9 +149,9 @@ const LocalStorage = function(notary, root, debug) {
         const identifier = generateDocumentIdentifier(citation);
         const bytes = await readComponent(location, identifier);
         if (bytes) {
+            await deleteComponent(location, identifier);
             const source = bytes.toString('utf8');
             const document = bali.component(source);
-            await deleteComponent(location, identifier);
             return document;
         }
     };
@@ -279,7 +273,8 @@ const LocalStorage = function(notary, root, debug) {
         const location = generateLocation('messages');
         const available = generateBagIdentifier(bag, 'available');
         const processing = generateBagIdentifier(bag, 'processing');
-        while (true) {
+        var limit = 5;
+        while (limit--) {
             const list = await listComponents(location, available);
             const count = list.length;
             if (count === 0) break;  // no more messages
@@ -287,8 +282,8 @@ const LocalStorage = function(notary, root, debug) {
             // select a message at random since a distributed bag cannot guarantee FIFO
             const generator = bali.generator();
             const index = generator.generateIndex(count);
-            const identifier = messages.getItem(index).getValue();
-            const availableMessage = available + '/' + identifier;
+            const identifier = messages.getItem(index);
+            const availableMessage = available + identifier;
             const bytes = await readComponent(location, availableMessage);
             if (!bytes) {
                 // someone else got there first, keep trying
@@ -299,10 +294,10 @@ const LocalStorage = function(notary, root, debug) {
                 continue;
             }
             // we got there first
-            const processingMessage = processing + '/' + identifier;
-            await writeComponent(location, processingMessage, bytes, true);
+            const processingMessage = processing + identifier;
             const source = bytes.toString('utf8');
             const message = bali.component(source);
+            await writeComponent(location, processingMessage, message, true);
             return message;
         }
     };
@@ -415,7 +410,7 @@ const listComponents = async function(location, identifier) {
         const components = [];
         for (var i = 0; i < directories.length; i++) {
             const directory = directories[i];
-            const component = directory + '/' + await pfs.readdir(path + '/' + directory, 'utf8');
+            const component = '/' + directory + '/' + await pfs.readdir(path + '/' + directory, 'utf8');
             components.push(component);
         }
         return components;
@@ -454,7 +449,7 @@ const writeComponent = async function(location, identifier, component, isMutable
     const file = location + '/' + identifier;
     const path = file.slice(0, file.lastIndexOf('/'));
     await pfs.mkdir(path, {recursive: true, mode: 0o700});
-    const source = component.toString() + EOL;  // add POSIX compliant <EOL>
+    const source = component.toDocument();
     await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
 };
 

@@ -131,7 +131,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             headers: {
             },
             statusCode: status,
-            body: (resultType === 'text/html') ? error.toHTML(STYLE) : error.toBDN()
+            body: (resultType === 'text/html') ? error.toHTML(STYLE) : error.toString()
         };
         response.headers['content-length'] = response.body.length;
         response.headers['content-type'] = resultType;
@@ -319,7 +319,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             },
             statusCode: status
         };
-        response.body = (resultType === 'text/html') ? component.toHTML(STYLE) : component.toBDN();
+        response.body = (resultType === 'text/html') ? component.toHTML(STYLE) : component.toString();
         response.headers['content-length'] = response.body.length;
         response.headers['content-type'] = resultType;
         response.headers['cache-control'] = cacheControl;

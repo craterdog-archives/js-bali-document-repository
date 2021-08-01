@@ -164,13 +164,13 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.removeMessage(bag)).to.not.exist;
 
                 // add some messages to the bag
-                const generateMessage = async function(count) {
+                const generateMessage = function(count) {
                     return bali.instance('/bali/examples/Message/v1', {
                         $count: count
                     });
                 };
 
-                var message = await generateMessage(1);
+                var message = generateMessage(1);
                 await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
@@ -178,23 +178,25 @@ describe('Bali Document Repository™', function() {
                     await storage.addMessage(bag, message);
                 });
 
-                message = await generateMessage(2);
+                message = generateMessage(2);
                 await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
-                message = await generateMessage(3);
+                message = generateMessage(3);
                 await storage.addMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(3);
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 // remove the messages from the bag
                 message = await storage.removeMessage(bag);
+                expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 await storage.returnMessage(bag, message);
                 expect(await storage.messageCount(bag)).to.equal(3);
 
                 message = await storage.removeMessage(bag);
+                expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 var citation = await notary.citeDocument(message);
                 expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
@@ -202,6 +204,7 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.removeMessage(bag);
+                expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(1);
                 citation = await notary.citeDocument(message);
                 expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
@@ -209,6 +212,7 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.messageAvailable(bag)).is.true;
 
                 message = await storage.removeMessage(bag);
+                expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(0);
                 citation = await notary.citeDocument(message);
                 expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
@@ -216,7 +220,8 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.messageAvailable(bag)).is.false;
 
                 // make sure the message bag is empty
-                expect(await storage.removeMessage(bag)).to.not.exist;
+                message = await storage.removeMessage(bag);
+                expect(message).to.not.exist;
             });
 
             it('should reset the notary', async function() {
