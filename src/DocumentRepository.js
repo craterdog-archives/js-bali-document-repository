@@ -63,7 +63,7 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Sequential} template A sequence of attribute values for the new document.
      * @returns {Catalog} A catalog containing the new document.
      */
-    this.createDocument = function(type, permissions, template) {
+    this.createDocument = async function(type, permissions, template) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
@@ -116,7 +116,8 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            return await storage.writeDocument(document);
+            const citation = await storage.writeDocument(document);
+            return citation;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -133,36 +134,25 @@ const DocumentRepository = function(notary, storage, debug) {
     /**
      * This method attempts to retrieve a document from the document repository.
      *
-     * @param {Name|Catalog} identifier A catalog containing a citation to the document.
+     * @param {Catalog} citation A catalog containing a citation to the document.
      * @returns {Catalog} A catalog containing the document or nothing if it doesn't exist.
      */
-    this.retrieveDocument = async function(identifier) {
+    this.retrieveDocument = async function(citation) {
         try {
             if (debug > 1) {
                 const validator = bali.validator(debug);
-                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$identifier', identifier, [
-                    '/javascript/String',
-                    '/bali/elements/Name',
+                validator.validateType('/bali/repositories/DocumentRepository', '$retrieveDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
             }
-            var document;
-            if (!identifier.isComponent || identifier.isType('/bali/elements/Name')) {
-                const citation = await storage.readName(identifier);
-                if (citation) {
-                    const contract = await storage.readContract(citation);
-                    document = contract.getAttribute('$document');
-                }
-            } else {
-                document = await storage.readDocument(identifier);
-            }
+            const document = await storage.readDocument(citation);
             return document;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$retrieveDocument',
                 $exception: '$unexpected',
-                $identifier: identifier,
+                $citation: citation,
                 $text: 'An unexpected error occurred while attempting to retrieve a document.'
             }, cause);
             if (debug) console.error(exception.toString());
@@ -185,7 +175,8 @@ const DocumentRepository = function(notary, storage, debug) {
                     '/bali/collections/Catalog'
                 ]);
             }
-            return (await storage.deleteDocument(citation) !== undefined);
+            const document = await storage.deleteDocument(citation);
+            return document !== undefined;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -207,6 +198,7 @@ const DocumentRepository = function(notary, storage, debug) {
      *
      * @param {Name} name The name to be associated with the new contract.
      * @param {Catalog} document A catalog containing the document to be notarized.
+     * @returns {Catalog} A catalog containing the newly signed contract.
      */
     this.signContract = async function(name, document) {
         try {
@@ -233,6 +225,7 @@ const DocumentRepository = function(notary, storage, debug) {
             const contract = await notary.notarizeDocument(document);
             const citation = await storage.writeContract(contract);
             await storage.writeName(name, citation);
+            return contract;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
@@ -263,7 +256,8 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             const citation = await storage.readName(name);
             if (citation) {
-                return await storage.readContract(citation);
+                const contract = await storage.readContract(citation);
+                return contract;
             }
         } catch (cause) {
             const exception = bali.exception({
@@ -365,7 +359,7 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             capacity = capacity || 10;  // default capacity
             lease = lease || 60;  // default to one minute
-            const document = this.createDocument('/bali/repositories/Bag/v1', permissions, {
+            const document = await this.createDocument('/bali/repositories/Bag/v1', permissions, {
                 $capacity: capacity,
                 $lease: lease
             });
@@ -405,7 +399,8 @@ const DocumentRepository = function(notary, storage, debug) {
                 ]);
             }
             const citation = await storage.readName(bag);
-            return await storage.messageCount(citation);
+            const count = await storage.messageCount(citation);
+            return count;
         } catch (cause) {
             const exception = bali.exception({
                 $module: '/bali/repositories/DocumentRepository',
