@@ -419,7 +419,7 @@ const RemoteStorage = function(notary, uri, debug) {
                     $module: '/bali/repositories/RemoteStorage',
                     $procedure: '$sendRequest',
                     $exception: '$serverDown',
-                    $uri: bali.reference(fullURI),
+                    $uri: bali.resource(fullURI),
                     $method: bali.text(method),
                     $status: cause.request.status,
                     $details: bali.text(cause.request.statusText),
@@ -432,7 +432,7 @@ const RemoteStorage = function(notary, uri, debug) {
                 $module: '/bali/repositories/RemoteStorage',
                 $procedure: '$sendRequest',
                 $exception: '$malformedRequest',
-                $uri: bali.reference(fullURI),
+                $uri: bali.resource(fullURI),
                 $method: bali.text(method),
                 $body: body,
                 $text: bali.text('The request was not formed correctly.')

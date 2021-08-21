@@ -89,7 +89,7 @@ exports.local = local;
  * remote storage mechanism service via an HTTPS interface exposed at the specified URI.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
- * @param {Reference} uri A reference that defines the URI for the remote storage.
+ * @param {Resource} uri A resource that defines the URI for the remote storage.
  * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
@@ -153,7 +153,7 @@ exports.test = test;
  * before storing it and after retrieving it from the remote storage mechanism.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
- * @param {Reference} uri A reference that defines the URI for the remote storage.
+ * @param {Resource} uri A resource that defines the URI for the remote storage.
  * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
  * debugging that occurs:
  * <pre>
