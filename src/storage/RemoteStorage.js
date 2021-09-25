@@ -14,6 +14,7 @@
  * documents as UTF-8 encoded strings.
  */
 const axios = require('axios');
+const bali = require('bali-component-framework').api();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
@@ -38,16 +39,14 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 const RemoteStorage = function(notary, uri, debug) {
     StorageMechanism.call(this, debug);
     debug = this.debug;
-    const bali = this.bali;
     if (debug > 2) console.log('Initializing the proxy to the remote repository: ' + uri);
 
     // validate the arguments
     if (debug > 1) {
-        const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/RemoteStorage', '$RemoteStorage', '$notary', notary, [
+        bali.component.validateArgument('/bali/repositories/RemoteStorage', '$RemoteStorage', '$notary', notary, [
             '/javascript/Object'
         ]);
-        validator.validateType('/bali/repositories/RemoteStorage', '$RemoteStorage', '$uri', uri, [
+        bali.component.validateArgument('/bali/repositories/RemoteStorage', '$RemoteStorage', '$uri', uri, [
             '/javascript/String'
         ]);
     }

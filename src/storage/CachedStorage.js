@@ -14,6 +14,7 @@
  * that have been retrieved from the wrapped storage mechanism.  The contracts are assumed
  * to be immutable so no cache consistency issues exist.
  */
+const bali = require('bali-component-framework').api();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
@@ -37,12 +38,10 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 const CachedStorage = function(storage, debug) {
     StorageMechanism.call(this, debug);
     debug = this.debug;
-    const bali = this.bali;
 
     // validate the arguments
     if (debug > 1) {
-        const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/CachedStorage', '$CachedStorage', '$storage', storage, [
+        bali.component.validateArgument('/bali/repositories/CachedStorage', '$CachedStorage', '$storage', storage, [
             '/javascript/Object'
         ]);
     }

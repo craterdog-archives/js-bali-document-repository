@@ -131,7 +131,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             headers: {
             },
             statusCode: status,
-            body: (resultType === 'text/html') ? error.toHTML(STYLE) : error.toString()
+            body: (resultType === 'text/html') ? bali.html(error, STYLE) : error.toString()
         };
         response.headers['content-length'] = response.body.length;
         response.headers['content-type'] = resultType;
@@ -296,7 +296,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
 
             // check the account of the authority
             const account = authority.getAttribute('$account');
-            if (account && account.isEqualTo(parameters.account)) {
+            if (account && bali.areEqual(account, parameters.account)) {
                 return true;  // the authority is always authorized
             }
 
@@ -319,7 +319,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             },
             statusCode: status
         };
-        response.body = (resultType === 'text/html') ? component.toHTML(STYLE) : component.toString();
+        response.body = (resultType === 'text/html') ? bali.html(component, STYLE) : component.toString();
         response.headers['content-length'] = response.body.length;
         response.headers['content-type'] = resultType;
         response.headers['cache-control'] = cacheControl;

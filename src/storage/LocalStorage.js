@@ -24,6 +24,7 @@
  */
 const os = require('os');
 const pfs = require('fs').promises;
+const bali = require('bali-component-framework').api();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
@@ -49,13 +50,11 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 const LocalStorage = function(notary, root, debug) {
     StorageMechanism.call(this, debug);
     debug = this.debug;
-    const bali = this.bali;
 
     // validate the arguments
     root = root || os.homedir() + '/.bali/';
     if (debug > 1) {
-        const validator = bali.validator(debug);
-        validator.validateType('/bali/storage/LocalStorage', '$LocalStorage', '$root', root, [
+        bali.component.validateArgument('/bali/storage/LocalStorage', '$LocalStorage', '$root', root, [
             '/javascript/Undefined',
             '/javascript/String'
         ]);
@@ -449,7 +448,7 @@ const writeComponent = async function(location, identifier, component, isMutable
     const file = location + '/' + identifier;
     const path = file.slice(0, file.lastIndexOf('/'));
     await pfs.mkdir(path, {recursive: true, mode: 0o700});
-    const source = component.toDocument();
+    const source = bali.document(component);
     await pfs.writeFile(file, source, {encoding: 'utf8', mode: mode});
 };
 

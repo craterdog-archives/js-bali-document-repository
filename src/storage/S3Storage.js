@@ -23,6 +23,7 @@ const {
 } = require('@aws-sdk/client-s3');
 
 const s3 = new S3Client();
+const bali = require('bali-component-framework').api();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
@@ -46,12 +47,10 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 const S3Storage = function(notary, configuration, debug) {
     StorageMechanism.call(this, debug);
     debug = this.debug;
-    const bali = this.bali;
 
     // validate the arguments
     if (debug > 1) {
-        const validator = bali.validator(debug);
-        validator.validateType('/bali/storage/S3Storage', '$S3Storage', '$configuration', configuration, [
+        bali.component.validateArgument('/bali/storage/S3Storage', '$S3Storage', '$configuration', configuration, [
             '/javascript/Object'
         ]);
     }
@@ -436,7 +435,7 @@ const S3Storage = function(notary, configuration, debug) {
 
     const writeComponent = async function(location, identifier, component, isMutable) {
         try {
-            const source = component.toDocument();
+            const source = bali.document(component);
             const command = new PutObjectCommand({Bucket: location, Key: identifier, Body: source});
             const response = await s3.send(command);
         } catch (cause) {

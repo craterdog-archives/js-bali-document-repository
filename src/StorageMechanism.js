@@ -13,6 +13,7 @@
  * This abstract class defines the interface that all storage mechanisms backing a document
  * repository must support.
  */
+const bali = require('bali-component-framework').api();
 
 
 // STORAGE MECHANISM API
@@ -34,7 +35,6 @@
 const StorageMechanism = function(debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
     this.debug = debug;
-    this.bali = require('bali-component-framework').api(debug);
     return this;
 };
 StorageMechanism.prototype.constructor = StorageMechanism;
@@ -47,7 +47,7 @@ exports.StorageMechanism = StorageMechanism;
  * @returns {String} A string describing this storage mechanism.
  */
 StorageMechanism.prototype.toString = function() {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$toString',
         $exception: '$abstractMethod',
@@ -64,7 +64,7 @@ StorageMechanism.prototype.toString = function() {
  * @returns {Boolean} Whether or not the named citation exists.
  */
 StorageMechanism.prototype.nameExists = async function(name) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$nameExists',
         $exception: '$abstractMethod',
@@ -81,7 +81,7 @@ StorageMechanism.prototype.nameExists = async function(name) {
  * @returns {Catalog} A catalog containing the named citation or nothing if it doesn't exist.
  */
 StorageMechanism.prototype.readName = async function(name) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$readName',
         $exception: '$abstractMethod',
@@ -100,7 +100,7 @@ StorageMechanism.prototype.readName = async function(name) {
  * @return {Catalog} A catalog containing the document citation.
  */
 StorageMechanism.prototype.writeName = async function(name, citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$writeName',
         $exception: '$abstractMethod',
@@ -118,7 +118,7 @@ StorageMechanism.prototype.writeName = async function(name, citation) {
  * @returns {Boolean} Whether or not the cited document exists.
  */
 StorageMechanism.prototype.documentExists = async function(citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$documentExists',
         $exception: '$abstractMethod',
@@ -136,7 +136,7 @@ StorageMechanism.prototype.documentExists = async function(citation) {
  * exist.
  */
 StorageMechanism.prototype.readDocument = async function(citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$readDocument',
         $exception: '$abstractMethod',
@@ -155,7 +155,7 @@ StorageMechanism.prototype.readDocument = async function(citation) {
  * @returns {Catalog} A catalog containing the document citation.
  */
 StorageMechanism.prototype.writeDocument = async function(document) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$writeDocument',
         $exception: '$abstractMethod',
@@ -173,7 +173,7 @@ StorageMechanism.prototype.writeDocument = async function(document) {
  * @returns {Component|Undefined} The deleted document if it existed.
  */
 StorageMechanism.prototype.deleteDocument = async function(citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$deleteDocument',
         $exception: '$abstractMethod',
@@ -190,7 +190,7 @@ StorageMechanism.prototype.deleteDocument = async function(citation) {
  * @returns {Boolean} Whether or not the contract exists.
  */
 StorageMechanism.prototype.contractExists = async function(citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$contractExist',
         $exception: '$abstractMethod',
@@ -207,7 +207,7 @@ StorageMechanism.prototype.contractExists = async function(citation) {
  * @returns {Catalog} A catalog containing the contract or nothing if it doesn't exist.
  */
 StorageMechanism.prototype.readContract = async function(citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$readContract',
         $exception: '$abstractMethod',
@@ -226,7 +226,7 @@ StorageMechanism.prototype.readContract = async function(citation) {
  * @returns {Catalog} A catalog containing the document citation.
  */
 StorageMechanism.prototype.writeContract = async function(contract) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$writeContract',
         $exception: '$abstractMethod',
@@ -244,7 +244,7 @@ StorageMechanism.prototype.writeContract = async function(contract) {
  * @returns {Boolean} Whether or not there is a message available to be retrieved.
  */
 StorageMechanism.prototype.messageAvailable = async function(bag) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$messageAvailable',
         $exception: '$abstractMethod',
@@ -262,7 +262,7 @@ StorageMechanism.prototype.messageAvailable = async function(bag) {
  * @returns {Number} The number of messages that are currently in the message bag.
  */
 StorageMechanism.prototype.messageCount = async function(bag) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$messageCount',
         $exception: '$abstractMethod',
@@ -279,7 +279,7 @@ StorageMechanism.prototype.messageCount = async function(bag) {
  * @param {Catalog} message A catalog containing the message to be added.
  */
 StorageMechanism.prototype.addMessage = async function(bag, message) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$addMessage',
         $exception: '$abstractMethod',
@@ -300,7 +300,7 @@ StorageMechanism.prototype.addMessage = async function(bag, message) {
  * @returns {Catalog} A catalog containing the message or nothing if the bag is empty.
  */
 StorageMechanism.prototype.removeMessage = async function(bag) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$removeMessage',
         $exception: '$abstractMethod',
@@ -321,7 +321,7 @@ StorageMechanism.prototype.removeMessage = async function(bag) {
  * @param {Catalog} message A catalog containing the message being returned.
  */
 StorageMechanism.prototype.returnMessage = async function(bag, message) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$returnMessage',
         $exception: '$abstractMethod',
@@ -340,7 +340,7 @@ StorageMechanism.prototype.returnMessage = async function(bag, message) {
  * @returns {Catalog} The deleted message.
  */
 StorageMechanism.prototype.deleteMessage = async function(bag, citation) {
-    const exception = this.bali.exception({
+    const exception = bali.exception({
         $module: '/bali/repositories/StorageMechanism',
         $procedure: '$deleteMessage',
         $exception: '$abstractMethod',

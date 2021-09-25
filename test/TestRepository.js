@@ -42,7 +42,7 @@ describe('Bali Document Repository™', function() {
             const publicKey = await notary.generateKey();
             const certificate = await notary.notarizeDocument(publicKey);
             const certificateCitation = await notary.activateKey(certificate);
-            expect(certificateCitation.isEqualTo(await storage.writeContract(certificate))).is.true;
+            expect(bali.areEqual(certificateCitation, await storage.writeContract(certificate))).is.true;
         });
 
         it('should perform a document lifecycle', async function() {
@@ -56,7 +56,7 @@ describe('Bali Document Repository™', function() {
             const documentCitation = await repository.saveDocument(document);
 
             // make sure the new document exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDocument(documentCitation))).is.true;
+            expect(bali.areEqual(document, await repository.retrieveDocument(documentCitation))).is.true;
 
             // discard the document in the repository
             expect(await repository.discardDocument(documentCitation)).is.true;
@@ -78,7 +78,7 @@ describe('Bali Document Repository™', function() {
             const documentCitation = await repository.saveDocument(document);
 
             // make sure the new document exists in the repository
-            expect(document.isEqualTo(await repository.retrieveDocument(documentCitation))).is.true;
+            expect(bali.areEqual(document, await repository.retrieveDocument(documentCitation))).is.true;
 
             // sign a contract and save it to the repository
             const contract = await repository.signContract(name, document);
@@ -87,7 +87,7 @@ describe('Bali Document Repository™', function() {
             expect(await repository.retrieveDocument(documentCitation)).to.not.exist;
 
             // make sure the named contract exists in the repository
-            expect(contract.isEqualTo(await repository.retrieveContract(name))).is.true;
+            expect(bali.areEqual(contract, await repository.retrieveContract(name))).is.true;
 
             // attempt to sign the same version of the contract in the repository
             await assert.rejects(async function() {
@@ -102,7 +102,7 @@ describe('Bali Document Repository™', function() {
 
             // checkout the next version of the contract
             const document = await repository.checkoutContract(name, level);
-            expect(document.getParameter('$version').isEqualTo(nextVersion)).is.true;
+            expect(bali.areEqual(document.getParameter('$version'), nextVersion)).is.true;
 
             // update and sign the next version of the contract in the repository
             document.setAttribute('$quantity', 20);
@@ -110,8 +110,8 @@ describe('Bali Document Repository™', function() {
             const contract = await repository.signContract(nextName, document);
 
             // make sure the signed contract exists in the repository
-            expect(contract.isEqualTo(await repository.retrieveContract(nextName))).is.true;
-            expect((await repository.retrieveContract(name)).isEqualTo(await repository.retrieveContract(nextName))).is.false;
+            expect(bali.areEqual(contract, await repository.retrieveContract(nextName))).is.true;
+            expect(bali.areEqual((await repository.retrieveContract(name)), await repository.retrieveContract(nextName))).is.false;
 
             // attempt to sign the same version of the contract in the repository
             await assert.rejects(async function() {

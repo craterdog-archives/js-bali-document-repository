@@ -15,6 +15,7 @@
  * storage mechanism.  The contracts are validated using the public certificate of the
  * notary key used to notarize them.
  */
+const bali = require('bali-component-framework').api();
 const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 
 
@@ -39,15 +40,13 @@ const StorageMechanism = require('../StorageMechanism').StorageMechanism;
 const ValidatedStorage = function(notary, repository, debug) {
     StorageMechanism.call(this, debug);
     debug = this.debug;
-    const bali = this.bali;
 
     // validate the arguments
     if (debug > 1) {
-        const validator = bali.validator(debug);
-        validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$notary', notary, [
+        bali.component.validateArgument('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$notary', notary, [
             '/javascript/Object'
         ]);
-        validator.validateType('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$repository', repository, [
+        bali.component.validateArgument('/bali/repositories/ValidatedStorage', '$ValidatedStorage', '$repository', repository, [
             '/javascript/Object'
         ]);
     }
@@ -207,7 +206,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
         // validate the previous version of the contract if one exists
         const previousCitation = document.getParameter('$previous');
-        if (previousCitation && !previousCitation.isEqualTo(bali.pattern.NONE)) {
+        if (previousCitation && !bali.areEqual(previousCitation, bali.pattern.NONE)) {
             const previousContract = await repository.readContract(previousCitation);
             const previousDocument = previousContract.getAttribute('$document');
             await validateCitation(previousCitation, previousDocument);
@@ -215,7 +214,7 @@ const ValidatedStorage = function(notary, repository, debug) {
 
         // validate the certificate if one exists
         var certificate;
-        if (certificateCitation && !certificateCitation.isEqualTo(bali.pattern.NONE)) {
+        if (certificateCitation && !bali.areEqual(certificateCitation, bali.pattern.NONE)) {
             certificate = await repository.readContract(certificateCitation);
             const certificateDocument = certificate.getAttribute('$document');
             await validateCitation(certificateCitation, certificateDocument);

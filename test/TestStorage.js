@@ -58,7 +58,7 @@ describe('Bali Document Repository™', function() {
                 const publicKey = await notary.generateKey();
                 certificate = await notary.notarizeDocument(publicKey);
                 citation = await notary.activateKey(certificate);
-                expect(citation.isEqualTo(await storage.writeContract(certificate))).is.true;
+                expect(bali.areEqual(citation, await storage.writeContract(certificate))).is.true;
             });
 
             it('should perform a named contract lifecycle', async function() {
@@ -70,13 +70,13 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.readName(name)).to.not.exist;
 
                 // create a new name in the repository
-                expect(citation.isEqualTo(await storage.writeName(name, citation))).is.true;
+                expect(bali.areEqual(citation, await storage.writeName(name, citation))).is.true;
 
                 // make sure the new name exists in the repository
                 expect(await storage.nameExists(name)).is.true;
 
                 // fetch the named contract from the repository
-                expect(citation.isEqualTo(await storage.readName(name))).is.true;
+                expect(bali.areEqual(citation, await storage.readName(name))).is.true;
 
                 // attempt to create the same name in the repository
                 await assert.rejects(async function() {
@@ -89,7 +89,7 @@ describe('Bali Document Repository™', function() {
                 citation = await notary.citeDocument(document);
 
                 // create a new document in the repository
-                expect(citation.isEqualTo(await storage.writeDocument(document))).is.true;
+                expect(bali.areEqual(citation, await storage.writeDocument(document))).is.true;
 
                 // make sure the new document exists in the repository
                 expect(await storage.documentExists(citation)).is.true;
@@ -98,16 +98,16 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.contractExists(citation)).is.false;
 
                 // fetch the new document from the repository
-                expect(document.isEqualTo(await storage.readDocument(citation))).is.true;
+                expect(bali.areEqual(document, await storage.readDocument(citation))).is.true;
 
                 // update the existing document in the repository
-                expect(citation.isEqualTo(await storage.writeDocument(document))).is.true;
+                expect(bali.areEqual(citation, await storage.writeDocument(document))).is.true;
 
                 // make sure the updated document exists in the repository
                 expect(await storage.documentExists(citation)).is.true;
 
                 // delete the document from the repository
-                expect(document.isEqualTo(await storage.deleteDocument(citation))).is.true;
+                expect(bali.areEqual(document, await storage.deleteDocument(citation))).is.true;
 
                 // make sure the document no longer exists in the repository
                 expect(await storage.documentExists(citation)).is.false;
@@ -127,7 +127,7 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.readContract(citation)).to.not.exist;
 
                 // create a new contract in the repository
-                expect(citation.isEqualTo(await storage.writeContract(contract))).is.true;
+                expect(bali.areEqual(citation, await storage.writeContract(contract))).is.true;
 
                 // make sure the same document does not exist in the repository
                 expect(await storage.documentExists(citation)).is.false;
@@ -137,7 +137,7 @@ describe('Bali Document Repository™', function() {
                 expect(await storage.contractExists(citation)).is.true;
 
                 // fetch the new contract from the repository
-                expect(contract.isEqualTo(await storage.readContract(citation))).is.true;
+                expect(bali.areEqual(contract, await storage.readContract(citation))).is.true;
 
                 // make sure the new contract still exists in the repository
                 expect(await storage.contractExists(citation)).is.true;
@@ -157,7 +157,7 @@ describe('Bali Document Repository™', function() {
 
                 // name the bag
                 const name = bali.component('/bali/examples/' + bag.getAttribute('$tag').toString().slice(1) + '/v1');
-                expect(bag.isEqualTo(await storage.writeName(name, bag))).is.true;
+                expect(bali.areEqual(bag, await storage.writeName(name, bag))).is.true;
 
                 // make sure the message bag is empty
                 expect(await storage.messageAvailable(bag)).is.false;
@@ -199,7 +199,7 @@ describe('Bali Document Repository™', function() {
                 expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 var citation = await notary.citeDocument(message);
-                expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
+                expect(bali.areEqual(message, await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(2);
                 expect(await storage.messageAvailable(bag)).is.true;
 
@@ -207,7 +207,7 @@ describe('Bali Document Repository™', function() {
                 expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(1);
                 citation = await notary.citeDocument(message);
-                expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
+                expect(bali.areEqual(message, await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(1);
                 expect(await storage.messageAvailable(bag)).is.true;
 
@@ -215,7 +215,7 @@ describe('Bali Document Repository™', function() {
                 expect(message).to.exist;
                 expect(await storage.messageCount(bag)).to.equal(0);
                 citation = await notary.citeDocument(message);
-                expect(message.isEqualTo(await storage.deleteMessage(bag, citation))).is.true;
+                expect(bali.areEqual(message, await storage.deleteMessage(bag, citation))).is.true;
                 expect(await storage.messageCount(bag)).to.equal(0);
                 expect(await storage.messageAvailable(bag)).is.false;
 
