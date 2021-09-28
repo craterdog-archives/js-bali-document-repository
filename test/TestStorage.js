@@ -48,7 +48,7 @@ describe('Bali Document Repository™', function() {
             $price: '1.25($currency: $USD)',
             $tax: '1.07($currency: $USD)',
             $total: '13.57($currency: $USD)'
-        });
+        }, debug);
 
         describe('Test ' + key, function() {
             var citation;
@@ -151,8 +151,8 @@ describe('Bali Document Repository™', function() {
             it('should perform a message bag lifecycle', async function() {
                 // create the bag
                 const contract = await notary.notarizeDocument(bali.instance('/bali/examples/Bag/v1', {
-                    $description: 'This is an example bag.'
-                }));
+                    $description: '"This is an example bag."'
+                }), debug);
                 const bag = await storage.writeContract(contract);
 
                 // name the bag
@@ -165,9 +165,11 @@ describe('Bali Document Repository™', function() {
 
                 // add some messages to the bag
                 const generateMessage = function(count) {
-                    return bali.instance('/bali/examples/Message/v1', {
+                    const result = bali.instance('/bali/examples/Message/v1', {
+                        $description: '"This is an example message."',
                         $count: count
-                    });
+                    }, debug);
+                    return result;
                 };
 
                 var message = generateMessage(1);

@@ -13,6 +13,7 @@
  * This class defines a document repository that is backed by any of a set of possible storage
  * mechanisms.  It treats documents as UTF-8 encoded strings.
  */
+const bali = require('bali-component-framework').api();
 
 
 // REPOSITORY API
@@ -34,12 +35,6 @@
  */
 const DocumentRepository = function(notary, storage, debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
-    if (debug > 1) {
-        bali.component.validateArgument('/bali/repositories/DocumentRepository', '$DocumentRepository', '$storage', storage, [
-            '/javascript/Object'
-        ]);
-    }
 
     /**
      * This method returns a string describing this document repository.
@@ -520,7 +515,6 @@ const DocumentRepository = function(notary, storage, debug) {
                 $module: '/bali/repositories/DocumentRepository',
                 $procedure: '$rejectMessage',
                 $exception: '$unexpected',
-                $bag: message.getAttribute('$bag') || 'none',
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to reject a message.'
             }, cause);

@@ -149,26 +149,32 @@ describe('Bali Document Repository™', function() {
 
             // remove the messages from the bag
             message = await repository.retrieveMessage(bag);
+            expect(message).to.exist;
             expect(await repository.messageCount(bag)).to.equal(2);
             await repository.rejectMessage(message);
             expect(await repository.messageCount(bag)).to.equal(3);
             message = await repository.retrieveMessage(bag);
+            expect(message).to.exist;
             await repository.acceptMessage(message);
             expect(await repository.messageCount(bag)).to.equal(2);
 
             message = await repository.retrieveMessage(bag);
+            expect(message).to.exist;
             expect(await repository.messageCount(bag)).to.equal(1);
             await repository.rejectMessage(message);
             expect(await repository.messageCount(bag)).to.equal(2);
             message = await repository.retrieveMessage(bag);
+            expect(message).to.exist;
             await repository.acceptMessage(message);
             expect(await repository.messageCount(bag)).to.equal(1);
 
             message = await repository.retrieveMessage(bag);
+            expect(message).to.exist;
             expect(await repository.messageCount(bag)).to.equal(0);
             await repository.rejectMessage(message);
             expect(await repository.messageCount(bag)).to.equal(1);
             message = await repository.retrieveMessage(bag);
+            expect(message).to.exist;
             await repository.acceptMessage(message);
             expect(await repository.messageCount(bag)).to.equal(0);
 
