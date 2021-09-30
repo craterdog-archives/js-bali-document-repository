@@ -41,7 +41,7 @@ describe('Bali Document Repository™', function() {
     for (var key in mechanisms) {
         const storage = mechanisms[key];
 
-        const transaction = bali.instance('/bali/examples/Transaction/v1', {
+        const transaction = bali.instance('/nebula/examples/Transaction/v1', {
             $timestamp: bali.moment(),
             $product: 'Snickers Bar',
             $quantity: 10,
@@ -63,7 +63,7 @@ describe('Bali Document Repository™', function() {
 
             it('should perform a named contract lifecycle', async function() {
                 const tag = citation.getAttribute('$tag');
-                const name = bali.component('/bali/certificates/' + tag.getValue() + '/v1');
+                const name = bali.component('/nebula/certificates/' + tag.getValue() + '/v1');
 
                 // make sure the new name does not yet exist in the repository
                 expect(await storage.nameExists(name)).is.false;
@@ -150,13 +150,13 @@ describe('Bali Document Repository™', function() {
 
             it('should perform a message bag lifecycle', async function() {
                 // create the bag
-                const contract = await notary.notarizeDocument(bali.instance('/bali/examples/Bag/v1', {
+                const contract = await notary.notarizeDocument(bali.instance('/nebula/examples/Bag/v1', {
                     $description: '"This is an example bag."'
                 }), debug);
                 const bag = await storage.writeContract(contract);
 
                 // name the bag
-                const name = bali.component('/bali/examples/' + bag.getAttribute('$tag').toString().slice(1) + '/v1');
+                const name = bali.component('/nebula/examples/' + bag.getAttribute('$tag').toString().slice(1) + '/v1');
                 expect(bali.areEqual(bag, await storage.writeName(name, bag))).is.true;
 
                 // make sure the message bag is empty
@@ -165,7 +165,7 @@ describe('Bali Document Repository™', function() {
 
                 // add some messages to the bag
                 const generateMessage = function(count) {
-                    const result = bali.instance('/bali/examples/Message/v1', {
+                    const result = bali.instance('/nebula/examples/Message/v1', {
                         $description: '"This is an example message."',
                         $count: count
                     }, debug);

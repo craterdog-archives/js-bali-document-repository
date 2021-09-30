@@ -345,7 +345,7 @@ const DocumentRepository = function(notary, storage, debug) {
             }
             capacity = capacity || 10;  // default capacity
             lease = lease || 60;  // default to one minute
-            const document = await this.createDocument('/bali/repositories/Bag/v1', permissions, {
+            const document = await this.createDocument('/nebula/repositories/Bag/v1', permissions, {
                 $capacity: capacity,
                 $lease: lease
             });
@@ -440,7 +440,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 });
                 throw exception;
             }
-            const document = bali.instance('/bali/repositories/Message/v1', message);
+            const document = bali.instance('/nebula/repositories/Message/v1', message);
             document.setAttribute('$bag', bag);
             await storage.addMessage(citation, document);
         } catch (cause) {
@@ -560,7 +560,7 @@ const DocumentRepository = function(notary, storage, debug) {
      * @param {Catalog} event A catalog containing the event to be added.
      */
     this.publishEvent = async function(event) {
-        const bag = bali.name(['bali', 'events', 'bag', 'v1']);
+        const bag = bali.name(['nebula', 'events', 'bag', 'v1']);
         try {
             if (debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$publishEvent', '$event', event, [
@@ -568,7 +568,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 ]);
             }
             const citation = await storage.readName(bag);
-            const message = bali.instance('/bali/repositories/Event/v1', event);
+            const message = bali.instance('/nebula/repositories/Event/v1', event);
             await storage.addMessage(citation, message);
         } catch (cause) {
             const exception = bali.exception({

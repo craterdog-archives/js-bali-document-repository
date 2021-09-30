@@ -96,7 +96,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             $version: version,
             $digest: digest
         }, {
-            $type: '/bali/notary/Citation/v1'
+            $type: '/nebula/notary/Citation/v1'
         });
         return citation;
     };
@@ -112,7 +112,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             $version: version,
             $digest: digest
         }, {
-            $type: '/bali/notary/Citation/v1'
+            $type: '/nebula/notary/Citation/v1'
         });
         return citation;
     };
@@ -124,7 +124,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
                 $status: status,
                 $message: message
             }, {
-                $type: '/bali/services/Error/v1'
+                $type: '/nebula/services/Error/v1'
             }
         );
         const response = {
@@ -290,7 +290,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
         if (authority && authority.isComponent && authority.isType('/bali/collections/Catalog')) {
             // check for a citation rather than a document
             const type = authority.getParameter('$type');
-            if (type.toString() === '/bali/notary/Citation/v1') {
+            if (type.toString() === '/nebula/notary/Citation/v1') {
                 return true;  // all citations are public by default
             }
 
@@ -304,7 +304,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             const document = authority.getAttribute('$document');
             if (document) authority = document;
             const permissions = authority.getParameter('$permissions');
-            if (permissions.toString() === '/bali/permissions/public/v1') {
+            if (permissions.toString() === '/nebula/permissions/public/v1') {
                 return true;  // publicly available
             }
             // TODO: load in the real permissions and check them
@@ -333,7 +333,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             component = document;
         }
         const type = component.getParameter('$type');
-        if (type.toString() !== '/bali/notary/Citation/v1') {
+        if (type.toString() !== '/nebula/notary/Citation/v1') {
             component = await notary.citeDocument(component);
         }
         return component;

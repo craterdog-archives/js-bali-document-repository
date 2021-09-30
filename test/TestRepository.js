@@ -24,7 +24,7 @@ const repository = Repository.repository(notary, storage, debug);
 const version = bali.version();
 const name = bali.name(['bali', 'examples', 'transaction', version]);
 
-const transaction = bali.instance('/bali/examples/Transaction/v1', {
+const transaction = bali.instance('/nebula/examples/Transaction/v1', {
     $timestamp: bali.moment(),
     $product: 'Snickers Bar',
     $quantity: 10,
@@ -48,8 +48,8 @@ describe('Bali Document Repository™', function() {
         it('should perform a document lifecycle', async function() {
             // save a new document to the repository
             const document = await repository.createDocument(
-                '/bali/examples/FooBar/v1',
-                '/bali/permissions/public/v1', {
+                '/nebula/examples/FooBar/v1',
+                '/nebula/permissions/public/v1', {
                     $foo: 'bar'
                 }
             );
@@ -121,8 +121,8 @@ describe('Bali Document Repository™', function() {
 
         it('should perform a message bag lifecycle', async function() {
             // create the bag
-            const bag = '/bali/examples/bag/v1';
-            const permissions = '/bali/permissions/public/v1';
+            const bag = '/nebula/examples/bag/v1';
+            const permissions = '/nebula/permissions/public/v1';
             const capacity = 3;
             const lease = 60;  // seconds
             await repository.createBag(bag, permissions, capacity, lease);
@@ -187,15 +187,15 @@ describe('Bali Document Repository™', function() {
 
         it('should perform an event publication', async function() {
             // create the event bag
-            const bag = '/bali/events/bag/v1';
-            const permissions = '/bali/permissions/public/v1';
+            const bag = '/nebula/events/bag/v1';
+            const permissions = '/nebula/permissions/public/v1';
             await repository.createBag(bag, permissions);
 
             const tag = bali.tag();
             const now = bali.moment();
             const event = await repository.createDocument(
-                '/bali/examples/Event/v1',
-                '/bali/permissions/public/v1', {
+                '/nebula/examples/Event/v1',
+                '/nebula/permissions/public/v1', {
                     $tag: tag,
                     $timestamp: now
                 }
