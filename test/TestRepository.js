@@ -22,7 +22,7 @@ const storage = Repository.local(notary, directory, debug);
 const repository = Repository.repository(notary, storage, debug);
 
 const version = bali.version();
-const name = bali.name(['bali', 'examples', 'transaction', version]);
+const name = bali.name(['nebula', 'examples', 'transaction', version]);
 
 const transaction = bali.instance('/nebula/examples/Transaction/v1', {
     $timestamp: bali.moment(),
@@ -98,7 +98,7 @@ describe('Bali Document Repository™', function() {
         it('should perform a versioned contract lifecycle', async function() {
             const level = 2;
             const nextVersion = bali.version.nextVersion(version, level);
-            const nextName = bali.name(['bali', 'examples', 'transaction', nextVersion]);
+            const nextName = bali.name(['nebula', 'examples', 'transaction', nextVersion]);
 
             // checkout the next version of the contract
             const document = await repository.checkoutContract(name, level);
