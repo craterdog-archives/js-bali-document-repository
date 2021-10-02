@@ -7,27 +7,28 @@
  * under the terms of The MIT License (MIT), as published by the Open   *
  * Source Initiative. (See http://opensource.org/licenses/MIT)          *
  ************************************************************************/
+'use strict';
 
+/*
+ * This class implements an HTTP engine that manages access to a document repository.
+ */
+const bali = require('bali-component-framework').api();
 const HTTPEngine = require('./utilities/HTTPEngine').HTTPEngine;
 
 
 const DocumentEngine = function(notary, storage, debug) {
-    const bali = require('bali-component-framework').api(debug);
     const handlers = {
-
         names: {
             HEAD: async function(parameters) {
                 const name = this.extractName(parameters);
                 const existing = await storage.readName(name);
                 return await this.encodeResponse(parameters, existing, existing, false);  // body is stripped off
             },
-
             GET: async function(parameters) {
                 const name = this.extractName(parameters);
                 const existing = await storage.readName(name);
                 return await this.encodeResponse(parameters, existing, existing, false);
             },
-
             PUT: async function(parameters) {
                 const name = this.extractName(parameters);
                 const citation = parameters.body;
@@ -44,13 +45,11 @@ const DocumentEngine = function(notary, storage, debug) {
                 const existing = await storage.readDocument(citation);
                 return await this.encodeResponse(parameters, existing, existing, true);  // body is stripped off
             },
-
             GET: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const existing = await storage.readDocument(citation);
                 return await this.encodeResponse(parameters, existing, existing, true);
             },
-
             PUT: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const document = parameters.body;
@@ -59,7 +58,6 @@ const DocumentEngine = function(notary, storage, debug) {
                 if (response.statusCode < 300) await storage.writeDocument(document);
                 return response;
             },
-
             DELETE: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const existing = await storage.readDocument(citation);
@@ -75,13 +73,11 @@ const DocumentEngine = function(notary, storage, debug) {
                 const existing = await storage.readContract(citation);
                 return await this.encodeResponse(parameters, existing, existing, false);  // body is stripped off
             },
-
             GET: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const existing = await storage.readContract(citation);
                 return await this.encodeResponse(parameters, existing, existing, false);
             },
-
             PUT: async function(parameters) {
                 const citation = this.extractResource(parameters);
                 const document = parameters.body;
@@ -101,14 +97,12 @@ const DocumentEngine = function(notary, storage, debug) {
                 const count = bali.number(await storage.messageCount(bag));
                 return await this.encodeResponse(parameters, authority, count.getMagnitude() > 0 ? count : undefined, true);  // body is stripped off
             },
-
             GET: async function(parameters) {
                 const bag = this.extractResource(parameters);
                 const authority = await storage.readContract(bag);
                 const count = bali.number(await storage.messageCount(bag));
                 return await this.encodeResponse(parameters, authority, count, true);
             },
-
             PUT: async function(parameters) {
                 const bag = this.extractResource(parameters);
                 const authority = await storage.readContract(bag);
@@ -123,7 +117,6 @@ const DocumentEngine = function(notary, storage, debug) {
                 }
                 return response;
             },
-
             POST: async function(parameters) {
                 const bag = this.extractResource(parameters);
                 const authority = await storage.readContract(bag);
@@ -138,7 +131,6 @@ const DocumentEngine = function(notary, storage, debug) {
                 }
                 return response;
             },
-
             DELETE: async function(parameters) {
                 const bag = this.extractResource(parameters);
                 const authority = await storage.readContract(bag);

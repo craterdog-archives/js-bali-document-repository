@@ -9,11 +9,17 @@
  ************************************************************************/
 'use strict';
 
+/*
+ * This class enforces the relatively standard HTTP web API semantics documented here:
+ * https://github.com/craterdog-bali/js-bali-nebula-services/wiki/HTTP-Method-Semantics
+ */
+const bali = require('bali-component-framework').api();
+
+
 // PUBLIC CLASSES
 
 const HTTPEngine = function(notary, storage, handlers, debug) {
     if (debug === null || debug === undefined) debug = 0;  // default is off
-    const bali = require('bali-component-framework').api(debug);
     const protocol = notary.getProtocols().getItem(-1);  // most recent protocol
 
     // PRIVATE ASPECTS
