@@ -14,8 +14,8 @@ const ValidatedStorage = require('./src/storage/ValidatedStorage').ValidatedStor
 const LocalStorage = require('./src/storage/LocalStorage').LocalStorage;
 const RemoteStorage = require('./src/storage/RemoteStorage').RemoteStorage;
 const S3Storage = require('./src/storage/S3Storage').S3Storage;
-const BrowserEngine = require('./src/BrowserEngine').BrowserEngine;
-const ApplicationEngine = require('./src/ApplicationEngine').ApplicationEngine;
+const HTMLEngine = require('./src/HTMLEngine').HTMLEngine;
+const WebEngine = require('./src/WebEngine').WebEngine;
 const DocumentRepository = require('./src/DocumentRepository').DocumentRepository;
 
 
@@ -194,7 +194,7 @@ const service = function(notary, configuration, debug) {
 exports.service = service;
 
 /**
- * This function initializes a browser engine with a digital notary and a storage mechanism.
+ * This function initializes an HTML engine with a digital notary and a storage mechanism.
  * It enforces the symantics for HTTP requests involving HEAD, GET, PUT, POST, and DELETE methods.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
@@ -208,15 +208,15 @@ exports.service = service;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {BrowserEngine} The browser engine.
+ * @returns {HTMLEngine} The HTML engine.
  */
-const browser = function(notary, storage, debug) {
-    return new BrowserEngine(notary, storage, debug);
+const html = function(notary, storage, debug) {
+    return new HTMLEngine(notary, storage, debug);
 };
-exports.browser = browser;
+exports.html = html;
 
 /**
- * This function initializes a application engine with a digital notary and a storage mechanism.
+ * This function initializes a web service engine with a digital notary and a storage mechanism.
  * It enforces the symantics for HTTP requests involving HEAD, GET, PUT, POST, and DELETE methods.
  *
  * @param {DigitalNotary} notary An object that implements the digital notary API.
@@ -230,12 +230,12 @@ exports.browser = browser;
  *   2: perform argument validation and log exceptions to console.error
  *   3: perform argument validation and log exceptions to console.error and debug info to console.log
  * </pre>
- * @returns {ApplicationEngine} The application engine.
+ * @returns {WebEngine} The web service engine.
  */
-const application = function(notary, storage, debug) {
-    return new ApplicationEngine(notary, storage, debug);
+const web = function(notary, storage, debug) {
+    return new WebEngine(notary, storage, debug);
 };
-exports.application = application;
+exports.web = web;
 
 /**
  * This function initializes a document repository backed by the specified storage mechanism.

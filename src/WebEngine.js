@@ -16,7 +16,7 @@ const bali = require('bali-component-framework').api();
 const HTTPEngine = require('./utilities/HTTPEngine').HTTPEngine;
 
 
-const ApplicationEngine = function(notary, storage, debug) {
+const WebEngine = function(notary, storage, debug) {
     const handlers = {
         names: {
             HEAD: async function(parameters) {
@@ -157,6 +157,6 @@ const ApplicationEngine = function(notary, storage, debug) {
     HTTPEngine.call(this, notary, storage, handlers, debug);
     return this;
 };
-ApplicationEngine.prototype = Object.create(HTTPEngine.prototype);
-ApplicationEngine.prototype.constructor = ApplicationEngine;
-exports.ApplicationEngine = ApplicationEngine;
+WebEngine.prototype = Object.create(HTTPEngine.prototype);
+WebEngine.prototype.constructor = WebEngine;
+exports.WebEngine = WebEngine;

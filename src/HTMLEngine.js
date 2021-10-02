@@ -10,13 +10,13 @@
 'use strict';
 
 /*
- * This class implements an HTTP engine that manages access to a document repository.
+ * This class implements an HTTP engine that manages browser access to a document repository.
  */
 const bali = require('bali-component-framework').api();
 const HTTPEngine = require('./utilities/HTTPEngine').HTTPEngine;
 
 
-const BrowserEngine = function(notary, storage, debug) {
+const HTMLEngine = function(notary, storage, debug) {
     const handlers = {
         names: {
             HEAD: async function(parameters) {
@@ -84,6 +84,6 @@ const BrowserEngine = function(notary, storage, debug) {
     HTTPEngine.call(this, notary, storage, handlers, debug);
     return this;
 };
-BrowserEngine.prototype = Object.create(HTTPEngine.prototype);
-BrowserEngine.prototype.constructor = BrowserEngine;
-exports.BrowserEngine = BrowserEngine;
+HTMLEngine.prototype = Object.create(HTTPEngine.prototype);
+HTMLEngine.prototype.constructor = HTMLEngine;
+exports.HTMLEngine = HTMLEngine;
