@@ -14,7 +14,7 @@ const account = bali.tag();
 const directory = 'test/config/service/';
 const notary = require('bali-digital-notary').test(account, directory, debug);
 const storage = require('../').test(notary, directory, debug);
-const engine = require('../').engine(notary, storage, debug);
+const engine = require('../').application(notary, storage, debug);
 const express = require("express");
 const bodyParser = require('body-parser');
 
