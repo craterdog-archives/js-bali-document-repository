@@ -31,52 +31,52 @@ const HTMLEngine = function(notary, storage, debug) {
                 return await this.encodeResponse(parameters, existing, existing, false);
             },
             PUT: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             }
         },
 
         documents: {
             HEAD: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             GET: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             PUT: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             DELETE: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             }
         },
 
         contracts: {
             HEAD: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             GET: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             PUT: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             }
         },
 
         messages: {
             HEAD: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             GET: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             PUT: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             POST: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             },
             DELETE: async function(parameters) {
-                return this.encodeError(401, parameters.responseType, 'Not Authenticated');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Not Authenticated');
             }
         }
 

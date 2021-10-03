@@ -35,7 +35,7 @@ const processRequest = async function(request, response) {
         response.writeHead(result.statusCode, result.statusMessage, result.headers);
         response.end(result.body);
     } catch (cause) {
-        console.error(cause);
+        console.error(cause.toString());
     }
 };
 

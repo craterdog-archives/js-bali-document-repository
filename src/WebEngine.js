@@ -112,7 +112,7 @@ const WebEngine = function(notary, storage, debug) {
                     try {
                         await storage.returnMessage(bag, message);
                     } catch (exception) {
-                        return this.encodeError(409, parameters.responseType, 'Resource Conflict');
+                        return this.encodeError(parameters, 409, parameters.resultType, 'Resource Conflict');
                     }
                 }
                 return response;
@@ -126,7 +126,7 @@ const WebEngine = function(notary, storage, debug) {
                     try {
                         await storage.addMessage(bag, message);
                     } catch (exception) {
-                        return this.encodeError(409, parameters.responseType, 'Resource Conflict');
+                        return this.encodeError(parameters, 409, parameters.resultType, 'Resource Conflict');
                     }
                 }
                 return response;
@@ -145,7 +145,7 @@ const WebEngine = function(notary, storage, debug) {
                             const citation = this.extractSubresource(parameters);
                             message = await storage.deleteMessage(bag, citation);
                         } catch (exception) {
-                            return this.encodeError(409, parameters.responseType, 'Resource Conflict');
+                            return this.encodeError(parameters, 409, parameters.resultType, 'Resource Conflict');
                         }
                     }
                 }

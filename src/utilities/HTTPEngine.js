@@ -42,25 +42,25 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             parameters = decodeRequest(request);
             if (!parameters) {
                 if (debug > 2) console.log('The service received a badly formed request.');
-                return this.encodeError(400, 'text/html', 'Bad Request');
+                return this.encodeError(parameters, 400, 'application/bali', 'Bad Request');
             }
 
             // validate the request type
             if (!handlers[parameters.type]) {
                 if (debug > 2) console.log('The service received an invalid request type: ' + parameters.type);
-                return this.encodeError(400, parameters.responseType, 'Bad Request');
+                return this.encodeError(parameters, 400, parameters.resultType, 'Bad Request');
             }
 
             // validate the request method
             if (!handlers[parameters.type][parameters.method]) {
                 if (debug > 2) console.log('The service received an invalid request method: ' + parameters.method);
-                return this.encodeError(405, parameters.responseType, 'Method Not Allowed');
+                return this.encodeError(parameters, 405, parameters.resultType, 'Method Not Allowed');
             }
 
             // validate any credentials that were passed with the request (there may not be any)
             if (!(await validCredentials(parameters))) {
                 if (debug > 2) console.log('Invalid credentials were passed with the request.');
-                return this.encodeError(401, parameters.responseType, 'Invalid Credentials');
+                return this.encodeError(parameters, 401, parameters.resultType, 'Invalid Credentials');
             }
 
             // handle the request (must explicitly pass in 'this')
@@ -73,15 +73,14 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
                 const exception = bali.exception({
                     $module: '/bali/services/HTTPEngine',
                     $procedure: '$processRequest',
-                    $exception: '$serverBug',
+                    $exception: '$badRequest',
                     $parameters: parameters,
                     $text: 'The processing of the HTTP request failed.'
                 }, cause);
+                console.log('Response: 400 (Bad Request)');
                 console.log(exception.toString());
-                console.log(cause);
-                console.log('Response: 503 (Service Unavailable)');
             }
-            return this.encodeError(503, 'Service Unavailable');
+            return this.encodeError(parameters, 400, parameters.resultType, 'Bad Request');
         }
     };
 
@@ -124,20 +123,19 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
     };
 
 
-    this.encodeError = function(status, resultType, message) {
-        const error = bali.catalog(
-            {
-                $status: status,
-                $message: message
-            }, {
-                $type: '/nebula/services/Error/v1'
-            }
-        );
+    this.encodeError = function(parameters, status, resultType, message) {
+        const error = bali.exception({
+            $module: '/bali/services/HTTPEngine',
+            $status: status,
+            $text: message
+        }, bali.pattern.NONE);
+        resultType = resultType || 'application/bali';
         const response = {
             headers: {
             },
             statusCode: status,
-            body: (resultType === 'text/html') ? bali.html(error, STYLE) : error.toString()
+            body: (resultType === 'text/html') ?
+                bali.html(error, this.extractName(parameters), STYLE) : error.toString()
         };
         response.headers['content-length'] = response.body.length;
         response.headers['content-type'] = resultType;
@@ -164,22 +162,22 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
         var citation = document ? await citeComponent(document) : undefined;
         if (![PUT, POST, HEAD, GET, DELETE].includes(method)) {
             // Unsupported Method
-            return this.encodeError(405, parameters.responseType, 'Method Not Allowed');
+            return this.encodeError(parameters, 405, parameters.resultType, 'Method Not Allowed');
         }
         if (!authenticated) {
             if (!exists || !authorized || ![HEAD, GET].includes(method)) {
                 // Not Authenticated
-                const error = this.encodeError(401, resultType, 'Not Authenticated');
+                const error = this.encodeError(parameters, 401, resultType, 'Not Authenticated');
                 return error;
             }
             // Existing Public Resource
             switch (method) {
                 case HEAD:
-                    const response = encodeSuccess(200, resultType, result, 'public, immutable');
+                    const response = encodeSuccess(parameters, 200, resultType, result, 'public, immutable');
                     response.body = undefined;
                     return response;
                 case GET:
-                    return encodeSuccess(200, resultType, result, 'public, immutable');
+                    return encodeSuccess(parameters, 200, resultType, result, 'public, immutable');
             }
         }
         if (!exists) {
@@ -188,36 +186,36 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
                 case PUT:
                     const tag = citation.getAttribute('$tag').toString().slice(1);  // remove leading '#'
                     const version = citation.getAttribute('$version');
-                    const response = encodeSuccess(201, resultType, citation, 'no-store');
+                    const response = encodeSuccess(parameters, 201, resultType, citation, 'no-store');
                     return response;
                 default:
-                    return this.encodeError(404, resultType, 'Not Found');
+                    return this.encodeError(parameters, 404, resultType, 'Not Found');
             }
         }
         if (!authorized) {
             // Authenticated, Existing Resource, but not Authorized
-            return this.encodeError(403, resultType, 'Not Authorized');
+            return this.encodeError(parameters, 403, resultType, 'Not Authorized');
         }
         // Authenticated, Existing Resource, and Authorized
         const cacheControl = isMutable ? 'no-store' : 'private, immutable';
         switch (method) {
             case PUT:
                 if (isMutable) {
-                    return encodeSuccess(200, resultType, citation, 'no-store');
+                    return encodeSuccess(parameters, 200, resultType, citation, 'no-store');
                 }
-                return this.encodeError(409, resultType, 'Resource Conflict');
+                return this.encodeError(parameters, 409, resultType, 'Resource Conflict');
             case POST:
                 // post a new document to the parent resource specified by the URI
-                var response = encodeSuccess(201, resultType, citation, 'no-store');
+                var response = encodeSuccess(parameters, 201, resultType, citation, 'no-store');
                 return response;
             case HEAD:
-                response = encodeSuccess(200, resultType, result, cacheControl);
+                response = encodeSuccess(parameters, 200, resultType, result, cacheControl);
                 response.body = undefined;
                 return response;
             case GET:
-                return encodeSuccess(200, resultType, result, cacheControl);
+                return encodeSuccess(parameters, 200, resultType, result, cacheControl);
             case DELETE:
-                return encodeSuccess(200, resultType, result, 'no-store');
+                return encodeSuccess(parameters, 200, resultType, result, 'no-store');
         }
     };
 
@@ -319,13 +317,15 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
     };
 
 
-    const encodeSuccess = function(status, resultType, component, cacheControl) {
+    const encodeSuccess = function(parameters, status, resultType, component, cacheControl) {
         const response = {
             headers: {
             },
             statusCode: status
         };
-        response.body = (resultType === 'text/html') ? bali.html(component, STYLE) : component.toString();
+        resultType = resultType || 'application/bali';
+        response.body = (resultType === 'text/html') ?
+            bali.html(component, this.extractName(parameters), STYLE) : component.toString();
         response.headers['content-length'] = response.body.length;
         response.headers['content-type'] = resultType;
         response.headers['cache-control'] = cacheControl;
