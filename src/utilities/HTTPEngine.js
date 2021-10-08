@@ -19,7 +19,7 @@ const bali = require('bali-component-framework').api();
 // PUBLIC CLASSES
 
 const HTTPEngine = function(notary, storage, handlers, debug) {
-    if (debug === null || debug === undefined) debug = 0;  // default is off
+    this.debug = debug || 0;  // default is off
     const protocol = notary.getProtocols().getItem(-1);  // most recent protocol
 
     // PRIVATE ASPECTS
@@ -40,36 +40,37 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
         try {
             // extract the request parameters
             parameters = decodeRequest(request);
+            if (this.debug > 2) console.log('Request: ' + bali.catalog(parameters));
             if (!parameters) {
-                if (debug > 2) console.log('The service received a badly formed request.');
+                if (this.debug > 2) console.log('The service received a badly formed request.');
                 return this.encodeError(parameters, 400, 'application/bali', 'Bad Request');
             }
 
             // validate the request type
             if (!handlers[parameters.type]) {
-                if (debug > 2) console.log('The service received an invalid request type: ' + parameters.type);
+                if (this.debug > 2) console.log('The service received an invalid request type: ' + parameters.type);
                 return this.encodeError(parameters, 400, parameters.resultType, 'Bad Request');
             }
 
             // validate the request method
             if (!handlers[parameters.type][parameters.method]) {
-                if (debug > 2) console.log('The service received an invalid request method: ' + parameters.method);
+                if (this.debug > 2) console.log('The service received an invalid request method: ' + parameters.method);
                 return this.encodeError(parameters, 405, parameters.resultType, 'Method Not Allowed');
             }
 
             // validate any credentials that were passed with the request (there may not be any)
             if (!(await validCredentials(parameters))) {
-                if (debug > 2) console.log('Invalid credentials were passed with the request.');
+                if (this.debug > 2) console.log('Invalid credentials were passed with the request.');
                 return this.encodeError(parameters, 401, parameters.resultType, 'Invalid Credentials');
             }
 
             // handle the request (must explicitly pass in 'this')
             const response = await handlers[parameters.type][parameters.method].call(this, parameters);
-            if (debug > 2) console.log('Response: ' + bali.catalog(response));
+            if (this.debug > 2) console.log('Response: ' + bali.catalog(response));
             return response;
 
         } catch (cause) {
-            if (debug > 0) {
+            if (this.debug > 0) {
                 const exception = bali.exception({
                     $module: '/bali/services/HTTPEngine',
                     $procedure: '$processRequest',
@@ -243,7 +244,7 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
         const path = request.path;
         var credentials = request.headers['nebula-credentials'] || request.headers['Nebula-Credentials'];
         if (credentials) {
-            const decoder = bali.decoder(0, debug);
+            const decoder = bali.decoder();
             credentials = Buffer.from(decoder.base32Decode(credentials)).toString('utf8');
             credentials = bali.component(credentials);
         }
@@ -278,7 +279,6 @@ const HTTPEngine = function(notary, storage, handlers, debug) {
             subdigest: subdigest,
             body: body
         };
-        if (debug > 2) console.log('Parameters: ' + bali.catalog(parameters));
         return parameters;
     };
 

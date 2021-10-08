@@ -19,7 +19,7 @@ const bali = require('bali-component-framework').api();
 // STORAGE MECHANISM API
 
 /**
- * This function creates a new instance of a storage mechanism.  It must be subclassed by a
+ * This constructor creates a new instance of a storage mechanism.  It must be subclassed by a
  * concrete class.
  *
  * @param {Boolean|Number} debug An optional number in the range 0..3 that controls the level of
@@ -33,8 +33,7 @@ const bali = require('bali-component-framework').api();
  * @returns {Object} The new storage mechanism.
  */
 const StorageMechanism = function(debug) {
-    if (debug === null || debug === undefined) debug = 0;  // default is off
-    this.debug = debug;
+    this.debug = debug || 0;  // default is off
     return this;
 };
 StorageMechanism.prototype.constructor = StorageMechanism;

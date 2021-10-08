@@ -34,7 +34,7 @@ const bali = require('bali-component-framework').api();
  * @returns {Object} The new document repository.
  */
 const DocumentRepository = function(notary, storage, debug) {
-    if (debug === null || debug === undefined) debug = 0;  // default is off
+    this.debug = debug || 0;  // default is off
 
     /**
      * This method returns a string describing this document repository.
@@ -59,7 +59,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.createDocument = async function(type, permissions, template) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$createDocument', '$type', type, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -88,7 +88,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $template: template,
                 $text: 'An unexpected error occurred while attempting to create a document of a given type.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -103,7 +103,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.saveDocument = async function(document) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$saveDocument', '$document', document, [
                     '/bali/collections/Catalog'
                 ]);
@@ -118,7 +118,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to save a document.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -131,7 +131,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.retrieveDocument = async function(citation) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$retrieveDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
@@ -146,7 +146,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $citation: citation,
                 $text: 'An unexpected error occurred while attempting to retrieve a document.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -160,7 +160,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.discardDocument = async function(citation) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$discardDocument', '$citation', citation, [
                     '/bali/collections/Catalog'
                 ]);
@@ -175,7 +175,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $citation: citation,
                 $text: 'An unexpected error occurred while attempting to discard a document.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -192,7 +192,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.signContract = async function(name, document) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$signContract', '$name', name, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -223,7 +223,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $document: document,
                 $text: 'An unexpected error occurred while attempting to sign a contract.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -236,7 +236,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.retrieveContract = async function(name) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$retrieveContract', '$name', name, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -255,7 +255,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to retrieve a named contract.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -271,7 +271,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.checkoutContract = async function(name, level) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$checkoutContract', '$name', name, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -306,7 +306,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $name: name,
                 $text: 'An unexpected error occurred while attempting to checkout a named contract.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -325,7 +325,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.createBag = async function(name, permissions, capacity, lease) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$createBag', '$name', name, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -363,7 +363,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $lease: lease,
                 $text: 'An unexpected error occurred while attempting to create a new message bag.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -377,7 +377,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.messageCount = async function(bag) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$messageCount', '$bag', bag, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -394,7 +394,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $bag: bag,
                 $text: 'An unexpected error occurred while attempting to check the number of messages that are in a bag.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -407,7 +407,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.postMessage = async function(bag, message) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$postMessage', '$bag', bag, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -452,7 +452,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to post a message.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -469,7 +469,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.retrieveMessage = async function(bag) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$retrieveMessage', '$bag', bag, [
                     '/javascript/String',
                     '/bali/strings/Name'
@@ -486,7 +486,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $bag: bag,
                 $text: 'An unexpected error occurred while attempting to receive a message.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -502,7 +502,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.rejectMessage = async function(message) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$rejectMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
@@ -518,7 +518,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to reject a message.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -532,7 +532,7 @@ const DocumentRepository = function(notary, storage, debug) {
      */
     this.acceptMessage = async function(message) {
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$acceptMessage', '$message', message, [
                     '/bali/collections/Catalog'
                 ]);
@@ -548,7 +548,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $message: message,
                 $text: 'An unexpected error occurred while attempting to accept a message.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
@@ -562,7 +562,7 @@ const DocumentRepository = function(notary, storage, debug) {
     this.publishEvent = async function(event) {
         const bag = bali.name(['nebula', 'events', 'bag', 'v1']);
         try {
-            if (debug > 1) {
+            if (this.debug > 1) {
                 bali.component.validateArgument('/bali/repositories/DocumentRepository', '$publishEvent', '$event', event, [
                     '/bali/collections/Catalog'
                 ]);
@@ -579,7 +579,7 @@ const DocumentRepository = function(notary, storage, debug) {
                 $event: event,
                 $text: 'An unexpected error occurred while attempting to publish an event.'
             }, cause);
-            if (debug) console.error(exception.toString());
+            if (this.debug) console.error(exception.toString());
             throw exception;
         }
     };
